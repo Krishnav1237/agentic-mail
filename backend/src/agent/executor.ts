@@ -8,8 +8,10 @@ import type { AgentGoalState } from './types.js';
 import { getConfidenceFactors } from './confidence.js';
 import { isAlwaysAllowed } from './policy.js';
 import { logDecisionTrace } from './decisionTrace.js';
-import { generateActionPreview } from './preview.js';
+import { generateActionPreview, generateWorkflowPreview } from './preview.js';
 import { detectRiskyOutcome } from './recovery.js';
+import { getExecutionKeyForStep } from './planMerge.js';
+import { recordWorkflowOutcomeMetrics } from '../observability/costTracker.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -49,6 +51,41 @@ const stripContextFields = (input: Record<string, unknown>) => {
   return rest;
 };
 
+const computeAutoExecution = (input: {
+  goals: AgentGoalState;
+  requiresApproval: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  policyAllows: boolean;
+}) => {
+  if (input.requiresApproval) return false;
+  if (input.policyAllows) return true;
+  if (input.riskLevel === 'low') {
+    return input.goals.autopilotLevel >= 1;
+  }
+  if (input.riskLevel === 'medium') {
+    return input.goals.autopilotLevel === 2 && input.goals.personalityMode === 'aggressive';
+  }
+  return false;
+};
+
+const groupWorkflows = (planId: string, steps: AgentPlan['plan']) => {
+  const workflowGroups: Array<{ id: string; name: string; steps: AgentPlan['plan'] }> = [];
+  let current: { id: string; name: string; steps: AgentPlan['plan'] } | null = null;
+
+  steps.forEach((step) => {
+    const name = step.workflow ?? 'General';
+    if (!current || current.name !== name) {
+      const index = workflowGroups.length;
+      const workflowId = createHash('sha1').update(`${planId}:${index}:${name}`).digest('hex').slice(0, 12);
+      current = { id: workflowId, name, steps: [] as AgentPlan['plan'] };
+      workflowGroups.push(current);
+    }
+    current.steps.push(step);
+  });
+
+  return workflowGroups;
+};
+
 export const executePlan = async (input: {
   userId: string;
   plan: AgentPlan;
@@ -61,20 +98,7 @@ export const executePlan = async (input: {
   const personalityAdjust = input.goals.personalityMode === 'chill' ? 0.05 : input.goals.personalityMode === 'aggressive' ? -0.05 : 0;
   const autoThreshold = Math.min(Math.max(0.85 + personalityAdjust, 0.75), 0.95);
   const suggestThreshold = Math.min(Math.max(0.5 + personalityAdjust, 0.4), 0.65);
-
-  const workflowGroups: Array<{ id: string; name: string; steps: typeof input.plan.plan }> = [];
-  let current: { id: string; name: string; steps: typeof input.plan.plan } | null = null;
-
-  input.plan.plan.forEach((step) => {
-    const name = step.workflow ?? 'General';
-    if (!current || current.name !== name) {
-      const index = workflowGroups.length;
-      const workflowId = createHash('sha1').update(`${input.planId}:${index}:${name}`).digest('hex').slice(0, 12);
-      current = { id: workflowId, name, steps: [] as typeof input.plan.plan };
-      workflowGroups.push(current);
-    }
-    current.steps.push(step);
-  });
+  const workflowGroups = groupWorkflows(input.planId, input.plan.plan);
 
   for (const workflow of workflowGroups) {
     await logAgentStep({
@@ -85,9 +109,63 @@ export const executePlan = async (input: {
     });
 
     let workflowFailures = 0;
+    let actionsCreated = 0;
+    let successfulActions = 0;
+
+    const contextCache = new Map<string, Awaited<ReturnType<typeof resolveContext>>>();
+    const previewCache = new Map<string, Awaited<ReturnType<typeof generateActionPreview>>>();
+
+    for (const step of workflow.steps) {
+      const executionKey = getExecutionKeyForStep(step);
+      const resolvedContext = await resolveContext(input.userId, step.input);
+      contextCache.set(executionKey, resolvedContext);
+
+      try {
+        const preview = await generateActionPreview({
+          userId: input.userId,
+          actionType: step.action,
+          actionInput: step.input,
+          emailId: resolvedContext?.id ?? null
+        });
+        previewCache.set(executionKey, preview);
+      } catch (error) {
+        previewCache.set(executionKey, null);
+        await logAgentStep({
+          userId: input.userId,
+          step: 'preview_error',
+          message: (error as Error).message,
+          data: { workflowId: workflow.id, step: step.action }
+        });
+      }
+    }
+
+    const workflowPreview = await generateWorkflowPreview({
+      userId: input.userId,
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      actions: workflow.steps.map((step) => {
+        const executionKey = getExecutionKeyForStep(step);
+        return {
+          actionType: step.action,
+          actionInput: step.input,
+          emailId: contextCache.get(executionKey)?.id ?? null
+        };
+      })
+    });
 
     for (const step of workflow.steps) {
       const tool = getToolDefinition(step.action);
+      const executionKey = getExecutionKeyForStep(step);
+      const resolvedContext = contextCache.get(executionKey) ?? null;
+      const preview = previewCache.get(executionKey) ?? null;
+      const previewPayload = preview
+        ? {
+            ...preview,
+            workflowSummary: workflowPreview.summary,
+            estimatedSavedTimeMinutes: workflowPreview.estimatedSavedTimeMinutes
+          }
+        : null;
+
       if (!tool) {
         results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'discarded', reason: 'tool_not_found' });
         await logDecisionTrace({
@@ -105,7 +183,6 @@ export const executePlan = async (input: {
         continue;
       }
 
-      const resolvedContext = await resolveContext(input.userId, step.input);
       const factors = await getConfidenceFactors({
         userId: input.userId,
         actionType: step.action,
@@ -141,32 +218,17 @@ export const executePlan = async (input: {
       }
 
       const requiresApproval = tool.requiresApproval;
-      const safe = tool.safe;
-      const policyAllows = await isAlwaysAllowed(input.userId, step.action);
-      const canExecute =
-        (input.goals.autopilotLevel >= 1 && !requiresApproval && (input.goals.autopilotLevel === 2 || safe)) ||
-        (policyAllows && !requiresApproval && safe);
-
-      let preview: any = null;
-      try {
-        preview = await generateActionPreview({
-          userId: input.userId,
-          actionType: step.action,
-          actionInput: step.input,
-          emailId: resolvedContext?.id ?? null
-        });
-      } catch (error) {
-        await logAgentStep({
-          userId: input.userId,
-          step: 'preview_error',
-          message: (error as Error).message
-        });
-        preview = null;
-      }
+      const policyAllows = await isAlwaysAllowed(input.userId, step.action, workflow.name);
+      const canExecute = computeAutoExecution({
+        goals: input.goals,
+        requiresApproval,
+        riskLevel: tool.riskLevel,
+        policyAllows
+      });
 
       if (adjustedConfidence <= autoThreshold || !canExecute) {
         if (resolvedContext) {
-          await createAgentAction({
+          const actionId = await createAgentAction({
             userId: input.userId,
             emailId: resolvedContext.id,
             action: {
@@ -180,14 +242,20 @@ export const executePlan = async (input: {
               contextSimilarity: factors.contextSimilarity,
               workflow: workflow.name,
               workflowId: workflow.id,
-              preview,
+              preview: previewPayload,
               payload: step.input,
+              executionKey,
               execution: 'suggest',
               requiresApproval
             },
             statusOverride: 'preview'
           });
+          if (actionId) {
+            actionsCreated += 1;
+            await updateAgentActionStatus(actionId, 'preview', { __workflowPreview: workflowPreview });
+          }
         }
+
         results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'suggested' });
         await logDecisionTrace({
           userId: input.userId,
@@ -204,15 +272,14 @@ export const executePlan = async (input: {
               adjusted_confidence: adjustedConfidence
             },
             decision: { action: step.action, workflow: workflow.name },
-            action: { execution: 'suggest', requiresApproval, preview },
+            action: { execution: 'suggest', requiresApproval, preview: previewPayload },
             result: { status: 'suggested' }
           }
         });
         continue;
       }
 
-      const ctx = resolvedContext;
-      if (!ctx) {
+      if (!resolvedContext) {
         results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'failed', reason: 'missing_context' });
         failed += 1;
         workflowFailures += 1;
@@ -240,7 +307,7 @@ export const executePlan = async (input: {
 
       const actionId = await createAgentAction({
         userId: input.userId,
-        emailId: ctx.id,
+        emailId: resolvedContext.id,
         action: {
           type: step.action,
           reason: step.reason,
@@ -252,8 +319,9 @@ export const executePlan = async (input: {
           contextSimilarity: factors.contextSimilarity,
           workflow: workflow.name,
           workflowId: workflow.id,
-          preview,
+          preview: previewPayload,
           payload: step.input,
+          executionKey,
           execution: 'execute',
           requiresApproval
         }
@@ -276,12 +344,14 @@ export const executePlan = async (input: {
               adjusted_confidence: adjustedConfidence
             },
             decision: { action: step.action, workflow: workflow.name },
-            action: { execution: 'execute', requiresApproval },
+            action: { execution: 'execute', requiresApproval, executionKey },
             result: { status: 'duplicate' }
           }
         });
         continue;
       }
+
+      actionsCreated += 1;
 
       const payload = stripContextFields(step.input);
       let attempt = 0;
@@ -293,14 +363,15 @@ export const executePlan = async (input: {
         try {
           const result = await executeTool(step.action, {
             userId: input.userId,
-            emailId: ctx.id,
-            messageId: ctx.message_id
+            emailId: resolvedContext.id,
+            messageId: resolvedContext.message_id
           }, payload);
 
-          await updateAgentActionStatus(actionId, 'executed', { result });
+          await updateAgentActionStatus(actionId, 'executed', { result, __workflowPreview: workflowPreview });
           results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'executed', result });
           lastResult = result as Record<string, unknown>;
           success = true;
+          successfulActions += 1;
         } catch (error) {
           lastError = (error as Error).message;
           attempt += 1;
@@ -314,7 +385,7 @@ export const executePlan = async (input: {
         await updateAgentActionStatus(actionId, 'failed', { error: lastError });
         await logAgentStep({
           userId: input.userId,
-          emailId: ctx.id,
+          emailId: resolvedContext.id,
           step: 'executor_failure',
           message: lastError ?? 'Unknown error'
         });
@@ -343,17 +414,24 @@ export const executePlan = async (input: {
             adjusted_confidence: adjustedConfidence
           },
           decision: { action: step.action, workflow: workflow.name },
-          action: { execution: 'execute', requiresApproval, preview },
+          action: { execution: 'execute', requiresApproval, preview: previewPayload, executionKey },
           result: { status: success ? 'executed' : 'failed', error: lastError ?? undefined, risk }
         }
       });
     }
 
+    await recordWorkflowOutcomeMetrics({
+      userId: input.userId,
+      workflowId: workflow.id,
+      actionsCreated,
+      successfulActions
+    });
+
     await logAgentStep({
       userId: input.userId,
       step: 'workflow_end',
       message: workflow.name,
-      data: { workflowId: workflow.id, planId: input.planId, failures: workflowFailures }
+      data: { workflowId: workflow.id, planId: input.planId, failures: workflowFailures, actionsCreated, successfulActions }
     });
   }
 

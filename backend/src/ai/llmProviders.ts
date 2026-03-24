@@ -4,6 +4,14 @@ import { fetchWithTimeout, safeJson } from '../utils/http.js';
 export type LLMResult = {
   content: string;
   raw: unknown;
+  usage: {
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    latencyMs: number;
+  };
 };
 
 const requireKey = (name: string, key: string) => {
@@ -14,6 +22,7 @@ const requireKey = (name: string, key: string) => {
 
 export const callLLM = async (prompt: string): Promise<LLMResult> => {
   const provider = env.aiProvider;
+  const startedAt = Date.now();
 
   if (provider === 'openrouter') {
     requireKey('OPENROUTER_API_KEY', env.openrouterApiKey);
@@ -36,7 +45,18 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
 
     const data = await safeJson<any>(response);
     const content = data?.choices?.[0]?.message?.content ?? '';
-    return { content, raw: data };
+    return {
+      content,
+      raw: data,
+      usage: {
+        provider,
+        model: data?.model ?? env.aiModel,
+        promptTokens: Number(data?.usage?.prompt_tokens ?? 0),
+        completionTokens: Number(data?.usage?.completion_tokens ?? 0),
+        totalTokens: Number(data?.usage?.total_tokens ?? 0),
+        latencyMs: Date.now() - startedAt
+      }
+    };
   }
 
   if (provider === 'groq') {
@@ -60,7 +80,18 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
 
     const data = await safeJson<any>(response);
     const content = data?.choices?.[0]?.message?.content ?? '';
-    return { content, raw: data };
+    return {
+      content,
+      raw: data,
+      usage: {
+        provider,
+        model: data?.model ?? env.aiModel,
+        promptTokens: Number(data?.usage?.prompt_tokens ?? 0),
+        completionTokens: Number(data?.usage?.completion_tokens ?? 0),
+        totalTokens: Number(data?.usage?.total_tokens ?? 0),
+        latencyMs: Date.now() - startedAt
+      }
+    };
   }
 
   if (provider === 'gemini') {
@@ -80,7 +111,20 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
 
     const data = await safeJson<any>(response);
     const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    return { content, raw: data };
+    const promptTokens = Number(data?.usageMetadata?.promptTokenCount ?? 0);
+    const completionTokens = Number(data?.usageMetadata?.candidatesTokenCount ?? 0);
+    return {
+      content,
+      raw: data,
+      usage: {
+        provider,
+        model: env.aiModel,
+        promptTokens,
+        completionTokens,
+        totalTokens: Number(data?.usageMetadata?.totalTokenCount ?? promptTokens + completionTokens),
+        latencyMs: Date.now() - startedAt
+      }
+    };
   }
 
   throw new Error(`Unsupported AI provider: ${provider}`);

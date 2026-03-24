@@ -15,6 +15,9 @@ export const markImportantTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 120,
   execute: async (ctx: ToolContext) => {
     const auth = await getAuthContext(ctx.userId);
     if (auth.provider === 'google') {

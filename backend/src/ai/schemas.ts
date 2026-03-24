@@ -52,6 +52,10 @@ export const AgentActionSchema = z.object({
     'send_reply',
     'snooze',
     'mark_important',
+    'archive_email',
+    'delete_email',
+    'move_to_folder',
+    'label_email',
     'ignore'
   ]),
   reason: z.string(),
@@ -76,7 +80,11 @@ export const PlanStepSchema = z.object({
     'draft_reply',
     'send_reply',
     'snooze',
-    'mark_important'
+    'mark_important',
+    'archive_email',
+    'delete_email',
+    'move_to_folder',
+    'label_email'
   ]),
   input: z.record(z.any()).default({}),
   reason: z.string(),

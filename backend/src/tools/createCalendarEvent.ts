@@ -23,6 +23,9 @@ export const createCalendarEventTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 300,
   execute: async (ctx: ToolContext, input: Input) => {
     let title = input.title ?? 'Student task';
     let description = input.description ?? '';

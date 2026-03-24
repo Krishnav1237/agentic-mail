@@ -211,6 +211,26 @@ export const modifyGmailMessage = async (accessToken: string, messageId: string,
   return safeJson<any>(response);
 };
 
+export const archiveGmailMessage = async (accessToken: string, messageId: string) => {
+  return modifyGmailMessage(accessToken, messageId, { removeLabelIds: ['INBOX'] });
+};
+
+export const trashGmailMessage = async (accessToken: string, messageId: string) => {
+  const response = await fetchWithTimeout(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/trash`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  }, env.aiTimeoutMs);
+  return safeJson<any>(response);
+};
+
+export const untrashGmailMessage = async (accessToken: string, messageId: string) => {
+  const response = await fetchWithTimeout(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/untrash`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  }, env.aiTimeoutMs);
+  return safeJson<any>(response);
+};
+
 export const listGoogleEvents = async (accessToken: string, maxResults = 10) => {
   const params = new URLSearchParams({
     maxResults: String(maxResults),

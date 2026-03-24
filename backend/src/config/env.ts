@@ -50,6 +50,7 @@ export const env = {
   geminiApiKey: optional('GEMINI_API_KEY', ''),
   aiTimeoutMs: Number(optional('AI_TIMEOUT_MS', '20000')),
   aiMaxRetries: Number(optional('AI_MAX_RETRIES', '2')),
+  agentLoopMaxMs: Number(optional('AGENT_LOOP_MAX_MS', '8000')),
 
   syncBatchSize: Number(optional('SYNC_BATCH_SIZE', '50')),
   cacheTtlSeconds: Number(optional('CACHE_TTL_SECONDS', '60'))

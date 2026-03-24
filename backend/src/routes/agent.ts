@@ -5,10 +5,11 @@ import { getUserGoals, updateUserGoals } from '../agent/goals.js';
 import { recordAgentFeedback } from '../services/agentFeedback.js';
 import { getLatestActivityFeed } from '../agent/activityFeed.js';
 import { getIntentState, updateIntentState } from '../agent/intent.js';
-import { approvePreview, modifyPreview, cancelPreview } from '../agent/preview.js';
+import { approvePreview, approveWorkflowPreview, modifyPreview, cancelPreview } from '../agent/preview.js';
 import { undoAction, rollbackWorkflow } from '../agent/recovery.js';
 import { query } from '../db/index.js';
 import { validate } from '../middleware/validate.js';
+import { summarizeActions } from '../agent/magicOutput.js';
 
 export const agentRouter = Router();
 
@@ -29,7 +30,7 @@ const goalsSchema = z.object({
 
 const feedbackSchema = z.object({
   actionId: z.string().uuid(),
-  status: z.enum(['accepted', 'approved', 'approve', 'rejected', 'reject', 'modified', 'always_allow']),
+  status: z.enum(['accepted', 'approved', 'approve', 'rejected', 'reject', 'modified', 'always_allow', 'cancel', 'cancelled']),
   notes: z.string().max(500).optional(),
   metadata: z.record(z.any()).optional()
 });
@@ -46,6 +47,10 @@ const previewSchema = z.object({
   actionId: z.string().uuid(),
   payloadOverride: z.record(z.any()).optional(),
   reason: z.string().max(300).optional()
+});
+
+const workflowPreviewSchema = z.object({
+  workflowId: z.string().min(3)
 });
 
 const recoverySchema = z.object({
@@ -89,7 +94,16 @@ agentRouter.get('/activity-feed', authMiddleware, async (req: AuthRequest, res) 
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const feed = await getLatestActivityFeed(userId);
-  return res.json({ feed });
+  const actions = await query<{ id: string; action_type: string; status: string; workflow_name: string | null; workflow_id: string | null }>(
+    `SELECT id, action_type, status, workflow_name, workflow_id
+     FROM agent_actions
+     WHERE user_id = $1
+       AND created_at >= now() - interval '24 hours'
+     ORDER BY created_at DESC
+     LIMIT 100`,
+    [userId]
+  );
+  return res.json({ feed, ...summarizeActions(actions.rows) });
 });
 
 agentRouter.get('/actions', authMiddleware, validate(listSchema, 'query'), async (req: AuthRequest, res) => {
@@ -136,7 +150,8 @@ agentRouter.get('/actions', authMiddleware, validate(listSchema, 'query'), async
     actions: listResult.rows,
     total: countResult.rows[0]?.total ?? 0,
     limit,
-    offset
+    offset,
+    ...summarizeActions(listResult.rows as any)
   });
 });
 
@@ -177,6 +192,15 @@ agentRouter.post('/preview/modify', authMiddleware, validate(previewSchema), asy
   if (!payloadOverride) return res.status(400).json({ error: 'Missing payloadOverride' });
 
   const result = await modifyPreview({ userId, actionId, payloadOverride });
+  return res.json({ ok: true, ...result });
+});
+
+agentRouter.post('/preview/approve-all', authMiddleware, validate(workflowPreviewSchema), async (req: AuthRequest, res) => {
+  const userId = req.user?.userId;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { workflowId } = req.body as z.infer<typeof workflowPreviewSchema>;
+  const result = await approveWorkflowPreview({ userId, workflowId });
   return res.json({ ok: true, ...result });
 });
 

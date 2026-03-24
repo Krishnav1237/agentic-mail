@@ -19,6 +19,9 @@ export const draftReplyTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 360,
   execute: async (ctx: ToolContext) => {
     const emailResult = await query<{
       subject: string | null;
@@ -38,6 +41,9 @@ export const draftReplyTool: ToolDefinition<Input, Output> = {
       senderName: email.sender_name,
       senderEmail: email.sender_email,
       bodyPreview: email.body_preview
+    }, {
+      userId: ctx.userId,
+      operation: 'draft_reply_tool'
     });
 
     const auth = await getAuthContext(ctx.userId);

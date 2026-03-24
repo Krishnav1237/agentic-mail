@@ -16,6 +16,9 @@ export const snoozeTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 180,
   execute: async (ctx: ToolContext, input: Input) => {
     const schedule = input.until ? new Date(input.until) : new Date(Date.now() + 24 * 60 * 60 * 1000);
     let affected = 0;

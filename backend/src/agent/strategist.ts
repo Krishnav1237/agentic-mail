@@ -84,6 +84,9 @@ export const runStrategist = async (input: { userId: string; goals: AgentGoalSta
       recentActions: recentActionsResult.rows,
       recentFeedback: feedbackResult.rows,
       memorySummary
+    }, {
+      userId: input.userId,
+      operation: 'strategist_adjustments'
     });
 
     const updatedWeights = { ...preferences };

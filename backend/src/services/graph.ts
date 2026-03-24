@@ -126,6 +126,42 @@ export const getMessage = async (accessToken: string, messageId: string) => {
   return safeJson<any>(response);
 };
 
+export const patchMessage = async (accessToken: string, messageId: string, payload: Record<string, unknown>) => {
+  const response = await fetchWithTimeout(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  }, env.aiTimeoutMs);
+
+  if (response.status === 204) {
+    return {};
+  }
+
+  return safeJson<any>(response);
+};
+
+export const moveMessage = async (accessToken: string, messageId: string, destinationId: string) => {
+  const response = await fetchWithTimeout(`https://graph.microsoft.com/v1.0/me/messages/${messageId}/move`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ destinationId })
+  }, env.aiTimeoutMs);
+  return safeJson<any>(response);
+};
+
+export const listMailFolders = async (accessToken: string) => {
+  const response = await fetchWithTimeout('https://graph.microsoft.com/v1.0/me/mailFolders?$select=id,displayName,wellKnownName', {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  }, env.aiTimeoutMs);
+  return safeJson<any>(response);
+};
+
 export const createSubscription = async (accessToken: string, payload: {
   resource: string;
   changeType: string;

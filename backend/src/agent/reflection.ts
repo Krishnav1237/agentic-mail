@@ -16,6 +16,9 @@ export const runReflection = async (input: {
     context: input.context,
     plan: input.plan,
     results: input.results
+  }, {
+    userId: input.userId,
+    operation: 'execution_reflection'
   });
 
   await query(

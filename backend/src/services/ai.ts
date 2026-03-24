@@ -3,6 +3,14 @@ import { env } from '../config/env.js';
 import { callLLM } from '../ai/llmProviders.js';
 import { classificationPrompt, extractionPrompt, replyPrompt, agentDecisionPrompt, plannerPrompt, reflectionPrompt, strategistPrompt, activityFeedPrompt } from '../ai/prompts.js';
 import { ClassificationSchema, ExtractionSchema, ReplySchema, AgentDecisionSchema, PlanSchema, ReflectionSchema, StrategistSchema, ActivityFeedSchema, type ClassificationOutput, type ExtractionOutput, type ReplyOutput, type AgentDecision, type AgentPlan, type AgentReflection, type StrategistOutput, type ActivityFeedOutput } from '../ai/schemas.js';
+import { estimateAiCost, recordAiUsage } from '../observability/costTracker.js';
+
+export type AiRequestMetadata = {
+  userId?: string;
+  workflowId?: string | null;
+  operation: string;
+  metadata?: Record<string, unknown>;
+};
 
 const extractJson = (content: string) => {
   const trimmed = content.trim();
@@ -17,13 +25,33 @@ const extractJson = (content: string) => {
   return trimmed.slice(start, end + 1);
 };
 
-const parseAndValidate = async <S extends z.ZodTypeAny>(prompt: string, schema: S): Promise<z.infer<S>> => {
+const parseAndValidate = async <S extends z.ZodTypeAny>(prompt: string, schema: S, requestMeta?: AiRequestMetadata): Promise<z.infer<S>> => {
   let attempt = 0;
   let lastError: Error | undefined;
   let currentPrompt = prompt;
 
   while (attempt <= env.aiMaxRetries) {
-    const { content } = await callLLM(currentPrompt);
+    const { content, usage } = await callLLM(currentPrompt);
+    if (requestMeta?.userId) {
+      await recordAiUsage({
+        userId: requestMeta.userId,
+        workflowId: requestMeta.workflowId,
+        provider: usage.provider,
+        model: usage.model,
+        operation: requestMeta.operation,
+        metrics: {
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+          latencyMs: usage.latencyMs,
+          estimatedCost: estimateAiCost(usage.provider, usage.model, usage.promptTokens, usage.completionTokens)
+        },
+        metadata: {
+          attempt,
+          ...(requestMeta.metadata ?? {})
+        }
+      });
+    }
     try {
       const json = JSON.parse(extractJson(content));
       return schema.parse(json);
@@ -42,9 +70,9 @@ export const classifyEmail = async (input: {
   senderName?: string | null;
   senderEmail?: string | null;
   bodyPreview?: string | null;
-}): Promise<ClassificationOutput> => {
+}, requestMeta?: AiRequestMetadata): Promise<ClassificationOutput> => {
   const prompt = classificationPrompt(input);
-  return parseAndValidate(prompt, ClassificationSchema);
+  return parseAndValidate(prompt, ClassificationSchema, requestMeta);
 };
 
 export const extractEmail = async (input: {
@@ -52,9 +80,9 @@ export const extractEmail = async (input: {
   senderName?: string | null;
   senderEmail?: string | null;
   bodyPreview?: string | null;
-}): Promise<ExtractionOutput> => {
+}, requestMeta?: AiRequestMetadata): Promise<ExtractionOutput> => {
   const prompt = extractionPrompt(input);
-  return parseAndValidate(prompt, ExtractionSchema);
+  return parseAndValidate(prompt, ExtractionSchema, requestMeta);
 };
 
 export const generateReply = async (input: {
@@ -62,9 +90,9 @@ export const generateReply = async (input: {
   senderName?: string | null;
   senderEmail?: string | null;
   bodyPreview?: string | null;
-}): Promise<ReplyOutput> => {
+}, requestMeta?: AiRequestMetadata): Promise<ReplyOutput> => {
   const prompt = replyPrompt(input);
-  return parseAndValidate(prompt, ReplySchema);
+  return parseAndValidate(prompt, ReplySchema, requestMeta);
 };
 
 export const decideAgentActions = async (input: {
@@ -79,9 +107,9 @@ export const decideAgentActions = async (input: {
     importance?: string | null;
   };
   memorySummary: string;
-}): Promise<AgentDecision> => {
+}, requestMeta?: AiRequestMetadata): Promise<AgentDecision> => {
   const prompt = agentDecisionPrompt(input);
-  return parseAndValidate(prompt, AgentDecisionSchema);
+  return parseAndValidate(prompt, AgentDecisionSchema, requestMeta);
 };
 
 export const planAgentActions = async (input: {
@@ -103,9 +131,9 @@ export const planAgentActions = async (input: {
   openTasks: Array<{ id: string; title: string; dueAt?: string | null; category?: string | null }>;
   upcomingEvents: Array<{ id: string; subject: string; start?: string | null }>;
   recentActions: Array<{ id: string; action_type: string; status: string }>;
-}): Promise<AgentPlan> => {
+}, requestMeta?: AiRequestMetadata): Promise<AgentPlan> => {
   const prompt = plannerPrompt(input);
-  return parseAndValidate(prompt, PlanSchema);
+  return parseAndValidate(prompt, PlanSchema, requestMeta);
 };
 
 export const reflectOnExecution = async (input: {
@@ -113,9 +141,9 @@ export const reflectOnExecution = async (input: {
   context: string;
   plan: unknown;
   results: unknown;
-}): Promise<AgentReflection> => {
+}, requestMeta?: AiRequestMetadata): Promise<AgentReflection> => {
   const prompt = reflectionPrompt(input);
-  return parseAndValidate(prompt, ReflectionSchema);
+  return parseAndValidate(prompt, ReflectionSchema, requestMeta);
 };
 
 export const generateStrategistAdjustments = async (input: {
@@ -125,9 +153,9 @@ export const generateStrategistAdjustments = async (input: {
   recentActions: Array<{ action_type: string; status: string }>;
   recentFeedback: Array<{ status: string; count: number }>;
   memorySummary: string;
-}): Promise<StrategistOutput> => {
+}, requestMeta?: AiRequestMetadata): Promise<StrategistOutput> => {
   const prompt = strategistPrompt(input);
-  return parseAndValidate(prompt, StrategistSchema);
+  return parseAndValidate(prompt, StrategistSchema, requestMeta);
 };
 
 export const generateActivityFeed = async (input: {
@@ -135,7 +163,7 @@ export const generateActivityFeed = async (input: {
   actionsSummary: string;
   reflectionsSummary: string;
   strategistNotes: string;
-}): Promise<ActivityFeedOutput> => {
+}, requestMeta?: AiRequestMetadata): Promise<ActivityFeedOutput> => {
   const prompt = activityFeedPrompt(input);
-  return parseAndValidate(prompt, ActivityFeedSchema);
+  return parseAndValidate(prompt, ActivityFeedSchema, requestMeta);
 };

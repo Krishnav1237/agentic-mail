@@ -1,58 +1,28 @@
 import { query } from '../db/index.js';
-import { planAgentActions } from '../services/ai.js';
-import type { AgentGoalState } from './types.js';
-import type { BuiltContext } from './contextBuilder.js';
-import { getStrategistState, type StrategistState } from './strategist.js';
-import { getUserPreferences } from '../services/preferences.js';
-import { getIntentState } from './intent.js';
-import { getEnergyContext } from './energy.js';
+import type { AgentPlan } from '../ai/schemas.js';
 
-export const createPlan = async (input: {
+export const persistPlan = async (input: {
   userId: string;
-  goals: AgentGoalState;
-  context: BuiltContext;
-  pendingEmails: Array<{ id: string; subject: string; sender: string; receivedAt?: string | null; preview?: string }>;
-  openTasks: Array<{ id: string; title: string; dueAt?: string | null; category?: string | null }>;
-  upcomingEvents: Array<{ id: string; subject: string; start?: string | null }>;
-  recentActions: Array<{ id: string; action_type: string; status: string }>;
   planType: 'continuous' | 'daily';
-  strategy?: StrategistState;
-  sessionId?: string;
+  plan: AgentPlan;
+  metadata?: Record<string, unknown>;
 }) => {
-  const strategist = input.strategy ?? await getStrategistState(input.userId);
-  const priorityWeights = await getUserPreferences(input.userId);
-  const intents = await getIntentState(input.userId, input.sessionId);
-  const energy = await getEnergyContext(input.userId);
-
-  const plan = await planAgentActions({
-    goals: input.goals.goals,
-    autopilotLevel: input.goals.autopilotLevel,
-    context: input.context.summary,
-    planningAggressiveness: strategist.planningAggressiveness,
-    focusAreas: strategist.focusAreas,
-    priorityWeights,
-    strategistNotes: strategist.notes,
-    priorityAdjustments: strategist.priorityAdjustments,
-    intentSummary: intents.intents.join(', ') || 'none',
-    sessionOverrides: intents.sessionOverrides.join(', ') || 'none',
-    priorityBoosts: intents.priorityBoosts,
-    energyLevel: energy.energyLevel,
-    bestTime: energy.bestTime,
-    personalityMode: input.goals.personalityMode,
-    pendingEmails: input.pendingEmails,
-    openTasks: input.openTasks,
-    upcomingEvents: input.upcomingEvents,
-    recentActions: input.recentActions
-  });
-
   const result = await query<{ id: string }>(
     `INSERT INTO agent_plans (user_id, plan_type, plan, status)
      VALUES ($1, $2, $3, $4)
      RETURNING id`,
-    [input.userId, input.planType, JSON.stringify(plan.plan), 'pending']
+    [
+      input.userId,
+      input.planType,
+      JSON.stringify({
+        ...input.plan,
+        metadata: input.metadata ?? {}
+      }),
+      'pending'
+    ]
   );
 
-  return { planId: result.rows[0].id, plan };
+  return { planId: result.rows[0].id, plan: input.plan };
 };
 
 export const markPlanStatus = async (planId: string, status: string) => {

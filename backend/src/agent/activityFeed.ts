@@ -53,6 +53,9 @@ export const generateDailyActivityFeed = async (input: { userId: string; goals: 
       actionsSummary,
       reflectionsSummary,
       strategistNotes: strategist.notes ?? ''
+    }, {
+      userId: input.userId,
+      operation: 'daily_activity_feed'
     });
 
     const result = await query<{ id: string }>(

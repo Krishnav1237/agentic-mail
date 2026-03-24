@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate.js';
 import { listTasksPaginated, dashboardSections, type DashboardSections } from '../services/tasks.js';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { query } from '../db/index.js';
+import { summarizeActions } from '../agent/magicOutput.js';
 
 export const tasksRouter = Router();
 
@@ -51,12 +52,27 @@ tasksRouter.get('/dashboard', authMiddleware, async (req: AuthRequest, res) => {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const cacheKey = `dashboard:${userId}`;
-  const cached = await cacheGet<DashboardSections>(cacheKey);
+  const cached = await cacheGet<DashboardSections & ReturnType<typeof summarizeActions>>(cacheKey);
   if (cached) return res.json(cached);
 
   const sections = await dashboardSections(userId);
-  await cacheSet(cacheKey, sections);
-  return res.json(sections);
+  const actions = await query<{ id: string; action_type: string; status: string; workflow_name: string | null; workflow_id: string | null }>(
+    `SELECT id, action_type, status, workflow_name, workflow_id
+     FROM agent_actions
+     WHERE user_id = $1
+       AND created_at >= now() - interval '24 hours'
+     ORDER BY created_at DESC
+     LIMIT 100`,
+    [userId]
+  );
+
+  const response = {
+    ...sections,
+    ...summarizeActions(actions.rows)
+  };
+
+  await cacheSet(cacheKey, response);
+  return res.json(response);
 });
 
 const patchSchema = z.object({

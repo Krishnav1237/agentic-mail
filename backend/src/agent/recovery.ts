@@ -1,9 +1,11 @@
 import { query } from '../db/index.js';
 import { getAuthContext } from '../services/tokens.js';
 import { fetchWithTimeout } from '../utils/http.js';
-import { deleteGoogleCalendarEvent, modifyGmailMessage, deleteGmailDraft } from '../services/gmail.js';
+import { deleteGoogleCalendarEvent, modifyGmailMessage, deleteGmailDraft, untrashGmailMessage } from '../services/gmail.js';
+import { getMessage, moveMessage, patchMessage } from '../services/graph.js';
 import { updateAgentActionStatus } from './actionStore.js';
 import { logAgentStep } from './logs.js';
+import { normalizeFolderName, normalizeLabelName, resolveOutlookFolderId } from '../tools/providerConfig.js';
 
 type ActionRow = {
   id: string;
@@ -113,6 +115,68 @@ const undoDraftReply = async (userId: string, payload: Record<string, any>) => {
   return { undone: 'draft_reply', draftId };
 };
 
+const undoArchiveEmail = async (userId: string, messageId: string | null) => {
+  if (!messageId) throw new Error('Missing message context');
+  const auth = await getAuthContext(userId);
+  if (auth.provider === 'google') {
+    await modifyGmailMessage(auth.accessToken, messageId, { addLabelIds: ['INBOX'] });
+    return { undone: 'archive_email', destination: 'inbox' };
+  }
+
+  const inboxFolderId = await resolveOutlookFolderId(auth.accessToken, 'inbox');
+  await moveMessage(auth.accessToken, messageId, inboxFolderId);
+  return { undone: 'archive_email', destination: 'inbox' };
+};
+
+const undoDeleteEmail = async (userId: string, messageId: string | null) => {
+  if (!messageId) throw new Error('Missing message context');
+  const auth = await getAuthContext(userId);
+  if (auth.provider === 'google') {
+    await untrashGmailMessage(auth.accessToken, messageId);
+    await modifyGmailMessage(auth.accessToken, messageId, { addLabelIds: ['INBOX'] });
+    return { undone: 'delete_email', destination: 'inbox' };
+  }
+
+  const inboxFolderId = await resolveOutlookFolderId(auth.accessToken, 'inbox');
+  await moveMessage(auth.accessToken, messageId, inboxFolderId);
+  return { undone: 'delete_email', destination: 'inbox' };
+};
+
+const undoMoveToFolder = async (userId: string, payload: Record<string, any>, messageId: string | null) => {
+  if (!messageId) throw new Error('Missing message context');
+  const auth = await getAuthContext(userId);
+  const previousFolder = normalizeFolderName(String(payload?.previous_folder ?? 'inbox'));
+  if (auth.provider === 'google') {
+    if (previousFolder === 'archive') {
+      await modifyGmailMessage(auth.accessToken, messageId, { removeLabelIds: ['INBOX'] });
+    } else {
+      await modifyGmailMessage(auth.accessToken, messageId, { addLabelIds: ['INBOX'] });
+    }
+    return { undone: 'move_to_folder', destination: previousFolder };
+  }
+
+  const folderId = await resolveOutlookFolderId(auth.accessToken, previousFolder);
+  await moveMessage(auth.accessToken, messageId, folderId);
+  return { undone: 'move_to_folder', destination: previousFolder };
+};
+
+const undoLabelEmail = async (userId: string, payload: Record<string, any>, messageId: string | null) => {
+  if (!messageId) throw new Error('Missing message context');
+  const label = normalizeLabelName(String(payload?.label ?? payload?.result?.label ?? '')).trim();
+  if (!label) throw new Error('Missing label context');
+  const auth = await getAuthContext(userId);
+
+  if (auth.provider === 'google') {
+    await modifyGmailMessage(auth.accessToken, messageId, { removeLabelIds: [label] });
+    return { undone: 'label_email', label };
+  }
+
+  const existing = await getMessage(auth.accessToken, messageId);
+  const categories = (existing?.categories ?? []).filter((category: string) => category !== label);
+  await patchMessage(auth.accessToken, messageId, { categories });
+  return { undone: 'label_email', label };
+};
+
 export const undoAction = async (input: { userId: string; actionId: string }) => {
   const action = await getAction(input.userId, input.actionId);
   if (!action) throw new Error('Action not found');
@@ -134,6 +198,18 @@ export const undoAction = async (input: { userId: string; actionId: string }) =>
       break;
     case 'draft_reply':
       result = await undoDraftReply(input.userId, action.action_payload ?? {});
+      break;
+    case 'archive_email':
+      result = await undoArchiveEmail(input.userId, action.message_id);
+      break;
+    case 'delete_email':
+      result = await undoDeleteEmail(input.userId, action.message_id);
+      break;
+    case 'move_to_folder':
+      result = await undoMoveToFolder(input.userId, action.action_payload ?? {}, action.message_id);
+      break;
+    case 'label_email':
+      result = await undoLabelEmail(input.userId, action.action_payload ?? {}, action.message_id);
       break;
     default:
       throw new Error('Undo not supported for this action type');
@@ -170,14 +246,14 @@ export const detectRiskyOutcome = async (input: {
   result?: Record<string, unknown>;
   confidence: number;
 }) => {
-  if (input.actionType === 'send_reply') {
+  if (input.actionType === 'send_reply' || input.actionType === 'delete_email') {
     await logAgentStep({
       userId: input.userId,
       step: 'risky_action',
-      message: 'Send reply is irreversible',
+      message: input.actionType === 'send_reply' ? 'Send reply is irreversible' : 'Delete email is high-risk mailbox cleanup',
       data: { actionType: input.actionType }
     });
-    return { risky: true, reason: 'irreversible_action' };
+    return { risky: true, reason: input.actionType === 'send_reply' ? 'irreversible_action' : 'destructive_cleanup' };
   }
 
   if ((input.result as any)?.error) {

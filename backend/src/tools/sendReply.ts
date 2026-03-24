@@ -17,6 +17,9 @@ export const sendReplyTool: ToolDefinition<Input, Output> = {
   schema,
   safe: false,
   requiresApproval: true,
+  riskLevel: 'high',
+  reversible: false,
+  estimatedSecondsSaved: 240,
   execute: async (ctx: ToolContext, input: Input) => {
     const auth = await getAuthContext(ctx.userId);
     if (auth.provider === 'google') {

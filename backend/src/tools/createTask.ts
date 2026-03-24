@@ -28,6 +28,9 @@ export const createTaskTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 420,
   execute: async (ctx: ToolContext, input: Input) => {
     const email = await query<{ subject: string | null }>(
       'SELECT subject FROM emails WHERE id = $1 AND user_id = $2',

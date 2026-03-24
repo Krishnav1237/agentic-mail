@@ -13,7 +13,7 @@ export const createAgentAction = async (input: {
   action: PlannedAction;
   statusOverride?: string;
 }): Promise<string | null> => {
-  const idempotencyKey = hashPayload({ type: input.action.type, payload: input.action.payload ?? {} });
+  const idempotencyKey = input.action.executionKey ?? hashPayload({ type: input.action.type, payload: input.action.payload ?? {} });
 
   const existing = await query<{ id: string }>(
     `SELECT id FROM agent_actions WHERE user_id = $1 AND email_id = $2 AND action_type = $3 AND idempotency_key = $4`,
@@ -30,7 +30,8 @@ export const createAgentAction = async (input: {
       adjusted_confidence: input.action.adjustedConfidence ?? input.action.confidence,
       historical_accuracy: input.action.historicalAccuracy ?? null,
       recency_weight: input.action.recencyWeight ?? null,
-      context_similarity: input.action.contextSimilarity ?? null
+      context_similarity: input.action.contextSimilarity ?? null,
+      execution_key: idempotencyKey
     }
   };
 

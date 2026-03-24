@@ -92,7 +92,7 @@ Output schema:
   "priority": number (0-100),
   "actions": [
     {
-      "type": "create_task|create_calendar_event|draft_reply|send_reply|snooze|mark_important|ignore",
+      "type": "create_task|create_calendar_event|draft_reply|send_reply|snooze|mark_important|archive_email|delete_email|move_to_folder|label_email|ignore",
       "reason": string,
       "confidence": number (0-1),
       "payload": object (optional, include any fields needed to execute the action)
@@ -140,7 +140,7 @@ Return STRICT JSON only. No prose, no markdown.
 Plan schema:
 {
   "plan": [
-    { "step": number, "workflow": string, "action": "create_task|create_calendar_event|draft_reply|send_reply|snooze|mark_important", "input": object, "reason": string, "confidence": number }
+    { "step": number, "workflow": string, "action": "create_task|create_calendar_event|draft_reply|send_reply|snooze|mark_important|archive_email|delete_email|move_to_folder|label_email", "input": object, "reason": string, "confidence": number }
   ]
 }
 Guidelines:
@@ -150,6 +150,7 @@ Guidelines:
 - Group related steps into workflows using the same workflow label.
 - Keep workflow labels short and action-oriented.
 - Do not include unsafe actions unless clearly justified.
+- Prefer reversible cleanup actions over deletion when intent is ambiguous.
 - Honor personality mode: chill = fewer actions, proactive = balanced, aggressive = more actions.
 - Apply priority boosts when choosing which actions to include.
 User goals: ${input.goals.map((g) => `${g.goal} (${g.weight})`).join(', ') || 'None'}
