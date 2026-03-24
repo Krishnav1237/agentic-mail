@@ -105,9 +105,9 @@ export default function AgentPage() {
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="glass-card rounded-[28px] p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Activity size={16} className="text-cyan-700" />
+        <div className="glass-card rounded-xl p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Activity size={16} className="text-neutral-300" />
             Daily activity feed
           </div>
           {feed ? (
@@ -115,36 +115,36 @@ export default function AgentPage() {
               <div className="status-pill">{feed.summary_date}</div>
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="surface-subtle">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Actions taken</div>
-                  <div className="mt-3 text-sm leading-7 text-slate-600">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Actions taken</div>
+                  <div className="mt-3 text-sm leading-7 text-neutral-400 font-light">
                     {feed.summary.actions_taken?.join(', ') || 'No actions yet'}
                   </div>
                 </div>
                 <div className="surface-subtle">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Improvements</div>
-                  <div className="mt-3 text-sm leading-7 text-slate-600">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Improvements</div>
+                  <div className="mt-3 text-sm leading-7 text-neutral-400 font-light">
                     {feed.summary.improvements?.join(', ') || 'No improvements logged'}
                   </div>
                 </div>
                 <div className="surface-subtle">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Insights</div>
-                  <div className="mt-3 text-sm leading-7 text-slate-600">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Insights</div>
+                  <div className="mt-3 text-sm leading-7 text-neutral-400 font-light">
                     {feed.summary.insights?.join(', ') || 'No insights logged'}
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm leading-7 text-slate-500">No activity feed yet. It will appear once the planner completes live work.</p>
+            <p className="mt-4 text-sm leading-7 text-neutral-300">No activity feed yet. It will appear once the planner completes live work.</p>
           )}
         </div>
 
         <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <ShieldCheck size={16} className="text-emerald-600" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <ShieldCheck size={16} className="text-neutral-400" />
             Approval policy
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
             High-confidence safe actions can execute automatically depending on autopilot level. Riskier steps stay here for review, keeping the agent proactive without becoming opaque.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -155,10 +155,10 @@ export default function AgentPage() {
         </div>
       </div>
 
-      <div className="glass-card rounded-[28px] p-5">
+      <div className="glass-card rounded-xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Bot size={16} className="text-cyan-700" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Bot size={16} className="text-neutral-300" />
             Approvals queue
           </div>
           <select
@@ -178,29 +178,29 @@ export default function AgentPage() {
         </div>
 
         {approvals.length === 0 ? (
-          <p className="mt-4 text-sm leading-7 text-slate-500">No actions waiting for approval right now.</p>
+          <p className="mt-4 text-sm leading-7 text-neutral-300">No actions waiting for approval right now.</p>
         ) : (
           <div className="mt-4 space-y-3">
             {approvals.map((action) => {
               const preview = parsePreview(action.action_payload ?? {});
               return (
-                <div key={action.id} className="rounded-[24px] border border-slate-200/80 bg-white/70 px-4 py-4">
+                <div key={action.id} className="rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 px-4 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`badge ${getStatusTone(action.status)}`}>{action.status}</span>
                         <span className="status-pill normal-case tracking-normal">{action.workflow_name ?? 'Workflow bundle'}</span>
                       </div>
-                      <div className="mt-3 text-lg font-semibold text-slate-950">{action.action_type}</div>
-                      <div className="mt-1 text-sm text-slate-500">
+                      <div className="mt-3 text-lg font-semibold text-neutral-100  ">{action.action_type}</div>
+                      <div className="mt-1 text-sm text-neutral-300">
                         {action.subject ? `${action.subject} • ` : ''}
                         {action.sender_name ?? action.sender_email ?? 'Unknown sender'}
                       </div>
                       {preview?.summary && (
-                        <p className="mt-3 text-sm leading-7 text-slate-600">{preview.summary}</p>
+                        <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">{preview.summary}</p>
                       )}
                       {action.decision_reason && (
-                        <p className="mt-2 text-xs leading-6 text-slate-500">Reason: {action.decision_reason}</p>
+                        <p className="mt-2 text-xs leading-6 text-neutral-300">Reason: {action.decision_reason}</p>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -216,29 +216,29 @@ export default function AgentPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading agent history...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading agent history...</div>
       ) : actions.length === 0 ? (
         <EmptyState title="No agent actions yet" message="Once the planner begins working through email and daily plans, the history and approval trail will show up here." />
       ) : (
         <div className="space-y-3">
           {actions.map((action) => (
-            <div key={action.id} className="glass-card rounded-[26px] px-4 py-4 md:px-5">
+            <div key={action.id} className="glass-card rounded-xl px-4 py-4 md:px-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`badge ${getStatusTone(action.status)}`}>{action.status}</span>
                     {action.workflow_name && <span className="status-pill normal-case tracking-normal">{action.workflow_name}</span>}
                   </div>
-                  <div className="mt-3 text-lg font-semibold text-slate-950">{action.action_type}</div>
-                  <div className="mt-1 text-sm text-slate-500">
+                  <div className="mt-3 text-lg font-semibold text-neutral-100  ">{action.action_type}</div>
+                  <div className="mt-1 text-sm text-neutral-300">
                     {action.subject ? `${action.subject} • ` : ''}
                     {action.sender_name ?? action.sender_email ?? 'No linked email'}
                   </div>
                   {action.decision_reason && (
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{action.decision_reason}</p>
+                    <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">{action.decision_reason}</p>
                   )}
                 </div>
-                <div className="text-right text-sm text-slate-500">
+                <div className="text-right text-sm text-neutral-300">
                   <div>{formatDateTime(action.created_at)}</div>
                   <div className="mt-1">
                     {action.confidence !== null ? `Confidence ${Number(action.confidence).toFixed(2)}` : 'No score'}

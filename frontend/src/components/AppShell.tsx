@@ -52,16 +52,16 @@ export default function AppShell() {
   const meta = routeContent[location.pathname] ?? routeContent['/dashboard'];
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-6 lg:grid-cols-[300px_1fr] lg:px-8">
-        <aside className="glass-card sticky top-6 h-fit rounded-[30px] p-5">
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-6 lg:grid-cols-[300px_1fr] lg:px-8 relative z-10">
+        <aside className="glass-card sticky top-6 h-fit rounded-xl p-5 border border-neutral-800">
           <div className="space-y-6">
-            <div className="rounded-[26px] bg-slate-950 px-5 py-5 text-white shadow-soft">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            <div className="rounded-xl bg-neutral-900 border border-neutral-800 px-5 py-5 text-neutral-100 shadow-sm">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-300">
                 Student Intelligence Layer
               </div>
-              <h1 className="mt-3 font-display text-2xl font-semibold">Agentic inbox OS</h1>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
+              <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-neutral-100  ">Agentic inbox OS</h1>
+              <p className="mt-3 text-sm leading-7 text-neutral-400">
                 Gmail and Outlook automation with approvals, memory, and a real operational dashboard.
               </p>
             </div>
@@ -74,43 +74,43 @@ export default function AppShell() {
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) => clsx(
-                      'group flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-semibold transition',
-                      isActive ? 'bg-slate-950 text-white shadow-soft' : 'text-slate-600 hover:bg-white/75'
+                      'group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300',
+                      isActive ? 'bg-neutral-900 text-neutral-300 border border-neutral-800 shadow-sm' : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-400 border border-transparent'
                     )}
                   >
                     <span className="flex items-center gap-3">
-                      <Icon size={18} />
+                      <Icon size={18} className="opacity-80 transition-opacity group-hover:opacity-100" />
                       {item.label}
                     </span>
-                    <ChevronRight size={16} className="opacity-50 transition group-hover:translate-x-0.5" />
+                    <ChevronRight size={16} className="opacity-30 transition group-hover:translate-x-0.5" />
                   </NavLink>
                 );
               })}
             </nav>
 
-            <div className="rounded-[24px] border border-slate-200/80 bg-white/70 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <ShieldCheck size={16} className="text-emerald-600" />
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-neutral-400">
+                <ShieldCheck size={16} className="text-neutral-400  " />
                 Trust posture
               </div>
-              <div className="mt-3 space-y-2 text-sm leading-7 text-slate-600">
-                <div className="status-pill">OAuth protected</div>
+              <div className="mt-4 space-y-2 text-sm leading-7 text-neutral-400">
+                <div className="status-pill text-neutral-400 border-neutral-800 bg-neutral-900">OAuth protected</div>
                 <div className="status-pill">Decision traces enabled</div>
                 <div className="status-pill">Safe-send guardrails</div>
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-slate-200/80 bg-white/70 p-4 text-sm text-slate-600">
-              <div className="flex items-center gap-2 font-semibold text-slate-900">
-                <LockKeyhole size={16} className="text-cyan-700" />
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400">
+              <div className="flex items-center gap-2 font-semibold text-neutral-400">
+                <LockKeyhole size={16} className="text-neutral-300  " />
                 Session
               </div>
-              <div className="mt-3 space-y-2 leading-7">
-                <div>{authLoading ? 'Checking secure session...' : hasToken ? 'Authenticated workspace' : 'No active session'}</div>
-                {userEmail && <div className="text-slate-500">{userEmail}</div>}
-                {authMode && <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{authMode} session</div>}
+              <div className="mt-4 space-y-2 leading-7">
+                <div className="text-neutral-400 font-medium">{authLoading ? 'Checking secure session...' : hasToken ? 'Authenticated workspace' : 'No active session'}</div>
+                {userEmail && <div className="text-neutral-400 truncate">{userEmail}</div>}
+                {authMode && <div className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-300">{authMode} session</div>}
                 {lastSyncedAt && (
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-neutral-400">
                     Last sync queued {new Date(lastSyncedAt).toLocaleTimeString()}
                   </div>
                 )}
@@ -120,16 +120,17 @@ export default function AppShell() {
         </aside>
 
         <div className="space-y-6">
-          <header className="glass-card rounded-[30px] p-5 md:p-6">
+          <header className="glass-card rounded-xl p-5 md:p-6 border border-neutral-800">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Workspace / {meta.title}
+              <div className="animate-fade">
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-300 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-neutral-900   shadow-sm"></span>
+                  Workspace / <span className="text-neutral-300">{meta.title}</span>
                 </div>
-                <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-950">
+                <h2 className="mt-3 font-display text-4xl font-bold tracking-tight text-neutral-100  ">
                   {meta.title}
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-400">
                   {meta.description}
                 </p>
               </div>
@@ -147,8 +148,8 @@ export default function AppShell() {
                     </>
                   ) : (
                     <>
-                      <button className="btn-primary" onClick={() => void syncInbox()} disabled={syncing}>
-                        <RefreshCcw size={16} /> {syncing ? 'Syncing...' : 'Sync inbox'}
+                      <button className="btn-primary group" onClick={() => void syncInbox()} disabled={syncing}>
+                        <RefreshCcw size={16} className={clsx("transition-transform group-hover:rotate-180", syncing && 'animate-spin')} /> {syncing ? 'Syncing...' : 'Sync inbox'}
                       </button>
                       <button className="btn-ghost" onClick={() => void signOut()}>
                         <LogOut size={16} /> Sign out
@@ -157,19 +158,20 @@ export default function AppShell() {
                   )}
                 </div>
 
-                <div className="rounded-[22px] border border-slate-200/80 bg-white/75 px-4 py-3 text-sm leading-7 text-slate-600">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="status-pill">Continuous agent loop</span>
-                    <span className="status-pill">Safe tools only</span>
-                    <span className="status-pill">Audit-ready activity</span>
+                <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm leading-7 text-neutral-400 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-neutral-900   rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                  <div className="flex flex-wrap gap-2 relative z-10">
+                    <span className="status-pill text-neutral-300 border-neutral-800 bg-neutral-900">Continuous agent loop</span>
+                    <span className="status-pill text-neutral-400">Safe tools only</span>
+                    <span className="status-pill text-neutral-400">Audit-ready activity</span>
                   </div>
-                  {status && <div className="mt-3 text-slate-700">{status}</div>}
+                  {status && <div className="mt-3 text-neutral-400 font-medium relative z-10 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-neutral-900  "></div>{status}</div>}
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="space-y-6">
+          <main className="space-y-6 animate-fade" style={{ animationDelay: '0.1s' }}>
             <Outlet />
           </main>
         </div>

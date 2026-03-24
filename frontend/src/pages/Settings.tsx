@@ -76,7 +76,7 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading settings...</div>;
+    return <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading settings...</div>;
   }
 
   return (
@@ -99,17 +99,17 @@ export default function SettingsPage() {
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="glass-card rounded-[28px] p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Target size={16} className="text-cyan-700" />
+        <div className="glass-card rounded-xl p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Target size={16} className="text-neutral-300" />
             Goals
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
+          <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">
             Weighted goals influence priority, planning aggressiveness, and which opportunities the agent keeps visible.
           </p>
           <div className="mt-5 space-y-3">
             {goals.map((goal, index) => (
-              <div key={`${goal.goal}-${index}`} className="grid gap-3 rounded-[24px] border border-slate-200/80 bg-white/70 p-4 md:grid-cols-[1fr_120px_auto]">
+              <div key={`${goal.goal}-${index}`} className="grid gap-3 rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 md:grid-cols-[1fr_120px_auto]">
                 <input
                   className="form-input"
                   placeholder="Example: get an internship for summer"
@@ -129,14 +129,14 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass-card rounded-[28px] p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <ShieldCheck size={16} className="text-emerald-600" />
+          <div className="glass-card rounded-xl p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+              <ShieldCheck size={16} className="text-neutral-400" />
               Autopilot and personality
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Autopilot</label>
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Autopilot</label>
                 <select
                   className="form-select mt-2"
                   value={autopilotLevel}
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Personality</label>
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Personality</label>
                 <select
                   className="form-select mt-2"
                   value={personalityMode}
@@ -160,33 +160,33 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-600">{personalityDescriptions[personalityMode]}</p>
+            <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">{personalityDescriptions[personalityMode]}</p>
           </div>
 
           <div className="surface-card">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <LockKeyhole size={16} className="text-cyan-700" />
+            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+              <LockKeyhole size={16} className="text-neutral-300" />
               Security posture
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
+            <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
               Email sending remains approval-gated, workflows are logged, and the agent’s execution history is retained for review and rollback.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="glass-card rounded-[28px] p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Settings2 size={16} className="text-cyan-700" />
+      <div className="glass-card rounded-xl p-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+          <Settings2 size={16} className="text-neutral-300" />
           Priority weights
         </div>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
+        <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">
           These weights help the model adapt when multiple useful items compete for attention.
         </p>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => (
-            <label key={category} className="rounded-[22px] border border-slate-200/80 bg-white/70 p-4 text-sm text-slate-600">
-              <div className="capitalize text-slate-900">{category}</div>
+            <label key={category} className="rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 text-sm text-neutral-400 font-light">
+              <div className="capitalize text-neutral-100">{category}</div>
               <input
                 className="form-input mt-3"
                 value={weights[category] ?? 1}

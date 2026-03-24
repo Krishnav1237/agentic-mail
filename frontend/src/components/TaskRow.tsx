@@ -22,7 +22,7 @@ export default function TaskRow({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="glass-card rounded-[26px] px-4 py-4 md:px-5">
+    <div className="glass-card rounded-xl px-4 py-4 md:px-5">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_180px_180px_auto] xl:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -32,22 +32,22 @@ export default function TaskRow({
               {getPriorityLabel(task.priority_score)}
             </span>
           </div>
-          <h4 className="mt-3 truncate text-lg font-semibold text-slate-950">{task.title}</h4>
+          <h4 className="mt-3 truncate text-lg font-semibold text-neutral-100  ">{task.title}</h4>
           {task.description && (
-            <p className="mt-2 text-sm leading-7 text-slate-600">{task.description}</p>
+            <p className="mt-2 text-sm leading-7 text-neutral-400 font-light">{task.description}</p>
           )}
         </div>
 
         <div className="surface-subtle py-3">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Deadline</div>
-          <div className="mt-2 text-sm font-semibold text-slate-900">{formatDate(task.due_at)}</div>
-          <div className="mt-1 text-xs text-slate-500">{relativeWindow(task.due_at)}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Deadline</div>
+          <div className="mt-2 text-sm font-semibold text-neutral-100">{formatDate(task.due_at)}</div>
+          <div className="mt-1 text-xs text-neutral-300">{relativeWindow(task.due_at)}</div>
         </div>
 
         <div className="surface-subtle py-3">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Priority score</div>
-          <div className="mt-2 text-sm font-semibold text-slate-900">{task.priority_score.toFixed(2)}</div>
-          <div className="mt-1 text-xs text-slate-500">{formatDateTime(task.created_at)}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Priority score</div>
+          <div className="mt-2 text-sm font-semibold text-neutral-100">{task.priority_score.toFixed(2)}</div>
+          <div className="mt-1 text-xs text-neutral-300">{formatDateTime(task.created_at)}</div>
         </div>
 
         <div className="flex justify-end">
@@ -59,7 +59,7 @@ export default function TaskRow({
       </div>
 
       {open && (
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-slate-200/80 pt-4">
+        <div className="mt-4 flex flex-wrap gap-3 border-t border-neutral-800 pt-4">
           <button className="btn-ghost" onClick={() => onAddCalendar?.(task)}>
             <CalendarCheck size={16} /> Add to calendar
           </button>

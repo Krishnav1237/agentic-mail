@@ -24,22 +24,23 @@ export default function PageHeader({
   aside
 }: PageHeaderProps) {
   return (
-    <section className="glass-card relative overflow-hidden rounded-[28px] p-6 md:p-8">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/30 to-cyan-100/40" />
-      <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-amber-200/20 blur-3xl" />
-      <div className="absolute left-0 top-0 h-32 w-32 rounded-full bg-cyan-200/30 blur-3xl" />
+    <section className="glass-card relative overflow-hidden rounded-xl p-6 md:p-8 border border-neutral-800 shadow-sm">
+      <div className="absolute inset-0" />
+      <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-neutral-900    " />
+      <div className="absolute left-0 top-0 h-32 w-32 rounded-full bg-neutral-900    " style={{ animationDelay: '1s' }} />
 
-      <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+      <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between z-10">
         <div className="max-w-3xl">
           {eyebrow && (
-            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <div className="text-xs font-bold uppercase tracking-[0.24em] text-neutral-300 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 shadow-sm"></span>
               {eyebrow}
             </div>
           )}
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-neutral-100  ">
             {title}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+          <p className="mt-4 max-w-2xl text-base leading-8 text-neutral-400 font-light md:text-lg">
             {description}
           </p>
         </div>
@@ -53,19 +54,20 @@ export default function PageHeader({
       </div>
 
       {stats && stats.length > 0 && (
-        <div className="relative mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => (
+        <div className="relative mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4 z-10">
+          {stats.map((stat, i) => (
             <div
               key={`${stat.label}-${stat.value}`}
-              className="rounded-3xl border border-white/70 bg-white/70 px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
+              className="group rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5 shadow-sm backdrop-  hover:-translate-y-1 hover:border-neutral-800 hover:bg-neutral-900 transition-all duration-300"
+              style={{ animationDelay: `${i * 0.1}s` }}
             >
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300 group-hover:text-neutral-300 transition-colors">
                 {stat.label}
               </div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+              <div className="mt-3 text-4xl font-display font-bold tracking-tight text-neutral-100   group-hover:  transition-all">
                 {stat.value}
               </div>
-              {stat.helper && <div className="mt-2 text-sm text-slate-500">{stat.helper}</div>}
+              {stat.helper && <div className="mt-3 text-xs leading-5 text-neutral-400 font-light group-hover:text-neutral-400 transition-colors">{stat.helper}</div>}
             </div>
           ))}
         </div>

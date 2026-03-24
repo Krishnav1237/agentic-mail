@@ -85,9 +85,9 @@ export default function InboxPage() {
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.3fr_repeat(2,minmax(0,0.45fr))_0.8fr]">
-        <div className="glass-card rounded-[28px] p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Search size={16} className="text-cyan-700" />
+        <div className="glass-card rounded-xl p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Search size={16} className="text-neutral-300" />
             Search and filter inbox
           </div>
           <input
@@ -98,8 +98,8 @@ export default function InboxPage() {
           />
         </div>
 
-        <div className="glass-card rounded-[28px] p-5">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Classification</label>
+        <div className="glass-card rounded-xl p-5">
+          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Classification</label>
           <select
             className="form-select mt-4"
             value={classification}
@@ -116,8 +116,8 @@ export default function InboxPage() {
           </select>
         </div>
 
-        <div className="glass-card rounded-[28px] p-5">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Processing status</label>
+        <div className="glass-card rounded-xl p-5">
+          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Processing status</label>
           <select
             className="form-select mt-4"
             value={status}
@@ -130,11 +130,11 @@ export default function InboxPage() {
         </div>
 
         <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <ShieldCheck size={16} className="text-emerald-600" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <ShieldCheck size={16} className="text-neutral-400" />
             Inbox trust rail
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
             Drafts are allowed. Sending stays guarded and requires approval.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function InboxPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading inbox...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading inbox...</div>
       ) : emails.length === 0 ? (
         <EmptyState title="No emails found" message="Try adjusting filters or sync again. This view is built to stay useful even as your inbox grows." />
       ) : (

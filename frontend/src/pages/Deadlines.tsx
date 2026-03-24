@@ -98,9 +98,9 @@ export default function DeadlinesPage() {
         ]}
       />
 
-      <div className="glass-card rounded-[28px] p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Search size={16} className="text-cyan-700" />
+      <div className="glass-card rounded-xl p-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+          <Search size={16} className="text-neutral-300" />
           Find a deadline
         </div>
         <input
@@ -112,7 +112,7 @@ export default function DeadlinesPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading deadlines...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading deadlines...</div>
       ) : tasks.length === 0 ? (
         <EmptyState title="No deadlines yet" message="You&apos;re clear for now. Once the inbox yields date-bound work, it will appear here grouped by day." />
       ) : (
@@ -120,8 +120,8 @@ export default function DeadlinesPage() {
           {grouped.map(([date, items]) => (
             <section key={date} className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-slate-900">
-                  <CalendarClock size={18} className="text-amber-600" />
+                <div className="flex items-center gap-2 text-neutral-100">
+                  <CalendarClock size={18} className="text-neutral-400" />
                   <h3 className="font-display text-xl font-semibold">{date}</h3>
                 </div>
                 <span className="status-pill">{items.length} tasks</span>

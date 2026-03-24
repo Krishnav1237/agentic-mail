@@ -86,9 +86,9 @@ export default function OpportunitiesPage() {
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.4fr_0.6fr]">
-        <div className="glass-card rounded-[28px] p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Search size={16} className="text-cyan-700" />
+        <div className="glass-card rounded-xl p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Search size={16} className="text-neutral-300" />
             Search opportunities
           </div>
           <input
@@ -99,11 +99,11 @@ export default function OpportunitiesPage() {
           />
         </div>
         <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <BriefcaseBusiness size={16} className="text-emerald-600" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <BriefcaseBusiness size={16} className="text-neutral-400" />
             Opportunity policy
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
             The planner keeps these items high in the queue when they align with your goals or carry tight response windows.
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function OpportunitiesPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading opportunities...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading opportunities...</div>
       ) : tasks.length === 0 ? (
         <EmptyState title="No opportunities yet" message="New internships and events will appear here as the agent detects them in your inbox." />
       ) : (

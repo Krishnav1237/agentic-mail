@@ -45,7 +45,7 @@ export default function AuthCallbackPage() {
   }, [navigate, refreshSession, setStatus, setToken]);
 
   return (
-    <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">
+    <div className="glass-card rounded-xl p-10 text-center text-neutral-400">
       Completing secure sign-in...
     </div>
   );

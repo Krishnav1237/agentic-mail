@@ -107,10 +107,10 @@ export default function TasksPage() {
         ]}
       />
 
-      <div className="glass-card rounded-[28px] p-5">
+      <div className="glass-card rounded-xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Filter size={16} className="text-cyan-700" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Filter size={16} className="text-neutral-300" />
             Task filters
           </div>
           <button
@@ -123,7 +123,7 @@ export default function TasksPage() {
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[2fr_repeat(5,minmax(0,1fr))]">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Search</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Search</label>
             <input
               className="form-input mt-2"
               placeholder="Search task title or description"
@@ -132,7 +132,7 @@ export default function TasksPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Status</label>
             <select
               className="form-select mt-2"
               value={status}
@@ -145,7 +145,7 @@ export default function TasksPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Category</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Category</label>
             <select
               className="form-select mt-2"
               value={category}
@@ -162,7 +162,7 @@ export default function TasksPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Sort</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Sort</label>
             <select
               className="form-select mt-2"
               value={sort}
@@ -174,7 +174,7 @@ export default function TasksPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Min priority</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Min priority</label>
             <input
               className="form-input mt-2"
               value={minPriority}
@@ -182,7 +182,7 @@ export default function TasksPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Max priority</label>
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Max priority</label>
             <input
               className="form-input mt-2"
               value={maxPriority}
@@ -199,7 +199,7 @@ export default function TasksPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">Loading tasks...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300   font-semibold border-neutral-800">Loading tasks...</div>
       ) : tasks.length === 0 ? (
         <EmptyState title="No tasks found" message="Try widening your filters or run another inbox sync to refresh the task graph." />
       ) : (
