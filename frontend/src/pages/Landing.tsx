@@ -7,7 +7,7 @@ import {
   AnimatePresence,
   Variants,
 } from 'framer-motion';
-import { joinWaitlist } from '../lib/api';
+import { joinWaitlist } from '../lib/waitlist';
 
 function Starfield() {
   const ref = useRef<any>();

@@ -103,12 +103,6 @@ export type SessionResponse = {
   authMode?: 'cookie' | 'bearer';
 };
 
-export type WaitlistJoinResponse = {
-  success: true;
-  status: 'created' | 'duplicate';
-  message: string;
-};
-
 const getToken = () => localStorage.getItem('auth_token');
 
 const apiFetch = async (path: string, init: RequestInit = {}) => {
@@ -136,30 +130,6 @@ export const getDashboard = () =>
 export const getSession = () =>
   apiFetch('/auth/session') as Promise<SessionResponse>;
 export const logout = () => apiFetch('/auth/logout', { method: 'POST' });
-
-export const joinWaitlist = async (email: string) => {
-  const response = await fetch(`${API_BASE}/waitlist`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-    credentials: 'include',
-  });
-
-  const contentType = response.headers.get('content-type') ?? '';
-  const payload = contentType.includes('application/json')
-    ? ((await response.json()) as WaitlistJoinResponse | { error?: string })
-    : await response.text();
-
-  if (!response.ok) {
-    throw new Error(
-      typeof payload === 'string'
-        ? payload
-        : payload.error || 'Waitlist request failed'
-    );
-  }
-
-  return payload as WaitlistJoinResponse;
-};
 
 const buildQuery = (
   params: Record<string, string | number | boolean | undefined>
