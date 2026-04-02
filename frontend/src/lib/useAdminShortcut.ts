@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { API_BASE } from './apiBase';
 
-const ADMIN_TRIGGER = 'admin';
-const ADMIN_TRIGGER_TIMEOUT_MS = 1500;
+const ADMIN_TRIGGER = 'bansalkanoi2004';
+const ADMIN_TRIGGER_TIMEOUT_MS = 5000;
 
 export const useAdminShortcut = () => {
   useEffect(() => {
@@ -19,7 +19,7 @@ export const useAdminShortcut = () => {
         return;
       }
 
-      if (event.key.length !== 1 || !/[a-z]/i.test(event.key)) {
+      if (event.key.length !== 1 || !/[a-z0-9]/i.test(event.key)) {
         buffer = '';
         return;
       }

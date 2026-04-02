@@ -132,8 +132,8 @@ export const renderAdminPage = () => `<!doctype html>
         <a class="secondary" href="/health">Health Check</a>
       </div>
       <div class="meta">
-        If the hidden shortcut is working, typing <strong>admin</strong> in the
-        frontend should open this page directly.
+        If the hidden shortcut is working, typing the configured secret phrase
+        in the frontend should open this page directly.
       </div>
     </main>
   </body>

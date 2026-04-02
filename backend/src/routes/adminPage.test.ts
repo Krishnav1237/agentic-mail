@@ -7,6 +7,6 @@ describe('admin page', () => {
 
     expect(html).toContain('Inbox Intelligence Layer backend admin');
     expect(html).toContain('href="/auth/google"');
-    expect(html).toContain('typing <strong>admin</strong>');
+    expect(html).toContain('typing the configured secret phrase');
   });
 });
