@@ -11,16 +11,20 @@ export type AuthUser = {
 
 export type AuthSource = 'bearer' | 'cookie';
 
-export type AuthRequest = Request & { user?: AuthUser; authSource?: AuthSource };
+export type AuthRequest = Request & {
+  user?: AuthUser;
+  authSource?: AuthSource;
+};
 
-const verifyToken = (token: string): AuthUser => (
+const verifyToken = (token: string): AuthUser =>
   jwt.verify(token, env.authJwtSecret, {
     issuer: env.authJwtIssuer,
-    audience: env.authJwtAudience
-  }) as AuthUser
-);
+    audience: env.authJwtAudience,
+  }) as AuthUser;
 
-export const readAuthFromRequest = (req: Request): { user: AuthUser; source: AuthSource } | null => {
+export const readAuthFromRequest = (
+  req: Request
+): { user: AuthUser; source: AuthSource } | null => {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '').trim();
@@ -35,7 +39,11 @@ export const readAuthFromRequest = (req: Request): { user: AuthUser; source: Aut
   return null;
 };
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const auth = (() => {
     try {
       return readAuthFromRequest(req);

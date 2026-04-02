@@ -1,7 +1,8 @@
 import { query } from '../db/index.js';
 import { getUserPreferences, updateUserPreferences } from './preferences.js';
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 export const recordFeedback = async (input: {
   userId: string;
@@ -13,10 +14,15 @@ export const recordFeedback = async (input: {
   await query(
     `INSERT INTO user_behavior_logs (user_id, email_id, action, metadata)
      VALUES ($1, $2, $3, $4)`,
-    [input.userId, input.emailId ?? null, input.action, JSON.stringify({
-      ...(input.metadata ?? {}),
-      category: input.category ?? undefined
-    })]
+    [
+      input.userId,
+      input.emailId ?? null,
+      input.action,
+      JSON.stringify({
+        ...(input.metadata ?? {}),
+        category: input.category ?? undefined,
+      }),
+    ]
   );
 
   if (input.action === 'thumbs_up' || input.action === 'thumbs_down') {

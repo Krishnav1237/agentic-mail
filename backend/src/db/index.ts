@@ -1,11 +1,16 @@
 import type { PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { db } from '../config/db.js';
 
-export const query = async <T extends QueryResultRow>(text: string, params: unknown[] = []): Promise<QueryResult<T>> => {
+export const query = async <T extends QueryResultRow>(
+  text: string,
+  params: unknown[] = []
+): Promise<QueryResult<T>> => {
   return db.query<T>(text, params);
 };
 
-export const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
+export const withTransaction = async <T>(
+  fn: (client: PoolClient) => Promise<T>
+): Promise<T> => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');

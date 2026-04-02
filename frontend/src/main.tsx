@@ -1,18 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { AppProvider } from './lib/appContext';
-
-const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
+import ErrorBoundary from './components/ErrorBoundary';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Router>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </Router>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );

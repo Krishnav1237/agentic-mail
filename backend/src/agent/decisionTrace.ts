@@ -23,7 +23,7 @@ export const logDecisionTrace = async (input: {
       JSON.stringify(input.data.reasoning ?? {}),
       JSON.stringify(input.data.decision ?? {}),
       JSON.stringify(input.data.action ?? {}),
-      JSON.stringify(input.data.result ?? {})
+      JSON.stringify(input.data.result ?? {}),
     ]
   );
 };

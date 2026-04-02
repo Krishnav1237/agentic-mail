@@ -20,13 +20,18 @@ const fallbackBestHour = (currentHour: number) => {
 };
 
 const computeEnergyLevel = (currentHour: number, bestHour: number) => {
-  const diff = Math.min(Math.abs(currentHour - bestHour), 24 - Math.abs(currentHour - bestHour));
+  const diff = Math.min(
+    Math.abs(currentHour - bestHour),
+    24 - Math.abs(currentHour - bestHour)
+  );
   if (diff <= 2) return 'high';
   if (diff <= 5) return 'medium';
   return 'low';
 };
 
-export const getEnergyContext = async (userId: string): Promise<EnergyContext> => {
+export const getEnergyContext = async (
+  userId: string
+): Promise<EnergyContext> => {
   const result = await query<{ hour: number; count: number }>(
     `SELECT EXTRACT(HOUR FROM created_at)::int as hour, COUNT(*)::int as count
      FROM user_behavior_logs
@@ -45,6 +50,6 @@ export const getEnergyContext = async (userId: string): Promise<EnergyContext> =
   return {
     energyLevel,
     bestTime: formatBestTime(bestHour),
-    bestHour: result.rows[0]?.hour ?? null
+    bestHour: result.rows[0]?.hour ?? null,
   };
 };

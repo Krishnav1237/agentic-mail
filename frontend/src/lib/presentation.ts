@@ -5,7 +5,7 @@ export const categoryTones: Record<string, string> = {
   academic: 'bg-indigo-100 text-indigo-700 ring-indigo-200',
   personal: 'bg-slate-100 text-slate-700 ring-slate-200',
   spam: 'bg-rose-100 text-rose-700 ring-rose-200',
-  other: 'bg-slate-100 text-slate-700 ring-slate-200'
+  other: 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
 export const statusTones: Record<string, string> = {
@@ -19,19 +19,22 @@ export const statusTones: Record<string, string> = {
   suggest: 'bg-amber-50 text-amber-700 ring-amber-200',
   suggested: 'bg-amber-50 text-amber-700 ring-amber-200',
   failed: 'bg-rose-50 text-rose-700 ring-rose-200',
-  cancelled: 'bg-slate-100 text-slate-700 ring-slate-200'
+  cancelled: 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
 export const autopilotLabels: Record<0 | 1 | 2, string> = {
   0: 'Suggestions only',
   1: 'Safe automation',
-  2: 'Full agent assist'
+  2: 'Full agent assist',
 };
 
-export const personalityDescriptions: Record<'chill' | 'proactive' | 'aggressive', string> = {
+export const personalityDescriptions: Record<
+  'chill' | 'proactive' | 'aggressive',
+  string
+> = {
   chill: 'Fewer interruptions, calmer planning, more approvals.',
   proactive: 'Balanced suggestions and safe automation for everyday use.',
-  aggressive: 'Higher urgency and faster execution for heavy inbox weeks.'
+  aggressive: 'Higher urgency and faster execution for heavy inbox weeks.',
 };
 
 export const formatDateTime = (value?: string | null) => {
@@ -40,7 +43,7 @@ export const formatDateTime = (value?: string | null) => {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(new Date(value));
 };
 
@@ -49,7 +52,7 @@ export const formatDate = (value?: string | null) => {
   return new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   }).format(new Date(value));
 };
 
@@ -66,9 +69,11 @@ export const relativeWindow = (value?: string | null) => {
   return `Due in ${diffDays} days`;
 };
 
-export const getCategoryTone = (category?: string | null) => categoryTones[category ?? 'other'] ?? categoryTones.other;
+export const getCategoryTone = (category?: string | null) =>
+  categoryTones[category ?? 'other'] ?? categoryTones.other;
 
-export const getStatusTone = (status?: string | null) => statusTones[status ?? 'open'] ?? statusTones.open;
+export const getStatusTone = (status?: string | null) =>
+  statusTones[status ?? 'open'] ?? statusTones.open;
 
 export const getPriorityLabel = (score: number) => {
   if (score >= 3) return 'Critical';

@@ -1,26 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { getSession, logout as apiLogout, syncInbox as apiSyncInbox } from './api';
-
-type AppContextValue = {
-  hasToken: boolean;
-  token: string | null;
-  userEmail: string | null;
-  authMode: 'cookie' | 'bearer' | null;
-  authLoading: boolean;
-  lastSyncedAt: string | null;
-  setToken: (token: string | null) => void;
-  refreshSession: () => Promise<boolean>;
-  signOut: () => Promise<void>;
-  status: string;
-  setStatus: (status: string) => void;
-  syncing: boolean;
-  syncInbox: () => Promise<void>;
-};
-
-const AppContext = createContext<AppContextValue | null>(null);
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  getSession,
+  logout as apiLogout,
+  syncInbox as apiSyncInbox,
+} from './api';
+import { AppContext } from './appContextStore';
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem('auth_token'));
+  const [token, setTokenState] = useState<string | null>(() =>
+    localStorage.getItem('auth_token')
+  );
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'cookie' | 'bearer' | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
@@ -97,42 +86,37 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [setToken]);
 
-  const value = useMemo(() => ({
-    hasToken: authenticated,
-    token,
-    userEmail,
-    authMode,
-    authLoading,
-    lastSyncedAt,
-    setToken,
-    refreshSession,
-    signOut,
-    status,
-    setStatus,
-    syncing,
-    syncInbox
-  }), [
-    authenticated,
-    token,
-    userEmail,
-    authMode,
-    authLoading,
-    lastSyncedAt,
-    setToken,
-    refreshSession,
-    signOut,
-    status,
-    syncing,
-    syncInbox
-  ]);
+  const value = useMemo(
+    () => ({
+      hasToken: authenticated,
+      token,
+      userEmail,
+      authMode,
+      authLoading,
+      lastSyncedAt,
+      setToken,
+      refreshSession,
+      signOut,
+      status,
+      setStatus,
+      syncing,
+      syncInbox,
+    }),
+    [
+      authenticated,
+      token,
+      userEmail,
+      authMode,
+      authLoading,
+      lastSyncedAt,
+      setToken,
+      refreshSession,
+      signOut,
+      status,
+      syncing,
+      syncInbox,
+    ]
+  );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-};
-
-export const useApp = () => {
-  const ctx = useContext(AppContext);
-  if (!ctx) {
-    throw new Error('useApp must be used within AppProvider');
-  }
-  return ctx;
 };

@@ -6,7 +6,10 @@ import { logAgentStep } from './logs.js';
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
 
-export const generateDailyActivityFeed = async (input: { userId: string; goals: AgentGoalState }) => {
+export const generateDailyActivityFeed = async (input: {
+  userId: string;
+  goals: AgentGoalState;
+}) => {
   const summaryDate = todayDate();
   try {
     const existing = await query<{ id: string }>(
@@ -18,7 +21,11 @@ export const generateDailyActivityFeed = async (input: { userId: string; goals: 
       return existing.rows[0].id;
     }
 
-    const actionsResult = await query<{ action_type: string; status: string; count: number }>(
+    const actionsResult = await query<{
+      action_type: string;
+      status: string;
+      count: number;
+    }>(
       `SELECT action_type, status, COUNT(*)::int as count
        FROM agent_actions
        WHERE user_id = $1
@@ -27,9 +34,10 @@ export const generateDailyActivityFeed = async (input: { userId: string; goals: 
       [input.userId]
     );
 
-    const actionsSummary = actionsResult.rows
-      .map((row) => `${row.action_type}:${row.status}:${row.count}`)
-      .join(', ') || 'none';
+    const actionsSummary =
+      actionsResult.rows
+        .map((row) => `${row.action_type}:${row.status}:${row.count}`)
+        .join(', ') || 'none';
 
     const reflectionsResult = await query<{ suggestion: string | null }>(
       `SELECT reflection->>'improvement_suggestion' as suggestion
@@ -41,19 +49,26 @@ export const generateDailyActivityFeed = async (input: { userId: string; goals: 
       [input.userId]
     );
 
-    const reflectionsSummary = reflectionsResult.rows
-      .map((row) => row.suggestion)
-      .filter(Boolean)
-      .join(' | ') || 'none';
+    const reflectionsSummary =
+      reflectionsResult.rows
+        .map((row) => row.suggestion)
+        .filter(Boolean)
+        .join(' | ') || 'none';
 
     const strategist = await getStrategistState(input.userId);
 
-    const feed = await generateActivityFeed({
-      goals: input.goals.goals,
-      actionsSummary,
-      reflectionsSummary,
-      strategistNotes: strategist.notes ?? ''
-    });
+    const feed = await generateActivityFeed(
+      {
+        goals: input.goals.goals,
+        actionsSummary,
+        reflectionsSummary,
+        strategistNotes: strategist.notes ?? '',
+      },
+      {
+        userId: input.userId,
+        operation: 'daily_activity_feed',
+      }
+    );
 
     const result = await query<{ id: string }>(
       `INSERT INTO agent_activity_feed (user_id, summary_date, summary)
@@ -67,7 +82,7 @@ export const generateDailyActivityFeed = async (input: { userId: string; goals: 
     await logAgentStep({
       userId: input.userId,
       step: 'activity_feed_error',
-      message: (error as Error).message
+      message: (error as Error).message,
     });
     return null;
   }

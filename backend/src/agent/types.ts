@@ -31,6 +31,7 @@ export type PlannedAction = {
   workflowId?: string;
   preview?: Record<string, unknown> | null;
   payload?: Record<string, unknown>;
+  executionKey?: string;
   execution: 'execute' | 'suggest' | 'ignore';
   requiresApproval: boolean;
 };

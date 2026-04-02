@@ -4,8 +4,13 @@ import { authMiddleware, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { executeTool } from '../tools/registry.js';
 import { query } from '../db/index.js';
+import { asyncRoute } from '../middleware/asyncRoute.js';
 
 export const actionsRouter = Router();
+
+type DraftReplyResult = {
+  draftId?: string;
+};
 
 const getContextFromTask = async (taskId: string, userId: string) => {
   const result = await query<{ email_id: string; message_id: string }>(
@@ -27,99 +32,139 @@ const getContextFromMessage = async (messageId: string, userId: string) => {
 };
 
 const calendarSchema = z.object({
-  taskId: z.string().uuid()
+  taskId: z.string().uuid(),
 });
 
-actionsRouter.post('/calendar', authMiddleware, validate(calendarSchema), async (req: AuthRequest, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+actionsRouter.post(
+  '/calendar',
+  authMiddleware,
+  validate(calendarSchema),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { taskId } = req.body as z.infer<typeof calendarSchema>;
+    const { taskId } = req.body as z.infer<typeof calendarSchema>;
 
-  const ctx = await getContextFromTask(taskId, userId);
-  if (!ctx) return res.status(404).json({ error: 'Task not found' });
+    const ctx = await getContextFromTask(taskId, userId);
+    if (!ctx) return res.status(404).json({ error: 'Task not found' });
 
-  const result = await executeTool('create_calendar_event', {
-    userId,
-    emailId: ctx.email_id,
-    messageId: ctx.message_id
-  }, { task_id: taskId });
+    const result = await executeTool(
+      'create_calendar_event',
+      {
+        userId,
+        emailId: ctx.email_id,
+        messageId: ctx.message_id,
+      },
+      { task_id: taskId }
+    );
 
-  return res.json(result);
-});
+    return res.json(result);
+  })
+);
 
 const importantSchema = z.object({
-  emailId: z.string().min(1)
+  emailId: z.string().min(1),
 });
 
-actionsRouter.post('/important', authMiddleware, validate(importantSchema), async (req: AuthRequest, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+actionsRouter.post(
+  '/important',
+  authMiddleware,
+  validate(importantSchema),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { emailId } = req.body as z.infer<typeof importantSchema>;
+    const { emailId } = req.body as z.infer<typeof importantSchema>;
 
-  const ctx = await getContextFromMessage(emailId, userId);
-  if (!ctx) return res.status(404).json({ error: 'Email not found' });
+    const ctx = await getContextFromMessage(emailId, userId);
+    if (!ctx) return res.status(404).json({ error: 'Email not found' });
 
-  const result = await executeTool('mark_important', {
-    userId,
-    emailId: ctx.id,
-    messageId: ctx.message_id
-  }, {});
+    const result = await executeTool(
+      'mark_important',
+      {
+        userId,
+        emailId: ctx.id,
+        messageId: ctx.message_id,
+      },
+      {}
+    );
 
-  return res.json(result);
-});
+    return res.json(result);
+  })
+);
 
 const replySchema = z.object({
   emailId: z.string().min(1),
-  send: z.boolean().optional()
+  send: z.boolean().optional(),
 });
 
-actionsRouter.post('/reply', authMiddleware, validate(replySchema), async (req: AuthRequest, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+actionsRouter.post(
+  '/reply',
+  authMiddleware,
+  validate(replySchema),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { emailId, send } = req.body as z.infer<typeof replySchema>;
+    const { emailId, send } = req.body as z.infer<typeof replySchema>;
 
-  const ctx = await getContextFromMessage(emailId, userId);
-  if (!ctx) return res.status(404).json({ error: 'Email not found' });
+    const ctx = await getContextFromMessage(emailId, userId);
+    if (!ctx) return res.status(404).json({ error: 'Email not found' });
 
-  const draft = await executeTool('draft_reply', {
-    userId,
-    emailId: ctx.id,
-    messageId: ctx.message_id
-  }, {});
+    const draft = (await executeTool(
+      'draft_reply',
+      {
+        userId,
+        emailId: ctx.id,
+        messageId: ctx.message_id,
+      },
+      {}
+    )) as DraftReplyResult;
 
-  if (send && (draft as any).draftId) {
-    await executeTool('send_reply', {
-      userId,
-      emailId: ctx.id,
-      messageId: ctx.message_id
-    }, { draft_id: (draft as any).draftId });
-  }
+    if (send && draft.draftId) {
+      await executeTool(
+        'send_reply',
+        {
+          userId,
+          emailId: ctx.id,
+          messageId: ctx.message_id,
+        },
+        { draft_id: draft.draftId }
+      );
+    }
 
-  return res.json({ ...draft, sent: Boolean(send) });
-});
+    return res.json({ ...draft, sent: Boolean(send) });
+  })
+);
 
 const snoozeSchema = z.object({
   taskId: z.string().uuid(),
-  until: z.string().optional()
+  until: z.string().optional(),
 });
 
-actionsRouter.post('/snooze', authMiddleware, validate(snoozeSchema), async (req: AuthRequest, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+actionsRouter.post(
+  '/snooze',
+  authMiddleware,
+  validate(snoozeSchema),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { taskId, until } = req.body as z.infer<typeof snoozeSchema>;
+    const { taskId, until } = req.body as z.infer<typeof snoozeSchema>;
 
-  const ctx = await getContextFromTask(taskId, userId);
-  if (!ctx) return res.status(404).json({ error: 'Task not found' });
+    const ctx = await getContextFromTask(taskId, userId);
+    if (!ctx) return res.status(404).json({ error: 'Task not found' });
 
-  const result = await executeTool('snooze', {
-    userId,
-    emailId: ctx.email_id,
-    messageId: ctx.message_id
-  }, { task_id: taskId, until });
+    const result = await executeTool(
+      'snooze',
+      {
+        userId,
+        emailId: ctx.email_id,
+        messageId: ctx.message_id,
+      },
+      { task_id: taskId, until }
+    );
 
-  return res.json(result);
-});
+    return res.json(result);
+  })
+);

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../lib/appContext';
+import { useApp } from '../lib/useApp';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -8,7 +8,9 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const run = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+      const hashParams = new URLSearchParams(
+        window.location.hash.replace('#', '')
+      );
       const queryParams = new URLSearchParams(window.location.search);
       const token = hashParams.get('token') || queryParams.get('token');
       const provider = queryParams.get('provider');
@@ -21,7 +23,9 @@ export default function AuthCallbackPage() {
       try {
         const authenticated = await refreshSession();
         if (status === 'error') {
-          setStatus(`Unable to connect ${provider ?? 'provider'}. Please try again.`);
+          setStatus(
+            `Unable to connect ${provider ?? 'provider'}. Please try again.`
+          );
           navigate('/', { replace: true });
           return;
         }
@@ -45,7 +49,7 @@ export default function AuthCallbackPage() {
   }, [navigate, refreshSession, setStatus, setToken]);
 
   return (
-    <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">
+    <div className="glass-card rounded-xl p-10 text-center text-neutral-400">
       Completing secure sign-in...
     </div>
   );

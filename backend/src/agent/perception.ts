@@ -22,6 +22,6 @@ export const perceiveEmail = (email: EmailRow): PerceivedEmail => {
     senderEmail: email.sender_email,
     bodyPreview: email.body_preview,
     receivedAt: email.received_at,
-    importance: email.importance
+    importance: email.importance,
   };
 };

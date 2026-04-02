@@ -21,7 +21,10 @@ type TokenRow = {
   last_sync_at: string | null;
 };
 
-const resolveProvider = (row: TokenRow, override?: AuthProvider): AuthProvider => {
+const resolveProvider = (
+  row: TokenRow,
+  override?: AuthProvider
+): AuthProvider => {
   if (override) return override;
   if (row.primary_provider === 'google') return 'google';
   if (row.primary_provider === 'microsoft') return 'microsoft';
@@ -29,7 +32,10 @@ const resolveProvider = (row: TokenRow, override?: AuthProvider): AuthProvider =
   return 'microsoft';
 };
 
-export const getAuthContext = async (userId: string, providerOverride?: AuthProvider) => {
+export const getAuthContext = async (
+  userId: string,
+  providerOverride?: AuthProvider
+) => {
   const result = await query<TokenRow>(
     `SELECT primary_provider,
             ms_access_token, ms_refresh_token, ms_token_expires_at,
@@ -48,7 +54,11 @@ export const getAuthContext = async (userId: string, providerOverride?: AuthProv
   const provider = resolveProvider(row, providerOverride);
 
   if (provider === 'google') {
-    if (!row.google_access_token || !row.google_refresh_token || !row.google_token_expires_at) {
+    if (
+      !row.google_access_token ||
+      !row.google_refresh_token ||
+      !row.google_token_expires_at
+    ) {
       throw new Error('Google tokens not available');
     }
     let accessToken = decrypt(row.google_access_token);
@@ -58,7 +68,9 @@ export const getAuthContext = async (userId: string, providerOverride?: AuthProv
       const refreshed = await refreshGoogleAccessToken(refreshToken);
       accessToken = refreshed.access_token;
       refreshToken = refreshed.refresh_token ?? refreshToken;
-      const expiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+      const expiresAt = new Date(
+        Date.now() + refreshed.expires_in * 1000
+      ).toISOString();
 
       await query(
         `UPDATE users SET google_access_token = $1, google_refresh_token = $2, google_token_expires_at = $3, updated_at = now() WHERE id = $4`,
@@ -69,7 +81,11 @@ export const getAuthContext = async (userId: string, providerOverride?: AuthProv
     return { provider, accessToken, lastSyncAt: row.last_sync_at };
   }
 
-  if (!row.ms_access_token || !row.ms_refresh_token || !row.ms_token_expires_at) {
+  if (
+    !row.ms_access_token ||
+    !row.ms_refresh_token ||
+    !row.ms_token_expires_at
+  ) {
     throw new Error('Microsoft tokens not available');
   }
   let accessToken = decrypt(row.ms_access_token);
@@ -79,7 +95,9 @@ export const getAuthContext = async (userId: string, providerOverride?: AuthProv
     const refreshed = await refreshAccessToken(refreshToken);
     accessToken = refreshed.access_token;
     refreshToken = refreshed.refresh_token ?? refreshToken;
-    const expiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + refreshed.expires_in * 1000
+    ).toISOString();
 
     await query(
       'UPDATE users SET ms_access_token = $1, ms_refresh_token = $2, ms_token_expires_at = $3, updated_at = now() WHERE id = $4',
@@ -90,7 +108,10 @@ export const getAuthContext = async (userId: string, providerOverride?: AuthProv
   return { provider, accessToken, lastSyncAt: row.last_sync_at };
 };
 
-export const getValidAccessToken = async (userId: string, providerOverride?: AuthProvider) => {
+export const getValidAccessToken = async (
+  userId: string,
+  providerOverride?: AuthProvider
+) => {
   const ctx = await getAuthContext(userId, providerOverride);
   return ctx.accessToken;
 };

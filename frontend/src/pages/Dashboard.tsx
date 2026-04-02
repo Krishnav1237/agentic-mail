@@ -1,16 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, CheckCircle2, ShieldCheck, Sparkles, Target } from 'lucide-react';
+import {
+  CalendarClock,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+  Target,
+} from 'lucide-react';
 import ConnectPrompt from '../components/ConnectPrompt';
 import PageHeader from '../components/PageHeader';
 import Section from '../components/Section';
-import { addToCalendar, generateReply, getDashboard, markImportant, recordFeedback, snoozeTask, type DashboardSections, type Task } from '../lib/api';
-import { useApp } from '../lib/appContext';
+import {
+  addToCalendar,
+  generateReply,
+  getDashboard,
+  markImportant,
+  recordFeedback,
+  snoozeTask,
+  type DashboardSections,
+  type Task,
+} from '../lib/api';
+import { useApp } from '../lib/useApp';
 
 const emptySections: DashboardSections = {
   criticalToday: [],
   upcomingDeadlines: [],
   opportunities: [],
-  lowPriority: []
+  lowPriority: [],
 };
 
 const limitTasks = (tasks: Task[], count = 5) => tasks.slice(0, count);
@@ -41,7 +56,7 @@ export default function DashboardPage() {
       ...sections.criticalToday,
       ...sections.upcomingDeadlines,
       ...sections.opportunities,
-      ...sections.lowPriority
+      ...sections.lowPriority,
     ];
     const uniqueIds = new Set(allTasks.map((task) => task.id));
     return {
@@ -49,11 +64,14 @@ export default function DashboardPage() {
       critical: sections.criticalToday.length,
       deadlines: sections.upcomingDeadlines.length,
       opportunities: sections.opportunities.length,
-      low: sections.lowPriority.length
+      low: sections.lowPriority.length,
     };
   }, [sections]);
 
-  const handleAction = async (label: string, action: () => Promise<unknown>) => {
+  const handleAction = async (
+    label: string,
+    action: () => Promise<unknown>
+  ) => {
     setStatus(`${label}...`);
     try {
       await action();
@@ -65,11 +83,13 @@ export default function DashboardPage() {
   };
 
   const handleThumbs = (task: Task, action: 'thumbs_up' | 'thumbs_down') =>
-    handleAction('Feedback saved', () => recordFeedback({
-      emailId: task.email_id,
-      action,
-      category: task.category ?? undefined
-    }));
+    handleAction('Feedback saved', () =>
+      recordFeedback({
+        emailId: task.email_id,
+        action,
+        category: task.category ?? undefined,
+      })
+    );
 
   if (!hasToken) {
     return <ConnectPrompt />;
@@ -81,62 +101,97 @@ export default function DashboardPage() {
         eyebrow="Workspace overview"
         title="See what matters before the inbox decides for you."
         description="This dashboard is the product’s operating summary: urgent tasks, deadlines, opportunities, and the lower-value noise that can safely stay in the background."
-        actions={(
-          <button className="btn-primary" onClick={() => void syncInbox()} disabled={syncing}>
-            <Sparkles size={16} /> {syncing ? 'Syncing...' : 'Refresh intelligence'}
+        actions={
+          <button
+            className="btn-primary"
+            onClick={() => void syncInbox()}
+            disabled={syncing}
+          >
+            <Sparkles size={16} />{' '}
+            {syncing ? 'Syncing...' : 'Refresh intelligence'}
           </button>
-        )}
-        aside={(
-          <div className="surface-card">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <ShieldCheck size={16} className="text-emerald-600" />
+        }
+        aside={
+          <div className="surface-card border-neutral-800 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-neutral-800/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100 relative z-10">
+              <ShieldCheck size={18} className="text-neutral-400" />
               Trust rails active
             </div>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              Safe-send approvals, workflow traceability, and idempotent action logging are live in this workspace.
+            <p className="mt-3 text-sm leading-7 text-neutral-400 font-light relative z-10">
+              Safe-send approvals, workflow traceability, and idempotent action
+              logging are live in this workspace.
             </p>
           </div>
-        )}
+        }
         stats={[
-          { label: 'Tracked items', value: String(totals.totalTracked), helper: 'Across active dashboard queues' },
-          { label: 'Critical today', value: String(totals.critical), helper: 'Needs attention within 24 hours' },
-          { label: 'Upcoming deadlines', value: String(totals.deadlines), helper: 'Next 7 days' },
-          { label: 'Opportunity queue', value: String(totals.opportunities), helper: 'Events and internships worth reviewing' }
+          {
+            label: 'Tracked items',
+            value: String(totals.totalTracked),
+            helper: 'Across active dashboard queues',
+          },
+          {
+            label: 'Critical today',
+            value: String(totals.critical),
+            helper: 'Needs attention within 24 hours',
+          },
+          {
+            label: 'Upcoming deadlines',
+            value: String(totals.deadlines),
+            helper: 'Next 7 days',
+          },
+          {
+            label: 'Opportunity queue',
+            value: String(totals.opportunities),
+            helper: 'Events and internships worth reviewing',
+          },
         ]}
       />
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <Target size={16} className="text-cyan-700" />
+        <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <Target
+              size={18}
+              className="text-neutral-300 transition-colors group-hover:text-white"
+            />
             What the system is optimizing
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
-            Goal-aware prioritization balances deadlines, opportunities, and the feedback you&apos;ve given the agent so far.
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
+            Goal-aware prioritization balances deadlines, opportunities, and the
+            feedback you&apos;ve given the agent so far.
           </p>
         </div>
-        <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <CalendarClock size={16} className="text-amber-600" />
+        <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <CalendarClock
+              size={18}
+              className="text-neutral-400 transition-colors group-hover:text-white"
+            />
             Today&apos;s pressure
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
-            Use the critical and deadline queues first. They are tuned to show what turns costly if it waits.
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
+            Use the critical and deadline queues first. They are tuned to show
+            what turns costly if it waits.
           </p>
         </div>
-        <div className="surface-card">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <CheckCircle2 size={16} className="text-emerald-600" />
+        <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
+            <CheckCircle2
+              size={18}
+              className="text-neutral-400 transition-colors group-hover:text-white"
+            />
             Lower-noise handling
           </div>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
-            Low-priority items remain visible for auditability, but stay out of the way unless your preferences say otherwise.
+          <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
+            Low-priority items remain visible for auditability, but stay out of
+            the way unless your preferences say otherwise.
           </p>
         </div>
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-[28px] p-10 text-center text-slate-500">
+        <div className="glass-card rounded-xl border border-neutral-800 p-10 text-center font-semibold tracking-wide text-neutral-300">
           Loading your dashboard...
         </div>
       ) : (
@@ -145,10 +200,24 @@ export default function DashboardPage() {
             title="Critical Today"
             subtitle="Deadlines or tasks that need your attention within the next 24 hours."
             tasks={limitTasks(sections.criticalToday)}
-            onAddCalendar={(task) => handleAction('Calendar event created', () => addToCalendar(task.id))}
-            onMarkImportant={(task) => handleAction('Marked important', () => markImportant(task.message_id))}
-            onGenerateReply={(task) => handleAction('Reply drafted', () => generateReply(task.message_id))}
-            onSnooze={(task) => handleAction('Snoozed', () => snoozeTask(task.id))}
+            onAddCalendar={(task) =>
+              handleAction('Calendar event created', () =>
+                addToCalendar(task.id)
+              )
+            }
+            onMarkImportant={(task) =>
+              handleAction('Marked important', () =>
+                markImportant(task.message_id)
+              )
+            }
+            onGenerateReply={(task) =>
+              handleAction('Reply drafted', () =>
+                generateReply(task.message_id)
+              )
+            }
+            onSnooze={(task) =>
+              handleAction('Snoozed', () => snoozeTask(task.id))
+            }
             onThumbsUp={(task) => handleThumbs(task, 'thumbs_up')}
             onThumbsDown={(task) => handleThumbs(task, 'thumbs_down')}
           />
@@ -156,10 +225,24 @@ export default function DashboardPage() {
             title="Upcoming Deadlines"
             subtitle="A forward look at what is coming in the next week so you can spread work intelligently."
             tasks={limitTasks(sections.upcomingDeadlines)}
-            onAddCalendar={(task) => handleAction('Calendar event created', () => addToCalendar(task.id))}
-            onMarkImportant={(task) => handleAction('Marked important', () => markImportant(task.message_id))}
-            onGenerateReply={(task) => handleAction('Reply drafted', () => generateReply(task.message_id))}
-            onSnooze={(task) => handleAction('Snoozed', () => snoozeTask(task.id))}
+            onAddCalendar={(task) =>
+              handleAction('Calendar event created', () =>
+                addToCalendar(task.id)
+              )
+            }
+            onMarkImportant={(task) =>
+              handleAction('Marked important', () =>
+                markImportant(task.message_id)
+              )
+            }
+            onGenerateReply={(task) =>
+              handleAction('Reply drafted', () =>
+                generateReply(task.message_id)
+              )
+            }
+            onSnooze={(task) =>
+              handleAction('Snoozed', () => snoozeTask(task.id))
+            }
             onThumbsUp={(task) => handleThumbs(task, 'thumbs_up')}
             onThumbsDown={(task) => handleThumbs(task, 'thumbs_down')}
           />
@@ -167,10 +250,24 @@ export default function DashboardPage() {
             title="Opportunities"
             subtitle="Internships, campus events, and other opportunities the agent believes are worth lifting out of the inbox."
             tasks={limitTasks(sections.opportunities)}
-            onAddCalendar={(task) => handleAction('Calendar event created', () => addToCalendar(task.id))}
-            onMarkImportant={(task) => handleAction('Marked important', () => markImportant(task.message_id))}
-            onGenerateReply={(task) => handleAction('Reply drafted', () => generateReply(task.message_id))}
-            onSnooze={(task) => handleAction('Snoozed', () => snoozeTask(task.id))}
+            onAddCalendar={(task) =>
+              handleAction('Calendar event created', () =>
+                addToCalendar(task.id)
+              )
+            }
+            onMarkImportant={(task) =>
+              handleAction('Marked important', () =>
+                markImportant(task.message_id)
+              )
+            }
+            onGenerateReply={(task) =>
+              handleAction('Reply drafted', () =>
+                generateReply(task.message_id)
+              )
+            }
+            onSnooze={(task) =>
+              handleAction('Snoozed', () => snoozeTask(task.id))
+            }
             onThumbsUp={(task) => handleThumbs(task, 'thumbs_up')}
             onThumbsDown={(task) => handleThumbs(task, 'thumbs_down')}
           />

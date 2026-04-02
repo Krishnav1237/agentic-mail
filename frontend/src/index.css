@@ -1,115 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  font-family: "Work Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: dark;
+  font-family: 'Inter', sans-serif;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
+html,
 body {
+  background-color: #000;
+  color: #fff;
   margin: 0;
-  min-height: 100vh;
-  color: #0f172a;
-  background:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 26%),
-    radial-gradient(circle at 82% 10%, rgba(249, 115, 22, 0.15), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.08), transparent 18%),
-    linear-gradient(180deg, #f8fafc 0%, #eef4ff 48%, #f8fafc 100%);
+  padding: 0;
+  width: 100vw;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(circle at center, black 35%, transparent 82%);
+::selection {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-* {
-  box-sizing: border-box;
+.text-glow {
+  text-shadow: 0 0 80px rgba(255, 255, 255, 0.4);
 }
 
-*::selection {
-  background: rgba(34, 211, 238, 0.24);
+.glass-panel {
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.76);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(18px);
-}
-
-@keyframes floatIn {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade {
-  animation: floatIn 0.7s ease both;
-}
-
-.badge {
-  @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ring-1 ring-inset;
-}
-
-.status-pill {
-  @apply inline-flex items-center rounded-full border border-slate-200/80 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600;
-}
-
-.btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-full bg-cyan-100 px-4 py-2.5 text-sm font-semibold text-cyan-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.btn-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:-translate-y-0.5 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60;
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-  @apply w-full rounded-2xl border border-slate-200/90 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100;
-}
-
-.form-textarea {
-  @apply min-h-[120px] resize-y;
-}
-
-.surface-card {
-  @apply rounded-[28px] border border-slate-200/80 bg-white/75 p-5 shadow-[0_16px_48px_rgba(15,23,42,0.08)];
-}
-
-.surface-subtle {
-  @apply rounded-[24px] border border-slate-200/80 bg-slate-50/80 p-4;
+/* Hide scrollbar for a cleaner cinematic experience */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
 }

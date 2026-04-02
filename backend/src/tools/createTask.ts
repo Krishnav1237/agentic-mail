@@ -9,7 +9,7 @@ const schema = z.object({
   due_at: z.string().optional(),
   link: z.string().optional(),
   category: z.string().optional(),
-  priority: z.number().min(0).max(100).optional()
+  priority: z.number().min(0).max(100).optional(),
 });
 
 type Input = z.infer<typeof schema>;
@@ -28,6 +28,9 @@ export const createTaskTool: ToolDefinition<Input, Output> = {
   schema,
   safe: true,
   requiresApproval: false,
+  riskLevel: 'low',
+  reversible: true,
+  estimatedSecondsSaved: 420,
   execute: async (ctx: ToolContext, input: Input) => {
     const email = await query<{ subject: string | null }>(
       'SELECT subject FROM emails WHERE id = $1 AND user_id = $2',
@@ -36,7 +39,11 @@ export const createTaskTool: ToolDefinition<Input, Output> = {
     const title = input.title ?? email.rows[0]?.subject ?? 'Follow up';
     const category = input.category ?? 'other';
     const aiScore = input.priority ? input.priority / 100 : 0.5;
-    const priorityScore = await computePriorityScore({ userId: ctx.userId, aiScore, category });
+    const priorityScore = await computePriorityScore({
+      userId: ctx.userId,
+      aiScore,
+      category,
+    });
 
     const taskId = await withTransaction(async (client) => {
       const inserted = await client.query<{ id: string }>(
@@ -51,7 +58,7 @@ export const createTaskTool: ToolDefinition<Input, Output> = {
           normalizeDate(input.due_at),
           input.link ?? null,
           category,
-          priorityScore
+          priorityScore,
         ]
       );
 
@@ -69,5 +76,5 @@ export const createTaskTool: ToolDefinition<Input, Output> = {
     });
 
     return { taskId };
-  }
+  },
 };

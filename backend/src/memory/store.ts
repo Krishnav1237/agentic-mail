@@ -2,7 +2,11 @@ import { query } from '../db/index.js';
 
 export type MemoryScope = 'short' | 'long';
 
-export const getMemory = async <T>(userId: string, scope: MemoryScope, key: string): Promise<T | null> => {
+export const getMemory = async <T>(
+  userId: string,
+  scope: MemoryScope,
+  key: string
+): Promise<T | null> => {
   const result = await query<{ value: T }>(
     'SELECT value FROM memory_store WHERE user_id = $1 AND scope = $2 AND key = $3',
     [userId, scope, key]
@@ -10,7 +14,13 @@ export const getMemory = async <T>(userId: string, scope: MemoryScope, key: stri
   return result.rowCount ? result.rows[0].value : null;
 };
 
-export const upsertMemory = async (userId: string, scope: MemoryScope, key: string, value: unknown, expiresAt?: string) => {
+export const upsertMemory = async (
+  userId: string,
+  scope: MemoryScope,
+  key: string,
+  value: unknown,
+  expiresAt?: string
+) => {
   await query(
     `INSERT INTO memory_store (user_id, scope, key, value, expires_at)
      VALUES ($1, $2, $3, $4, $5)
@@ -19,7 +29,13 @@ export const upsertMemory = async (userId: string, scope: MemoryScope, key: stri
   );
 };
 
-export const appendMemoryList = async (userId: string, scope: MemoryScope, key: string, item: unknown, limit = 20) => {
+export const appendMemoryList = async (
+  userId: string,
+  scope: MemoryScope,
+  key: string,
+  item: unknown,
+  limit = 20
+) => {
   const current = (await getMemory<unknown[]>(userId, scope, key)) ?? [];
   const updated = [item, ...current].slice(0, limit);
   await upsertMemory(userId, scope, key, updated);

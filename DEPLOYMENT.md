@@ -1,48 +1,80 @@
 # Deployment Guide
 
+## Target Setup
+
+- Frontend: Vercel
+- Backend API: Railway
+- Background worker: Railway
+
+This repository now supports that split directly:
+
+- the frontend includes `frontend/vercel.json` for SPA route rewrites
+- the backend supports cross-site auth cookies for Vercel to Railway setups
+- origin matching supports exact domains plus preview-style patterns such as `https://your-app-*.vercel.app`
+
 ## Frontend (Vercel)
 
-1. Create a new Vercel project and import the `frontend/` directory.
-2. Set the build settings:
+1. Create a new Vercel project and point it at the `frontend/` directory.
+2. Use these settings:
    - Framework: Vite
    - Build command: `npm run build`
    - Output directory: `dist`
 3. Add environment variables:
-   - `VITE_API_BASE` = `https://your-api.example.com`
+   - `VITE_API_BASE=https://your-api.up.railway.app`
 4. Deploy.
 
-## Backend (Render or Fly.io)
+Notes:
+- `frontend/vercel.json` handles client-side routes such as `/auth/callback`, `/dashboard`, and `/tasks`.
+- If you only want the landing page live first, Vercel can deploy that immediately. The waitlist form will work once `VITE_API_BASE` points to the Railway backend.
 
-### Render
+## Backend API (Railway)
 
-1. Create a new **Web Service**.
-2. Root directory: `backend/`.
-3. Build command: `npm install && npm run build`.
-4. Start command: `node dist/server.js`.
-5. Add environment variables from `backend/.env.example`.
-6. Create a second **Background Worker** service with:
-   - Root directory: `backend/`
+1. Create a Railway service from the `backend/` directory.
+2. Set:
    - Build command: `npm install && npm run build`
-   - Start command: `node dist/workers/index.js`
+   - Start command: `npm run start`
+3. Add environment variables from `backend/.env.example`.
+4. For a Vercel frontend, set these explicitly:
+   - `FRONTEND_URL=https://your-app.vercel.app,https://your-app-*.vercel.app`
+   - `AUTH_COOKIE_SAME_SITE=none`
+   - `AUTH_COOKIE_SECURE=true`
+5. Set your provider callback URLs to the Railway API domain:
+   - `GOOGLE_REDIRECT_URI=https://your-api.up.railway.app/auth/google/callback`
+   - `MS_REDIRECT_URI=https://your-api.up.railway.app/auth/microsoft/callback`
 
-### Fly.io (alternative)
+Important:
+- Put the canonical Vercel production URL first in `FRONTEND_URL`. The backend uses the first exact origin for redirecting the OAuth callback back to the frontend.
+- The `https://your-app-*.vercel.app` pattern is for preview deployments. If you use a custom preview domain strategy instead, prefer that.
 
-1. Create two Fly apps: one for API, one for workers.
-2. Build with `npm install && npm run build`.
-3. Run API with `node dist/server.js` and workers with `node dist/workers/index.js`.
+## Backend Worker (Railway)
+
+Create a second Railway service from the same `backend/` directory:
+
+- Build command: `npm install && npm run build`
+- Start command: `node dist/workers/index.js`
+
+Use the same env values as the API service.
 
 ## Postgres + Redis
 
-Use managed services (Neon, Supabase, or Render Postgres for DB; Upstash or Redis Cloud for Redis).
+Use managed services such as Neon, Supabase, or Railway Postgres for DB, and Upstash, Railway Redis, or Redis Cloud for Redis.
 
 Set the following environment variables:
 
 - `DATABASE_URL`
 - `REDIS_URL`
+- `QUEUE_REDIS_URL` (optional override for BullMQ)
+- `CACHE_REDIS_URL` (optional override for cache/state reads)
+- `FRONTEND_URL`
 - `AUTH_JWT_SECRET`
 - `AUTH_JWT_ISSUER`
 - `AUTH_JWT_AUDIENCE`
+- `AUTH_COOKIE_NAME`
+- `AUTH_COOKIE_SAME_SITE`
+- `AUTH_COOKIE_SECURE`
 - `TOKEN_ENC_KEY`
+- `SECURITY_CONTACT`
+- `SECURITY_POLICY_URL`
 - `MS_CLIENT_ID`
 - `MS_CLIENT_SECRET`
 - `MS_REDIRECT_URI`
@@ -62,6 +94,8 @@ psql "$DATABASE_URL" -f backend/db/migrations/003_autopilot_level.sql
 psql "$DATABASE_URL" -f backend/db/migrations/004_agent_enhancements.sql
 psql "$DATABASE_URL" -f backend/db/migrations/005_personality_mode.sql
 psql "$DATABASE_URL" -f backend/db/migrations/006_google_integration.sql
+psql "$DATABASE_URL" -f backend/db/migrations/007_productization_indexes.sql
+psql "$DATABASE_URL" -f backend/db/migrations/008_autonomous_operator_hardening.sql
 ```
 
 ## Microsoft Graph Webhooks
@@ -72,8 +106,8 @@ Ensure `MS_WEBHOOK_NOTIFICATION_URL` is publicly reachable over HTTPS and routed
 
 Update your Azure App Registration redirect URI to:
 
-- `https://your-api.example.com/auth/microsoft/callback`
+- `https://your-api.up.railway.app/auth/microsoft/callback`
 
 Update your Google Cloud OAuth redirect URI to:
 
-- `https://your-api.example.com/auth/google/callback`
+- `https://your-api.up.railway.app/auth/google/callback`
