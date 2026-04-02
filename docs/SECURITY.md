@@ -1,6 +1,6 @@
 # Security
 
-This document describes the security posture of Student Intelligence Layer and the operational safeguards expected in production.
+This document describes the security posture of Inbox Intelligence Layer and the operational safeguards expected in production.
 
 ## Security Goals
 
@@ -25,8 +25,8 @@ Implemented:
 
 Relevant files:
 
-- `/Users/HP/outlook-bot/backend/src/routes/auth.ts`
-- `/Users/HP/outlook-bot/backend/src/middleware/auth.ts`
+- `backend/src/routes/auth.ts`
+- `backend/src/middleware/auth.ts`
 
 Recommended production settings:
 
@@ -65,8 +65,8 @@ Implemented:
 
 Relevant files:
 
-- `/Users/HP/outlook-bot/backend/src/app.ts`
-- `/Users/HP/outlook-bot/backend/src/middleware/validate.ts`
+- `backend/src/app.ts`
+- `backend/src/middleware/validate.ts`
 
 ## Autonomous Action Safety
 
@@ -85,11 +85,11 @@ Implemented:
 
 Relevant files:
 
-- `/Users/HP/outlook-bot/backend/src/agent/executor.ts`
-- `/Users/HP/outlook-bot/backend/src/agent/preview.ts`
-- `/Users/HP/outlook-bot/backend/src/agent/recovery.ts`
-- `/Users/HP/outlook-bot/backend/src/agent/decisionTrace.ts`
-- `/Users/HP/outlook-bot/backend/src/tools/types.ts`
+- `backend/src/agent/executor.ts`
+- `backend/src/agent/preview.ts`
+- `backend/src/agent/recovery.ts`
+- `backend/src/agent/decisionTrace.ts`
+- `backend/src/tools/types.ts`
 
 ## Tool Risk Model
 
@@ -160,7 +160,7 @@ Benefits:
 
 Relevant file:
 
-- `/Users/HP/outlook-bot/backend/src/agent/stateManager.ts`
+- `backend/src/agent/stateManager.ts`
 
 ## Memory Safety
 
@@ -175,7 +175,7 @@ Implemented safeguards:
 
 Relevant file:
 
-- `/Users/HP/outlook-bot/backend/src/memory/optimizer.ts`
+- `backend/src/memory/optimizer.ts`
 
 ## Cost and Abuse Monitoring
 
@@ -188,7 +188,7 @@ Implemented:
 
 Relevant file:
 
-- `/Users/HP/outlook-bot/backend/src/observability/costTracker.ts`
+- `backend/src/observability/costTracker.ts`
 
 Why this matters:
 
@@ -205,7 +205,7 @@ Implemented:
 
 Relevant file:
 
-- `/Users/HP/outlook-bot/backend/src/app.ts`
+- `backend/src/app.ts`
 
 ## Production Security Checklist
 
@@ -236,5 +236,4 @@ High-value security test areas:
 - unauthorized rollback/undo attempts
 - mailbox tool abuse through crafted inputs
 
-For full product validation coverage, use `/Users/HP/outlook-bot/docs/TESTING.md`.
-
+For full product validation coverage, use `docs/TESTING.md`.

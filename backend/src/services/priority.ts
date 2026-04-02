@@ -8,12 +8,16 @@ const actionWeights: Record<string, number> = {
   thumbs_up: 0.6,
   dismiss: -0.3,
   thumbs_down: -0.6,
-  snooze: -0.1
+  snooze: -0.1,
 };
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
-export const computeBehaviorWeight = async (userId: string, category?: string) => {
+export const computeBehaviorWeight = async (
+  userId: string,
+  category?: string
+) => {
   const result = await query<{ action: string; count: number }>(
     `SELECT action, COUNT(*)::int as count
      FROM user_behavior_logs
@@ -40,7 +44,10 @@ export const computePriorityScore = async (input: {
 }) => {
   const preferences = await getUserPreferences(input.userId);
   const userWeight = preferences[input.category] ?? 1.0;
-  const behaviorWeight = await computeBehaviorWeight(input.userId, input.category);
+  const behaviorWeight = await computeBehaviorWeight(
+    input.userId,
+    input.category
+  );
   const score = input.aiScore * userWeight * behaviorWeight;
   return clamp(score, 0, 5);
 };

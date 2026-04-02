@@ -3,10 +3,14 @@ import type { ToolContext, ToolDefinition } from './types.js';
 import { getAuthContext } from '../services/tokens.js';
 import { modifyGmailMessage } from '../services/gmail.js';
 import { getMessage, patchMessage } from '../services/graph.js';
-import { gmailAllowedLabels, normalizeLabelName, outlookAllowedCategories } from './providerConfig.js';
+import {
+  gmailAllowedLabels,
+  normalizeLabelName,
+  outlookAllowedCategories,
+} from './providerConfig.js';
 
 const schema = z.object({
-  label: z.string().min(1).max(80)
+  label: z.string().min(1).max(80),
 });
 
 type Input = z.infer<typeof schema>;
@@ -39,13 +43,20 @@ export const labelEmailTool: ToolDefinition<Input, Output> = {
     const label = normalizeLabelName(input.label);
 
     if (auth.provider === 'google') {
-      await modifyGmailMessage(auth.accessToken, ctx.messageId, { addLabelIds: [label] });
+      await modifyGmailMessage(auth.accessToken, ctx.messageId, {
+        addLabelIds: [label],
+      });
       return { labeled: true, label };
     }
 
     const existing = await getMessage(auth.accessToken, ctx.messageId);
-    const categories = new Set<string>([...(existing?.categories ?? []), label]);
-    await patchMessage(auth.accessToken, ctx.messageId, { categories: [...categories] });
+    const categories = new Set<string>([
+      ...(existing?.categories ?? []),
+      label,
+    ]);
+    await patchMessage(auth.accessToken, ctx.messageId, {
+      categories: [...categories],
+    });
     return { labeled: true, label };
-  }
+  },
 };

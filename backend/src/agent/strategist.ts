@@ -1,5 +1,8 @@
 import { query } from '../db/index.js';
-import { getUserPreferences, updateUserPreferences } from '../services/preferences.js';
+import {
+  getUserPreferences,
+  updateUserPreferences,
+} from '../services/preferences.js';
 import { generateStrategistAdjustments } from '../services/ai.js';
 import { getMemory, upsertMemory } from '../memory/store.js';
 import { buildMemorySummary } from '../memory/summary.js';
@@ -16,7 +19,8 @@ export type StrategistState = {
 
 const STRATEGIST_INTERVAL_HOURS = 12;
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 const shouldRunStrategist = (lastRun: string | null) => {
   if (!lastRun) return true;
@@ -25,20 +29,33 @@ const shouldRunStrategist = (lastRun: string | null) => {
   return diffHours >= STRATEGIST_INTERVAL_HOURS;
 };
 
-export const getStrategistState = async (userId: string): Promise<StrategistState> => {
-  const state = await getMemory<StrategistState>(userId, 'long', 'strategist_state');
+export const getStrategistState = async (
+  userId: string
+): Promise<StrategistState> => {
+  const state = await getMemory<StrategistState>(
+    userId,
+    'long',
+    'strategist_state'
+  );
   if (state) return state;
   return {
     planningAggressiveness: 'medium',
     focusAreas: [],
     priorityAdjustments: {},
     notes: '',
-    updatedAt: new Date(0).toISOString()
+    updatedAt: new Date(0).toISOString(),
   };
 };
 
-export const runStrategist = async (input: { userId: string; goals: AgentGoalState }) => {
-  const lastRun = await getMemory<string>(input.userId, 'short', 'strategist_last_run');
+export const runStrategist = async (input: {
+  userId: string;
+  goals: AgentGoalState;
+}) => {
+  const lastRun = await getMemory<string>(
+    input.userId,
+    'short',
+    'strategist_last_run'
+  );
   if (!shouldRunStrategist(lastRun)) {
     return getStrategistState(input.userId);
   }
@@ -47,7 +64,10 @@ export const runStrategist = async (input: { userId: string; goals: AgentGoalSta
     const preferences = await getUserPreferences(input.userId);
     const memorySummary = await buildMemorySummary(input.userId);
 
-    const recentActionsResult = await query<{ action_type: string; status: string }>(
+    const recentActionsResult = await query<{
+      action_type: string;
+      status: string;
+    }>(
       `SELECT action_type, status
        FROM agent_actions
        WHERE user_id = $1
@@ -75,24 +95,36 @@ export const runStrategist = async (input: { userId: string; goals: AgentGoalSta
       [input.userId]
     );
 
-    const behaviorSummary = behaviorResult.rows.map((row) => `${row.action}:${row.count}`).join(', ') || 'none';
+    const behaviorSummary =
+      behaviorResult.rows
+        .map((row) => `${row.action}:${row.count}`)
+        .join(', ') || 'none';
 
-    const strategist = await generateStrategistAdjustments({
-      goals: input.goals.goals,
-      behaviorSummary,
-      preferences,
-      recentActions: recentActionsResult.rows,
-      recentFeedback: feedbackResult.rows,
-      memorySummary
-    }, {
-      userId: input.userId,
-      operation: 'strategist_adjustments'
-    });
+    const strategist = await generateStrategistAdjustments(
+      {
+        goals: input.goals.goals,
+        behaviorSummary,
+        preferences,
+        recentActions: recentActionsResult.rows,
+        recentFeedback: feedbackResult.rows,
+        memorySummary,
+      },
+      {
+        userId: input.userId,
+        operation: 'strategist_adjustments',
+      }
+    );
 
     const updatedWeights = { ...preferences };
-    for (const [key, value] of Object.entries(strategist.priority_weight_adjustments ?? {})) {
+    for (const [key, value] of Object.entries(
+      strategist.priority_weight_adjustments ?? {}
+    )) {
       const multiplier = clamp(value, 0.7, 1.3);
-      updatedWeights[key] = clamp((updatedWeights[key] ?? 1) * multiplier, 0.2, 2);
+      updatedWeights[key] = clamp(
+        (updatedWeights[key] ?? 1) * multiplier,
+        0.2,
+        2
+      );
     }
 
     await updateUserPreferences(input.userId, updatedWeights);
@@ -102,17 +134,22 @@ export const runStrategist = async (input: { userId: string; goals: AgentGoalSta
       focusAreas: strategist.focus_areas ?? [],
       priorityAdjustments: strategist.priority_weight_adjustments ?? {},
       notes: strategist.notes ?? '',
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     await upsertMemory(input.userId, 'long', 'strategist_state', state);
-    await upsertMemory(input.userId, 'short', 'strategist_last_run', state.updatedAt);
+    await upsertMemory(
+      input.userId,
+      'short',
+      'strategist_last_run',
+      state.updatedAt
+    );
 
     await logAgentStep({
       userId: input.userId,
       step: 'strategist',
       message: strategist.notes ?? 'Strategist updated priorities',
-      data: state
+      data: state,
     });
 
     return state;
@@ -120,7 +157,7 @@ export const runStrategist = async (input: { userId: string; goals: AgentGoalSta
     await logAgentStep({
       userId: input.userId,
       step: 'strategist_error',
-      message: (error as Error).message
+      message: (error as Error).message,
     });
     return getStrategistState(input.userId);
   }

@@ -4,7 +4,7 @@ import { query, withTransaction } from '../db/index.js';
 
 const schema = z.object({
   task_id: z.string().optional(),
-  until: z.string().optional()
+  until: z.string().optional(),
 });
 
 type Input = z.infer<typeof schema>;
@@ -20,7 +20,9 @@ export const snoozeTool: ToolDefinition<Input, Output> = {
   reversible: true,
   estimatedSecondsSaved: 180,
   execute: async (ctx: ToolContext, input: Input) => {
-    const schedule = input.until ? new Date(input.until) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const schedule = input.until
+      ? new Date(input.until)
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
     let affected = 0;
 
     if (input.task_id) {
@@ -58,5 +60,5 @@ export const snoozeTool: ToolDefinition<Input, Output> = {
     }
 
     return { snoozed: affected };
-  }
+  },
 };

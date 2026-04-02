@@ -1,4 +1,9 @@
-import type { FilteredPlannerContext, PlannerEmail, PlannerEvent, PlannerTask } from './planningTypes.js';
+import type {
+  FilteredPlannerContext,
+  PlannerEmail,
+  PlannerEvent,
+  PlannerTask,
+} from './planningTypes.js';
 
 type RawEmail = {
   id: string;
@@ -28,9 +33,12 @@ type RawEvent = {
 };
 
 const hasSignal = (text: string) =>
-  /(deadline|due|submit|application|interview|schedule|meeting|respond|reply|internship|event|reminder|today|tomorrow|urgent)/i.test(text);
+  /(deadline|due|submit|application|interview|schedule|meeting|respond|reply|internship|event|reminder|today|tomorrow|urgent)/i.test(
+    text
+  );
 
-const normalizePreview = (value?: string) => (value ?? '').replace(/\s+/g, ' ').trim().slice(0, 220);
+const normalizePreview = (value?: string) =>
+  (value ?? '').replace(/\s+/g, ' ').trim().slice(0, 220);
 
 const hoursUntil = (value?: string | null) => {
   if (!value) return null;
@@ -45,9 +53,15 @@ const filterEmail = (email: RawEmail): PlannerEmail => {
   const sender = email.sender.toLowerCase();
 
   if (email.importance === 'high') reasons.push('important');
-  if (email.classification && email.classification !== 'spam') reasons.push(`classification:${email.classification}`);
+  if (email.classification && email.classification !== 'spam')
+    reasons.push(`classification:${email.classification}`);
   if (hasSignal(text)) reasons.push('actionable_keyword');
-  if (/(career|jobs?|recruit|talent|campus|professor|office|university)/i.test(sender)) reasons.push('high_value_sender');
+  if (
+    /(career|jobs?|recruit|talent|campus|professor|office|university)/i.test(
+      sender
+    )
+  )
+    reasons.push('high_value_sender');
 
   const actionable = reasons.length > 0 && email.classification !== 'spam';
   return {
@@ -61,7 +75,7 @@ const filterEmail = (email: RawEmail): PlannerEmail => {
     importance: email.importance ?? null,
     classification: email.classification ?? null,
     actionable,
-    reasons: actionable ? reasons : ['filtered_noise']
+    reasons: actionable ? reasons : ['filtered_noise'],
   };
 };
 
@@ -69,7 +83,11 @@ const filterTask = (task: RawTask): PlannerTask => {
   const reasons: string[] = [];
   const dueInHours = hoursUntil(task.dueAt);
   if ((task.priorityScore ?? 0) >= 1.5) reasons.push('priority');
-  if (task.category && ['assignment', 'internship', 'event', 'academic'].includes(task.category)) reasons.push(`category:${task.category}`);
+  if (
+    task.category &&
+    ['assignment', 'internship', 'event', 'academic'].includes(task.category)
+  )
+    reasons.push(`category:${task.category}`);
   if (dueInHours !== null && dueInHours <= 24 * 14) reasons.push('due_soon');
   if (task.status === 'open') reasons.push('open');
 
@@ -82,7 +100,7 @@ const filterTask = (task: RawTask): PlannerTask => {
     priorityScore: task.priorityScore ?? null,
     status: task.status ?? 'open',
     actionable,
-    reasons: actionable ? reasons : ['filtered_noise']
+    reasons: actionable ? reasons : ['filtered_noise'],
   };
 };
 
@@ -90,7 +108,8 @@ const filterEvent = (event: RawEvent): PlannerEvent => {
   const reasons: string[] = [];
   const startsInHours = hoursUntil(event.start);
   if (hasSignal(event.subject)) reasons.push('actionable_keyword');
-  if (startsInHours !== null && startsInHours <= 24 * 14) reasons.push('upcoming');
+  if (startsInHours !== null && startsInHours <= 24 * 14)
+    reasons.push('upcoming');
 
   const actionable = reasons.length > 0;
   return {
@@ -98,7 +117,7 @@ const filterEvent = (event: RawEvent): PlannerEvent => {
     subject: event.subject,
     start: event.start,
     actionable,
-    reasons: actionable ? reasons : ['filtered_noise']
+    reasons: actionable ? reasons : ['filtered_noise'],
   };
 };
 
@@ -111,9 +130,13 @@ export const filterPlanningContext = (input: {
   const filteredTasks = input.openTasks.map(filterTask);
   const filteredEvents = input.upcomingEvents.map(filterEvent);
 
-  const emails = filteredEmails.filter((email) => email.actionable).slice(0, 25);
+  const emails = filteredEmails
+    .filter((email) => email.actionable)
+    .slice(0, 25);
   const tasks = filteredTasks.filter((task) => task.actionable).slice(0, 60);
-  const events = filteredEvents.filter((event) => event.actionable).slice(0, 20);
+  const events = filteredEvents
+    .filter((event) => event.actionable)
+    .slice(0, 20);
 
   return {
     emails,
@@ -125,7 +148,7 @@ export const filterPlanningContext = (input: {
       keptTasks: tasks.length,
       droppedTasks: filteredTasks.length - tasks.length,
       keptEvents: events.length,
-      droppedEvents: filteredEvents.length - events.length
-    }
+      droppedEvents: filteredEvents.length - events.length,
+    },
   };
 };

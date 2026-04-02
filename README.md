@@ -1,6 +1,6 @@
-# Student Intelligence Layer
+# Inbox Intelligence Layer
 
-Student Intelligence Layer is a production-oriented SaaS for turning a student inbox into a structured execution system. It connects to Gmail and Microsoft Outlook, ingests email, extracts tasks and deadlines, and runs a single-agent loop that can plan, preview, execute, learn, and improve over time.
+Inbox Intelligence Layer is a production-oriented SaaS for turning an inbox into a structured execution system. It connects to Gmail and Microsoft Outlook, ingests email, extracts tasks and deadlines, and runs a single-agent loop that can plan, preview, execute, learn, and improve over time.
 
 This repository contains:
 
@@ -44,12 +44,12 @@ Core loop:
 Perceive -> Filter Context -> Build Context -> Normalize State -> Plan -> Preview/Execute -> Reflect -> Learn -> Repeat
 ```
 
-See `/Users/HP/outlook-bot/docs/ARCHITECTURE.md` for the full system walkthrough.
+See `docs/ARCHITECTURE.md` for the full system walkthrough.
 
 ## Repository Structure
 
 ```text
-/Users/HP/outlook-bot
+agentic-mail
 ├── backend
 │   ├── db
 │   │   ├── migrations
@@ -100,7 +100,7 @@ See `/Users/HP/outlook-bot/docs/ARCHITECTURE.md` for the full system walkthrough
 ### Start infrastructure
 
 ```bash
-cd /Users/HP/outlook-bot
+cd agentic-mail
 docker-compose up -d
 ```
 
@@ -109,25 +109,25 @@ docker-compose up -d
 Fresh database:
 
 ```bash
-psql "postgres://postgres:postgres@localhost:5432/student_intel" -f /Users/HP/outlook-bot/backend/db/schema.sql
+psql "postgres://postgres:postgres@localhost:5433/inbox_intel" -f backend/db/schema.sql
 ```
 
 Existing database upgrade path:
 
 ```bash
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/002_agent_system.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/003_autopilot_level.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/004_agent_enhancements.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/005_personality_mode.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/006_google_integration.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/007_productization_indexes.sql
-psql "$DATABASE_URL" -f /Users/HP/outlook-bot/backend/db/migrations/008_autonomous_operator_hardening.sql
+psql "$DATABASE_URL" -f backend/db/migrations/002_agent_system.sql
+psql "$DATABASE_URL" -f backend/db/migrations/003_autopilot_level.sql
+psql "$DATABASE_URL" -f backend/db/migrations/004_agent_enhancements.sql
+psql "$DATABASE_URL" -f backend/db/migrations/005_personality_mode.sql
+psql "$DATABASE_URL" -f backend/db/migrations/006_google_integration.sql
+psql "$DATABASE_URL" -f backend/db/migrations/007_productization_indexes.sql
+psql "$DATABASE_URL" -f backend/db/migrations/008_autonomous_operator_hardening.sql
 ```
 
 ### Backend setup
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 cp .env.example .env
 npm install
 ```
@@ -141,21 +141,21 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 Run API:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run dev
 ```
 
 Run worker:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run worker
 ```
 
 ### Frontend setup
 
 ```bash
-cd /Users/HP/outlook-bot/frontend
+cd frontend
 cp .env.example .env
 npm install
 npm run dev
@@ -169,11 +169,17 @@ Backend:
 
 - `DATABASE_URL`
 - `REDIS_URL`
+- `QUEUE_REDIS_URL`
+- `CACHE_REDIS_URL`
 - `FRONTEND_URL`
+- `SECURITY_CONTACT`
+- `SECURITY_POLICY_URL`
 - `AUTH_JWT_SECRET`
 - `AUTH_JWT_ISSUER`
 - `AUTH_JWT_AUDIENCE`
 - `AUTH_COOKIE_NAME`
+- `AUTH_COOKIE_SAME_SITE`
+- `AUTH_COOKIE_SECURE`
 - `TOKEN_ENC_KEY`
 - `AI_PROVIDER`
 - `AI_MODEL`
@@ -201,8 +207,8 @@ Google integration:
 
 Current implementation note:
 
-- the backend environment loader currently expects the Microsoft env block to be present at startup
-- if you are validating Gmail first, make sure the Microsoft env values are still populated in `/Users/HP/outlook-bot/backend/.env`
+- the backend can start with Google-only configuration
+- leave the Microsoft env values blank unless Outlook support is enabled
 
 AI provider keys:
 
@@ -214,7 +220,14 @@ Frontend:
 
 - `VITE_API_BASE`
 
-Use `/Users/HP/outlook-bot/backend/.env.example` and `/Users/HP/outlook-bot/frontend/.env.example` as templates.
+Use `backend/.env.example` and `frontend/.env.example` as templates.
+
+Deployment note for Vercel + Railway:
+
+- set `VITE_API_BASE` to the Railway API URL
+- set `FRONTEND_URL` to the canonical Vercel domain first, then optional preview patterns
+- set `AUTH_COOKIE_SAME_SITE=none`
+- set `AUTH_COOKIE_SECURE=true`
 
 ## OAuth Setup
 
@@ -271,7 +284,7 @@ Main route groups:
 - `/agent`
 - `/webhooks`
 
-Full request and response examples live in `/Users/HP/outlook-bot/docs/API.md`.
+Full request and response examples live in `docs/API.md`.
 
 ## Security Posture
 
@@ -290,13 +303,13 @@ Implemented safeguards include:
 - Recovery and rollback support
 - `/.well-known/security.txt`
 
-Details: `/Users/HP/outlook-bot/docs/SECURITY.md`
+Details: `docs/SECURITY.md`
 
 ## Operations
 
 Production operations guidance:
 
-- `/Users/HP/outlook-bot/docs/OPS.md`
+- `docs/OPS.md`
 
 This covers:
 
@@ -311,7 +324,7 @@ This covers:
 
 Deep validation guide:
 
-- `/Users/HP/outlook-bot/docs/TESTING.md`
+- `docs/TESTING.md`
 
 This is the document to use before launch or before onboarding real users. It covers:
 
@@ -332,22 +345,22 @@ This is the document to use before launch or before onboarding real users. It co
 Backend:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run build
 ```
 
 Frontend:
 
 ```bash
-cd /Users/HP/outlook-bot/frontend
+cd frontend
 npm run build
 ```
 
 ## Recommended Release Checklist
 
-1. Apply all migrations, including `/Users/HP/outlook-bot/backend/db/migrations/008_autonomous_operator_hardening.sql`
+1. Apply all migrations, including `backend/db/migrations/008_autonomous_operator_hardening.sql`
 2. Configure real OAuth credentials
 3. Verify Redis and Postgres connectivity
 4. Run backend and frontend production builds
-5. Execute the checklist in `/Users/HP/outlook-bot/docs/TESTING.md`
+5. Execute the checklist in `docs/TESTING.md`
 6. Review logs, cost metrics, and action preview behavior before enabling aggressive autopilot

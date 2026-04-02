@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS emails_user_status_received_idx ON emails (user_id, s
 CREATE INDEX IF NOT EXISTS emails_user_classification_received_idx ON emails (user_id, classification, received_at DESC);
 CREATE INDEX IF NOT EXISTS emails_search_idx
   ON emails
-  USING gin ((concat_ws(' ', coalesce(subject, ''), coalesce(sender_name, ''), coalesce(sender_email, ''))) gin_trgm_ops);
+  USING gin (((coalesce(subject, '') || ' ' || coalesce(sender_name, '') || ' ' || coalesce(sender_email, ''))) gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS extracted_tasks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS extracted_tasks_user_category_priority_due_idx
   ON extracted_tasks (user_id, category, priority_score DESC, due_at ASC);
 CREATE INDEX IF NOT EXISTS extracted_tasks_search_idx
   ON extracted_tasks
-  USING gin ((concat_ws(' ', coalesce(title, ''), coalesce(description, ''))) gin_trgm_ops);
+  USING gin (((coalesce(title, '') || ' ' || coalesce(description, ''))) gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS user_preferences (
   user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -263,3 +263,9 @@ CREATE TABLE IF NOT EXISTS llm_cost_daily_aggregates (
 );
 
 CREATE INDEX IF NOT EXISTS llm_cost_daily_user_summary_idx ON llm_cost_daily_aggregates (user_id, summary_date DESC);
+
+CREATE TABLE IF NOT EXISTS waitlist (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text UNIQUE NOT NULL,
+  created_at timestamptz DEFAULT now()
+);

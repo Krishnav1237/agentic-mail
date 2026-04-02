@@ -9,9 +9,14 @@ export type UserRow = {
   display_name: string | null;
 };
 
-export const upsertUserFromMicrosoft = async (profile: GraphProfile, token: GraphTokenResponse) => {
+export const upsertUserFromMicrosoft = async (
+  profile: GraphProfile,
+  token: GraphTokenResponse
+) => {
   const email = profile.mail ?? profile.userPrincipalName ?? '';
-  const expiresAt = new Date(Date.now() + token.expires_in * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + token.expires_in * 1000
+  ).toISOString();
 
   const result = await query<UserRow>(
     `INSERT INTO users (ms_user_id, email, display_name, ms_access_token, ms_refresh_token, ms_token_expires_at, primary_provider)
@@ -30,16 +35,21 @@ export const upsertUserFromMicrosoft = async (profile: GraphProfile, token: Grap
       profile.displayName ?? null,
       encrypt(token.access_token),
       encrypt(token.refresh_token),
-      expiresAt
+      expiresAt,
     ]
   );
 
   return result.rows[0];
 };
 
-export const upsertUserFromGoogle = async (profile: GoogleProfile, token: GoogleTokenResponse) => {
+export const upsertUserFromGoogle = async (
+  profile: GoogleProfile,
+  token: GoogleTokenResponse
+) => {
   const email = profile.email ?? '';
-  const expiresAt = new Date(Date.now() + token.expires_in * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + token.expires_in * 1000
+  ).toISOString();
 
   const result = await query<UserRow>(
     `INSERT INTO users (google_user_id, email, display_name, google_access_token, google_refresh_token, google_token_expires_at, primary_provider)
@@ -58,7 +68,7 @@ export const upsertUserFromGoogle = async (profile: GoogleProfile, token: Google
       profile.name ?? null,
       encrypt(token.access_token),
       token.refresh_token ? encrypt(token.refresh_token) : null,
-      expiresAt
+      expiresAt,
     ]
   );
 

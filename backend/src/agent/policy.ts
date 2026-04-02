@@ -12,17 +12,31 @@ export const getPolicyState = async (userId: string): Promise<PolicyState> => {
   return stored ?? defaultPolicy;
 };
 
-export const recordAlwaysAllow = async (userId: string, actionType: string, workflowName?: string | null) => {
+export const recordAlwaysAllow = async (
+  userId: string,
+  actionType: string,
+  workflowName?: string | null
+) => {
   const policy = await getPolicyState(userId);
-  policy.tools[actionType] = { always_allow: true, updatedAt: new Date().toISOString() };
+  policy.tools[actionType] = {
+    always_allow: true,
+    updatedAt: new Date().toISOString(),
+  };
   if (workflowName) {
-    policy.workflows[workflowName] = { always_allow: true, updatedAt: new Date().toISOString() };
+    policy.workflows[workflowName] = {
+      always_allow: true,
+      updatedAt: new Date().toISOString(),
+    };
   }
   await upsertMemory(userId, 'long', 'policy_state', policy);
   return policy;
 };
 
-export const isAlwaysAllowed = async (userId: string, actionType: string, workflowName?: string | null) => {
+export const isAlwaysAllowed = async (
+  userId: string,
+  actionType: string,
+  workflowName?: string | null
+) => {
   const policy = await getPolicyState(userId);
   return Boolean(
     policy.tools[actionType]?.always_allow ||

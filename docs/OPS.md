@@ -1,22 +1,22 @@
 # Operations
 
-This document covers how to run, deploy, observe, and scale Student Intelligence Layer in a production-style environment.
+This document covers how to run, deploy, observe, and scale Inbox Intelligence Layer in a production-style environment.
 
 ## Service Layout
 
 ### Backend API
 
-- path: `/Users/HP/outlook-bot/backend`
+- path: `backend`
 - responsibility: REST API, auth, session handling, reads/writes, preview approvals
 
 ### Worker
 
-- path: `/Users/HP/outlook-bot/backend`
+- path: `backend`
 - responsibility: ingestion, AI processing, autonomous agent loop, reflections, memory optimization
 
 ### Frontend
 
-- path: `/Users/HP/outlook-bot/frontend`
+- path: `frontend`
 - responsibility: landing page, dashboard, inbox, tasks, agent feed, settings
 
 ### Dependencies
@@ -31,21 +31,21 @@ This document covers how to run, deploy, observe, and scale Student Intelligence
 Backend:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run dev
 ```
 
 Worker:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run worker
 ```
 
 Frontend:
 
 ```bash
-cd /Users/HP/outlook-bot/frontend
+cd frontend
 npm run dev
 ```
 
@@ -54,14 +54,14 @@ npm run dev
 Backend:
 
 ```bash
-cd /Users/HP/outlook-bot/backend
+cd backend
 npm run build
 ```
 
 Frontend:
 
 ```bash
-cd /Users/HP/outlook-bot/frontend
+cd frontend
 npm run build
 ```
 
@@ -69,15 +69,15 @@ npm run build
 
 Apply in order:
 
-1. `/Users/HP/outlook-bot/backend/db/migrations/002_agent_system.sql`
-2. `/Users/HP/outlook-bot/backend/db/migrations/003_autopilot_level.sql`
-3. `/Users/HP/outlook-bot/backend/db/migrations/004_agent_enhancements.sql`
-4. `/Users/HP/outlook-bot/backend/db/migrations/005_personality_mode.sql`
-5. `/Users/HP/outlook-bot/backend/db/migrations/006_google_integration.sql`
-6. `/Users/HP/outlook-bot/backend/db/migrations/007_productization_indexes.sql`
-7. `/Users/HP/outlook-bot/backend/db/migrations/008_autonomous_operator_hardening.sql`
+1. `backend/db/migrations/002_agent_system.sql`
+2. `backend/db/migrations/003_autopilot_level.sql`
+3. `backend/db/migrations/004_agent_enhancements.sql`
+4. `backend/db/migrations/005_personality_mode.sql`
+5. `backend/db/migrations/006_google_integration.sql`
+6. `backend/db/migrations/007_productization_indexes.sql`
+7. `backend/db/migrations/008_autonomous_operator_hardening.sql`
 
-For greenfield environments, using `/Users/HP/outlook-bot/backend/db/schema.sql` is simpler.
+For greenfield environments, using `backend/db/schema.sql` is simpler.
 
 ## Required Environment
 
@@ -291,8 +291,7 @@ Check:
 2. Confirm backend and frontend production builds succeed
 3. Validate Gmail and Outlook OAuth flows
 4. Confirm Redis and Postgres production credentials
-5. Run the test checklist in `/Users/HP/outlook-bot/docs/TESTING.md`
+5. Run the test checklist in `docs/TESTING.md`
 6. Review `delete_email` and `send_reply` approval posture
 7. Confirm rate limits, CORS, and cookie settings for production domains
 8. Confirm backup and restore path for Postgres
-

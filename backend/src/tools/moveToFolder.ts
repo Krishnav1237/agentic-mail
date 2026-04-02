@@ -3,10 +3,14 @@ import type { ToolContext, ToolDefinition } from './types.js';
 import { getAuthContext } from '../services/tokens.js';
 import { modifyGmailMessage } from '../services/gmail.js';
 import { moveMessage } from '../services/graph.js';
-import { gmailAllowedFolders, normalizeFolderName, resolveOutlookFolderId } from './providerConfig.js';
+import {
+  gmailAllowedFolders,
+  normalizeFolderName,
+  resolveOutlookFolderId,
+} from './providerConfig.js';
 
 const schema = z.object({
-  folder: z.string().min(1).max(80)
+  folder: z.string().min(1).max(80),
 });
 
 type Input = z.infer<typeof schema>;
@@ -36,15 +40,22 @@ export const moveToFolderTool: ToolDefinition<Input, Output> = {
 
     if (auth.provider === 'google') {
       if (folder === 'inbox') {
-        await modifyGmailMessage(auth.accessToken, ctx.messageId, { addLabelIds: ['INBOX'] });
+        await modifyGmailMessage(auth.accessToken, ctx.messageId, {
+          addLabelIds: ['INBOX'],
+        });
       } else if (folder === 'archive') {
-        await modifyGmailMessage(auth.accessToken, ctx.messageId, { removeLabelIds: ['INBOX'] });
+        await modifyGmailMessage(auth.accessToken, ctx.messageId, {
+          removeLabelIds: ['INBOX'],
+        });
       }
       return { moved: true, folder };
     }
 
-    const destinationId = await resolveOutlookFolderId(auth.accessToken, folder);
+    const destinationId = await resolveOutlookFolderId(
+      auth.accessToken,
+      folder
+    );
     await moveMessage(auth.accessToken, ctx.messageId, destinationId);
     return { moved: true, folder };
-  }
+  },
 };

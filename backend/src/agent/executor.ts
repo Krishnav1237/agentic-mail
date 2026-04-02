@@ -15,7 +15,10 @@ import { recordWorkflowOutcomeMetrics } from '../observability/costTracker.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const resolveContext = async (userId: string, input: Record<string, unknown>) => {
+const resolveContext = async (
+  userId: string,
+  input: Record<string, unknown>
+) => {
   if (input.email_id) {
     const result = await query<{ id: string; message_id: string }>(
       'SELECT id, message_id FROM emails WHERE id = $1 AND user_id = $2',
@@ -40,7 +43,9 @@ const resolveContext = async (userId: string, input: Record<string, unknown>) =>
        WHERE t.id = $1 AND t.user_id = $2`,
       [input.task_id, userId]
     );
-    return result.rows[0] ? { id: result.rows[0].email_id, message_id: result.rows[0].message_id } : null;
+    return result.rows[0]
+      ? { id: result.rows[0].email_id, message_id: result.rows[0].message_id }
+      : null;
   }
 
   return null;
@@ -63,20 +68,31 @@ const computeAutoExecution = (input: {
     return input.goals.autopilotLevel >= 1;
   }
   if (input.riskLevel === 'medium') {
-    return input.goals.autopilotLevel === 2 && input.goals.personalityMode === 'aggressive';
+    return (
+      input.goals.autopilotLevel === 2 &&
+      input.goals.personalityMode === 'aggressive'
+    );
   }
   return false;
 };
 
 const groupWorkflows = (planId: string, steps: AgentPlan['plan']) => {
-  const workflowGroups: Array<{ id: string; name: string; steps: AgentPlan['plan'] }> = [];
-  let current: { id: string; name: string; steps: AgentPlan['plan'] } | null = null;
+  const workflowGroups: Array<{
+    id: string;
+    name: string;
+    steps: AgentPlan['plan'];
+  }> = [];
+  let current: { id: string; name: string; steps: AgentPlan['plan'] } | null =
+    null;
 
   steps.forEach((step) => {
     const name = step.workflow ?? 'General';
     if (!current || current.name !== name) {
       const index = workflowGroups.length;
-      const workflowId = createHash('sha1').update(`${planId}:${index}:${name}`).digest('hex').slice(0, 12);
+      const workflowId = createHash('sha1')
+        .update(`${planId}:${index}:${name}`)
+        .digest('hex')
+        .slice(0, 12);
       current = { id: workflowId, name, steps: [] as AgentPlan['plan'] };
       workflowGroups.push(current);
     }
@@ -95,9 +111,20 @@ export const executePlan = async (input: {
 }) => {
   const results: Array<Record<string, unknown>> = [];
   let failed = 0;
-  const personalityAdjust = input.goals.personalityMode === 'chill' ? 0.05 : input.goals.personalityMode === 'aggressive' ? -0.05 : 0;
-  const autoThreshold = Math.min(Math.max(0.85 + personalityAdjust, 0.75), 0.95);
-  const suggestThreshold = Math.min(Math.max(0.5 + personalityAdjust, 0.4), 0.65);
+  const personalityAdjust =
+    input.goals.personalityMode === 'chill'
+      ? 0.05
+      : input.goals.personalityMode === 'aggressive'
+        ? -0.05
+        : 0;
+  const autoThreshold = Math.min(
+    Math.max(0.85 + personalityAdjust, 0.75),
+    0.95
+  );
+  const suggestThreshold = Math.min(
+    Math.max(0.5 + personalityAdjust, 0.4),
+    0.65
+  );
   const workflowGroups = groupWorkflows(input.planId, input.plan.plan);
 
   for (const workflow of workflowGroups) {
@@ -105,15 +132,21 @@ export const executePlan = async (input: {
       userId: input.userId,
       step: 'workflow_start',
       message: workflow.name,
-      data: { workflowId: workflow.id, planId: input.planId }
+      data: { workflowId: workflow.id, planId: input.planId },
     });
 
     let workflowFailures = 0;
     let actionsCreated = 0;
     let successfulActions = 0;
 
-    const contextCache = new Map<string, Awaited<ReturnType<typeof resolveContext>>>();
-    const previewCache = new Map<string, Awaited<ReturnType<typeof generateActionPreview>>>();
+    const contextCache = new Map<
+      string,
+      Awaited<ReturnType<typeof resolveContext>>
+    >();
+    const previewCache = new Map<
+      string,
+      Awaited<ReturnType<typeof generateActionPreview>>
+    >();
 
     for (const step of workflow.steps) {
       const executionKey = getExecutionKeyForStep(step);
@@ -125,7 +158,7 @@ export const executePlan = async (input: {
           userId: input.userId,
           actionType: step.action,
           actionInput: step.input,
-          emailId: resolvedContext?.id ?? null
+          emailId: resolvedContext?.id ?? null,
         });
         previewCache.set(executionKey, preview);
       } catch (error) {
@@ -134,7 +167,7 @@ export const executePlan = async (input: {
           userId: input.userId,
           step: 'preview_error',
           message: (error as Error).message,
-          data: { workflowId: workflow.id, step: step.action }
+          data: { workflowId: workflow.id, step: step.action },
         });
       }
     }
@@ -148,9 +181,9 @@ export const executePlan = async (input: {
         return {
           actionType: step.action,
           actionInput: step.input,
-          emailId: contextCache.get(executionKey)?.id ?? null
+          emailId: contextCache.get(executionKey)?.id ?? null,
         };
-      })
+      }),
     });
 
     for (const step of workflow.steps) {
@@ -162,12 +195,19 @@ export const executePlan = async (input: {
         ? {
             ...preview,
             workflowSummary: workflowPreview.summary,
-            estimatedSavedTimeMinutes: workflowPreview.estimatedSavedTimeMinutes
+            estimatedSavedTimeMinutes:
+              workflowPreview.estimatedSavedTimeMinutes,
           }
         : null;
 
       if (!tool) {
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'discarded', reason: 'tool_not_found' });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'discarded',
+          reason: 'tool_not_found',
+        });
         await logDecisionTrace({
           userId: input.userId,
           planId: input.planId,
@@ -177,8 +217,8 @@ export const executePlan = async (input: {
             reasoning: { reason: step.reason },
             decision: { action: step.action, workflow: workflow.name },
             action: { execution: 'discard', requiresApproval: false },
-            result: { status: 'tool_not_found' }
-          }
+            result: { status: 'tool_not_found' },
+          },
         });
         continue;
       }
@@ -186,15 +226,27 @@ export const executePlan = async (input: {
       const factors = await getConfidenceFactors({
         userId: input.userId,
         actionType: step.action,
-        emailId: resolvedContext?.id ?? (step.input as any)?.email_id ?? null
+        emailId: resolvedContext?.id ?? (step.input as any)?.email_id ?? null,
       });
       const adjustedConfidence = Math.min(
-        Math.max(step.confidence * factors.historicalAccuracy * factors.recencyWeight * factors.contextSimilarity, 0),
+        Math.max(
+          step.confidence *
+            factors.historicalAccuracy *
+            factors.recencyWeight *
+            factors.contextSimilarity,
+          0
+        ),
         1
       );
 
       if (adjustedConfidence < suggestThreshold) {
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'discarded', reason: 'low_confidence' });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'discarded',
+          reason: 'low_confidence',
+        });
         await logDecisionTrace({
           userId: input.userId,
           planId: input.planId,
@@ -207,23 +259,30 @@ export const executePlan = async (input: {
               historical_accuracy: factors.historicalAccuracy,
               recency_weight: factors.recencyWeight,
               context_similarity: factors.contextSimilarity,
-              adjusted_confidence: adjustedConfidence
+              adjusted_confidence: adjustedConfidence,
             },
             decision: { action: step.action, workflow: workflow.name },
-            action: { execution: 'discard', requiresApproval: tool.requiresApproval },
-            result: { status: 'low_confidence' }
-          }
+            action: {
+              execution: 'discard',
+              requiresApproval: tool.requiresApproval,
+            },
+            result: { status: 'low_confidence' },
+          },
         });
         continue;
       }
 
       const requiresApproval = tool.requiresApproval;
-      const policyAllows = await isAlwaysAllowed(input.userId, step.action, workflow.name);
+      const policyAllows = await isAlwaysAllowed(
+        input.userId,
+        step.action,
+        workflow.name
+      );
       const canExecute = computeAutoExecution({
         goals: input.goals,
         requiresApproval,
         riskLevel: tool.riskLevel,
-        policyAllows
+        policyAllows,
       });
 
       if (adjustedConfidence <= autoThreshold || !canExecute) {
@@ -246,17 +305,24 @@ export const executePlan = async (input: {
               payload: step.input,
               executionKey,
               execution: 'suggest',
-              requiresApproval
+              requiresApproval,
             },
-            statusOverride: 'preview'
+            statusOverride: 'preview',
           });
           if (actionId) {
             actionsCreated += 1;
-            await updateAgentActionStatus(actionId, 'preview', { __workflowPreview: workflowPreview });
+            await updateAgentActionStatus(actionId, 'preview', {
+              __workflowPreview: workflowPreview,
+            });
           }
         }
 
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'suggested' });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'suggested',
+        });
         await logDecisionTrace({
           userId: input.userId,
           planId: input.planId,
@@ -269,18 +335,28 @@ export const executePlan = async (input: {
               historical_accuracy: factors.historicalAccuracy,
               recency_weight: factors.recencyWeight,
               context_similarity: factors.contextSimilarity,
-              adjusted_confidence: adjustedConfidence
+              adjusted_confidence: adjustedConfidence,
             },
             decision: { action: step.action, workflow: workflow.name },
-            action: { execution: 'suggest', requiresApproval, preview: previewPayload },
-            result: { status: 'suggested' }
-          }
+            action: {
+              execution: 'suggest',
+              requiresApproval,
+              preview: previewPayload,
+            },
+            result: { status: 'suggested' },
+          },
         });
         continue;
       }
 
       if (!resolvedContext) {
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'failed', reason: 'missing_context' });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'failed',
+          reason: 'missing_context',
+        });
         failed += 1;
         workflowFailures += 1;
         await logDecisionTrace({
@@ -295,12 +371,12 @@ export const executePlan = async (input: {
               historical_accuracy: factors.historicalAccuracy,
               recency_weight: factors.recencyWeight,
               context_similarity: factors.contextSimilarity,
-              adjusted_confidence: adjustedConfidence
+              adjusted_confidence: adjustedConfidence,
             },
             decision: { action: step.action, workflow: workflow.name },
             action: { execution: 'execute', requiresApproval },
-            result: { status: 'missing_context' }
-          }
+            result: { status: 'missing_context' },
+          },
         });
         continue;
       }
@@ -323,12 +399,18 @@ export const executePlan = async (input: {
           payload: step.input,
           executionKey,
           execution: 'execute',
-          requiresApproval
-        }
+          requiresApproval,
+        },
       });
 
       if (!actionId) {
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'skipped', reason: 'duplicate' });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'skipped',
+          reason: 'duplicate',
+        });
         await logDecisionTrace({
           userId: input.userId,
           planId: input.planId,
@@ -341,12 +423,12 @@ export const executePlan = async (input: {
               historical_accuracy: factors.historicalAccuracy,
               recency_weight: factors.recencyWeight,
               context_similarity: factors.contextSimilarity,
-              adjusted_confidence: adjustedConfidence
+              adjusted_confidence: adjustedConfidence,
             },
             decision: { action: step.action, workflow: workflow.name },
             action: { execution: 'execute', requiresApproval, executionKey },
-            result: { status: 'duplicate' }
-          }
+            result: { status: 'duplicate' },
+          },
         });
         continue;
       }
@@ -361,14 +443,27 @@ export const executePlan = async (input: {
 
       while (attempt < 3 && !success) {
         try {
-          const result = await executeTool(step.action, {
-            userId: input.userId,
-            emailId: resolvedContext.id,
-            messageId: resolvedContext.message_id
-          }, payload);
+          const result = await executeTool(
+            step.action,
+            {
+              userId: input.userId,
+              emailId: resolvedContext.id,
+              messageId: resolvedContext.message_id,
+            },
+            payload
+          );
 
-          await updateAgentActionStatus(actionId, 'executed', { result, __workflowPreview: workflowPreview });
-          results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'executed', result });
+          await updateAgentActionStatus(actionId, 'executed', {
+            result,
+            __workflowPreview: workflowPreview,
+          });
+          results.push({
+            step: step.step,
+            action: step.action,
+            workflow: workflow.name,
+            status: 'executed',
+            result,
+          });
           lastResult = result as Record<string, unknown>;
           success = true;
           successfulActions += 1;
@@ -387,16 +482,24 @@ export const executePlan = async (input: {
           userId: input.userId,
           emailId: resolvedContext.id,
           step: 'executor_failure',
-          message: lastError ?? 'Unknown error'
+          message: lastError ?? 'Unknown error',
         });
-        results.push({ step: step.step, action: step.action, workflow: workflow.name, status: 'failed', reason: lastError });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'failed',
+          reason: lastError,
+        });
       }
 
       const risk = await detectRiskyOutcome({
         userId: input.userId,
         actionType: step.action,
-        result: success ? (lastResult ?? {}) : { error: lastError ?? 'Unknown error' },
-        confidence: adjustedConfidence
+        result: success
+          ? (lastResult ?? {})
+          : { error: lastError ?? 'Unknown error' },
+        confidence: adjustedConfidence,
       });
 
       await logDecisionTrace({
@@ -411,12 +514,21 @@ export const executePlan = async (input: {
             historical_accuracy: factors.historicalAccuracy,
             recency_weight: factors.recencyWeight,
             context_similarity: factors.contextSimilarity,
-            adjusted_confidence: adjustedConfidence
+            adjusted_confidence: adjustedConfidence,
           },
           decision: { action: step.action, workflow: workflow.name },
-          action: { execution: 'execute', requiresApproval, preview: previewPayload, executionKey },
-          result: { status: success ? 'executed' : 'failed', error: lastError ?? undefined, risk }
-        }
+          action: {
+            execution: 'execute',
+            requiresApproval,
+            preview: previewPayload,
+            executionKey,
+          },
+          result: {
+            status: success ? 'executed' : 'failed',
+            error: lastError ?? undefined,
+            risk,
+          },
+        },
       });
     }
 
@@ -424,14 +536,20 @@ export const executePlan = async (input: {
       userId: input.userId,
       workflowId: workflow.id,
       actionsCreated,
-      successfulActions
+      successfulActions,
     });
 
     await logAgentStep({
       userId: input.userId,
       step: 'workflow_end',
       message: workflow.name,
-      data: { workflowId: workflow.id, planId: input.planId, failures: workflowFailures, actionsCreated, successfulActions }
+      data: {
+        workflowId: workflow.id,
+        planId: input.planId,
+        failures: workflowFailures,
+        actionsCreated,
+        successfulActions,
+      },
     });
   }
 

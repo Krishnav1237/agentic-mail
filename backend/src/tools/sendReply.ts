@@ -5,7 +5,7 @@ import { fetchWithTimeout } from '../utils/http.js';
 import { sendGmailDraft } from '../services/gmail.js';
 
 const schema = z.object({
-  draft_id: z.string()
+  draft_id: z.string(),
 });
 
 type Input = z.infer<typeof schema>;
@@ -25,12 +25,15 @@ export const sendReplyTool: ToolDefinition<Input, Output> = {
     if (auth.provider === 'google') {
       await sendGmailDraft(auth.accessToken, input.draft_id);
     } else {
-      await fetchWithTimeout(`https://graph.microsoft.com/v1.0/me/messages/${input.draft_id}/send`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${auth.accessToken}` }
-      });
+      await fetchWithTimeout(
+        `https://graph.microsoft.com/v1.0/me/messages/${input.draft_id}/send`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${auth.accessToken}` },
+        }
+      );
     }
 
     return { sent: true };
-  }
+  },
 };

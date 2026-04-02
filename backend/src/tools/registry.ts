@@ -20,12 +20,18 @@ const registry: Partial<Record<ToolName, ToolDefinition<any, any>>> = {
   archive_email: archiveEmailTool,
   delete_email: deleteEmailTool,
   move_to_folder: moveToFolderTool,
-  label_email: labelEmailTool
+  label_email: labelEmailTool,
 };
 
-export const getToolDefinition = (name: ToolName): ToolDefinition<any, any> | undefined => registry[name];
+export const getToolDefinition = (
+  name: ToolName
+): ToolDefinition<any, any> | undefined => registry[name];
 
-export const executeTool = async (name: ToolName, ctx: ToolContext, payload: unknown) => {
+export const executeTool = async (
+  name: ToolName,
+  ctx: ToolContext,
+  payload: unknown
+) => {
   const tool = registry[name];
   if (!tool) throw new Error(`Unknown tool: ${name}`);
   const input = tool.schema.parse(payload ?? {});

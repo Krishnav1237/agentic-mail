@@ -8,7 +8,13 @@ type PaginationProps = {
 
 const pageSizes = [20, 50, 100];
 
-export default function Pagination({ total, limit, offset, onPageChange, onLimitChange }: PaginationProps) {
+export default function Pagination({
+  total,
+  limit,
+  offset,
+  onPageChange,
+  onLimitChange,
+}: PaginationProps) {
   const pageCount = Math.max(Math.ceil(total / limit), 1);
   const currentPage = Math.min(Math.floor(offset / limit) + 1, pageCount);
   const canPrev = currentPage > 1;
@@ -19,7 +25,9 @@ export default function Pagination({ total, limit, offset, onPageChange, onLimit
   return (
     <div className="glass-card flex flex-col gap-4 rounded-xl px-5 py-4 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400 font-light">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Rows</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+          Rows
+        </span>
         <select
           className="form-select max-w-[92px] py-2"
           value={limit}
@@ -38,7 +46,9 @@ export default function Pagination({ total, limit, offset, onPageChange, onLimit
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="text-sm text-neutral-300">
-          Page <span className="font-semibold text-neutral-100">{currentPage}</span> of {pageCount}
+          Page{' '}
+          <span className="font-semibold text-neutral-100">{currentPage}</span>{' '}
+          of {pageCount}
         </div>
         <div className="flex gap-2">
           <button

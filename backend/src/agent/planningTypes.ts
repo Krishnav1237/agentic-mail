@@ -65,7 +65,12 @@ export type PlannerInput = {
     bestTime: string;
   };
   filtered: FilteredPlannerContext;
-  recentActions: Array<{ id: string; action_type: string; status: string; workflow_name?: string | null }>;
+  recentActions: Array<{
+    id: string;
+    action_type: string;
+    status: string;
+    workflow_name?: string | null;
+  }>;
   remainingBudgetMs?: number;
 };
 

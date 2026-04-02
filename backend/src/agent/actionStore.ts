@@ -13,7 +13,12 @@ export const createAgentAction = async (input: {
   action: PlannedAction;
   statusOverride?: string;
 }): Promise<string | null> => {
-  const idempotencyKey = input.action.executionKey ?? hashPayload({ type: input.action.type, payload: input.action.payload ?? {} });
+  const idempotencyKey =
+    input.action.executionKey ??
+    hashPayload({
+      type: input.action.type,
+      payload: input.action.payload ?? {},
+    });
 
   const existing = await query<{ id: string }>(
     `SELECT id FROM agent_actions WHERE user_id = $1 AND email_id = $2 AND action_type = $3 AND idempotency_key = $4`,
@@ -27,12 +32,13 @@ export const createAgentAction = async (input: {
     __preview: input.action.preview ?? null,
     __meta: {
       base_confidence: input.action.baseConfidence ?? input.action.confidence,
-      adjusted_confidence: input.action.adjustedConfidence ?? input.action.confidence,
+      adjusted_confidence:
+        input.action.adjustedConfidence ?? input.action.confidence,
       historical_accuracy: input.action.historicalAccuracy ?? null,
       recency_weight: input.action.recencyWeight ?? null,
       context_similarity: input.action.contextSimilarity ?? null,
-      execution_key: idempotencyKey
-    }
+      execution_key: idempotencyKey,
+    },
   };
 
   const result = await query<{ id: string }>(
@@ -50,14 +56,18 @@ export const createAgentAction = async (input: {
       input.action.reason,
       input.statusOverride ?? input.action.execution,
       input.action.requiresApproval,
-      idempotencyKey
+      idempotencyKey,
     ]
   );
 
   return result.rows[0].id;
 };
 
-export const updateAgentActionStatus = async (actionId: string, status: string, metadata?: Record<string, unknown>) => {
+export const updateAgentActionStatus = async (
+  actionId: string,
+  status: string,
+  metadata?: Record<string, unknown>
+) => {
   await query(
     `UPDATE agent_actions SET status = $1, action_payload = COALESCE(action_payload, '{}'::jsonb) || $2::jsonb, updated_at = now() WHERE id = $3`,
     [status, JSON.stringify(metadata ?? {}), actionId]

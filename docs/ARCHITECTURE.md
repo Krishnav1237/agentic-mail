@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains how Student Intelligence Layer is built, how data moves through the system, and where each production concern lives.
+This document explains how Inbox Intelligence Layer is built, how data moves through the system, and where each production concern lives.
 
 ## System Overview
 
@@ -132,7 +132,7 @@ sequenceDiagram
 
 ## Agent Loop
 
-The agent loop is implemented in `/Users/HP/outlook-bot/backend/src/agent/coreLoop.ts`.
+The agent loop is implemented in `backend/src/agent/coreLoop.ts`.
 
 Logical stages:
 
@@ -167,7 +167,7 @@ graph LR
 
 ## Key Agent Modules
 
-### `/Users/HP/outlook-bot/backend/src/agent/contextFilter.ts`
+### `backend/src/agent/contextFilter.ts`
 
 Reduces noise before planning:
 
@@ -176,7 +176,7 @@ Reduces noise before planning:
 - removes low-signal noise
 - returns diagnostics for observability
 
-### `/Users/HP/outlook-bot/backend/src/agent/stateManager.ts`
+### `backend/src/agent/stateManager.ts`
 
 Avoids unnecessary LLM work:
 
@@ -187,7 +187,7 @@ Avoids unnecessary LLM work:
 - stores last hash in Redis
 - skips heavy planning if nothing materially changed
 
-### `/Users/HP/outlook-bot/backend/src/agent/fastPlanner.ts`
+### `backend/src/agent/fastPlanner.ts`
 
 Deterministic planner path:
 
@@ -197,18 +197,18 @@ Deterministic planner path:
 
 Rule modules:
 
-- `/Users/HP/outlook-bot/backend/src/planner/rules/recruiterRules.ts`
-- `/Users/HP/outlook-bot/backend/src/planner/rules/schedulingRules.ts`
-- `/Users/HP/outlook-bot/backend/src/planner/rules/cleanupRules.ts`
+- `backend/src/planner/rules/recruiterRules.ts`
+- `backend/src/planner/rules/schedulingRules.ts`
+- `backend/src/planner/rules/cleanupRules.ts`
 
-### `/Users/HP/outlook-bot/backend/src/agent/heavyPlanner.ts`
+### `backend/src/agent/heavyPlanner.ts`
 
 LLM-backed planner path:
 
 - only runs when state changed and budget allows
 - sees filtered context, goals, strategist output, intents, and energy context
 
-### `/Users/HP/outlook-bot/backend/src/agent/planMerge.ts`
+### `backend/src/agent/planMerge.ts`
 
 Guarantees stable action sequences:
 
@@ -217,7 +217,7 @@ Guarantees stable action sequences:
 - preserves order
 - generates stable execution keys
 
-### `/Users/HP/outlook-bot/backend/src/agent/preview.ts`
+### `backend/src/agent/preview.ts`
 
 Human-aligned control layer:
 
@@ -225,7 +225,7 @@ Human-aligned control layer:
 - generates workflow previews
 - supports `approve`, `modify`, `cancel`, and `approve_all`
 
-### `/Users/HP/outlook-bot/backend/src/agent/executor.ts`
+### `backend/src/agent/executor.ts`
 
 Executes deduped plans:
 
@@ -236,7 +236,7 @@ Executes deduped plans:
 - preserves workflow ordering
 - prevents duplicate action inserts
 
-### `/Users/HP/outlook-bot/backend/src/agent/recovery.ts`
+### `backend/src/agent/recovery.ts`
 
 Safety and reversibility:
 
@@ -244,7 +244,7 @@ Safety and reversibility:
 - rollback workflows
 - detect risky outcomes
 
-### `/Users/HP/outlook-bot/backend/src/agent/strategist.ts`
+### `backend/src/agent/strategist.ts`
 
 Higher-level behavior tuning:
 
@@ -266,7 +266,7 @@ Planner inputs are assembled from:
 - memory summaries
 - energy context
 
-Shared planner typing is defined in `/Users/HP/outlook-bot/backend/src/agent/planningTypes.ts`.
+Shared planner typing is defined in `backend/src/agent/planningTypes.ts`.
 
 ## Tool System
 
@@ -274,8 +274,8 @@ The tool registry is the boundary between agent decisions and real side effects.
 
 Core files:
 
-- `/Users/HP/outlook-bot/backend/src/tools/types.ts`
-- `/Users/HP/outlook-bot/backend/src/tools/registry.ts`
+- `backend/src/tools/types.ts`
+- `backend/src/tools/registry.ts`
 
 Current tools:
 
@@ -324,8 +324,8 @@ Memory is split across product stores rather than a single vector-only store.
 
 Relevant files:
 
-- `/Users/HP/outlook-bot/backend/src/memory/summary.ts`
-- `/Users/HP/outlook-bot/backend/src/memory/optimizer.ts`
+- `backend/src/memory/summary.ts`
+- `backend/src/memory/optimizer.ts`
 
 Memory optimizer rules:
 
@@ -345,9 +345,9 @@ Confidence is not static. Execution confidence is adjusted using:
 
 Policy and confidence files:
 
-- `/Users/HP/outlook-bot/backend/src/agent/policy.ts`
-- `/Users/HP/outlook-bot/backend/src/agent/confidence.ts`
-- `/Users/HP/outlook-bot/backend/src/services/agentFeedback.ts`
+- `backend/src/agent/policy.ts`
+- `backend/src/agent/confidence.ts`
+- `backend/src/services/agentFeedback.ts`
 
 ## Observability and Cost
 
@@ -355,9 +355,9 @@ AI spend is tracked explicitly.
 
 Files:
 
-- `/Users/HP/outlook-bot/backend/src/observability/costTracker.ts`
-- `/Users/HP/outlook-bot/backend/src/ai/llmProviders.ts`
-- `/Users/HP/outlook-bot/backend/src/services/ai.ts`
+- `backend/src/observability/costTracker.ts`
+- `backend/src/ai/llmProviders.ts`
+- `backend/src/services/ai.ts`
 
 Recorded metrics:
 
@@ -382,9 +382,9 @@ The dashboard and agent pages receive additive “magic moment” fields that ma
 
 Implemented in:
 
-- `/Users/HP/outlook-bot/backend/src/agent/magicOutput.ts`
-- `/Users/HP/outlook-bot/backend/src/routes/tasks.ts`
-- `/Users/HP/outlook-bot/backend/src/routes/agent.ts`
+- `backend/src/agent/magicOutput.ts`
+- `backend/src/routes/tasks.ts`
+- `backend/src/routes/agent.ts`
 
 ## Database Model
 
@@ -408,8 +408,8 @@ Primary tables:
 
 Schema and migrations:
 
-- `/Users/HP/outlook-bot/backend/db/schema.sql`
-- `/Users/HP/outlook-bot/backend/db/migrations/`
+- `backend/db/schema.sql`
+- `backend/db/migrations/`
 
 ## Scale and Safety Principles
 
@@ -422,4 +422,3 @@ This architecture is intentionally conservative:
 - approval before risky operations
 - all actions persisted and traceable
 - rollback pathways for reversible operations
-

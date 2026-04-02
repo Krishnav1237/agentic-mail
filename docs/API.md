@@ -581,4 +581,3 @@ Response:
 ### `GET /.well-known/security.txt`
 
 Serves security disclosure metadata.
-

@@ -2,23 +2,41 @@ import { query } from '../db/index.js';
 import { getUserPreferences, updateUserPreferences } from './preferences.js';
 import { recordAlwaysAllow } from '../agent/policy.js';
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
 
 export const recordAgentFeedback = async (input: {
   userId: string;
   actionId: string;
-  status: 'accepted' | 'approved' | 'approve' | 'rejected' | 'reject' | 'modified' | 'always_allow' | 'cancel' | 'cancelled';
+  status:
+    | 'accepted'
+    | 'approved'
+    | 'approve'
+    | 'rejected'
+    | 'reject'
+    | 'modified'
+    | 'always_allow'
+    | 'cancel'
+    | 'cancelled';
   notes?: string;
   metadata?: Record<string, unknown>;
 }) => {
   const normalizedStatus =
-    input.status === 'approve' ? 'approved'
-      : input.status === 'reject' ? 'rejected'
-      : input.status === 'accepted' ? 'approved'
-      : input.status === 'cancel' ? 'cancelled'
-      : input.status;
+    input.status === 'approve'
+      ? 'approved'
+      : input.status === 'reject'
+        ? 'rejected'
+        : input.status === 'accepted'
+          ? 'approved'
+          : input.status === 'cancel'
+            ? 'cancelled'
+            : input.status;
 
-  const actionResult = await query<{ action_payload: Record<string, unknown>; action_type: string; workflow_name: string | null }>(
+  const actionResult = await query<{
+    action_payload: Record<string, unknown>;
+    action_type: string;
+    workflow_name: string | null;
+  }>(
     'SELECT action_payload, action_type, workflow_name FROM agent_actions WHERE id = $1 AND user_id = $2',
     [input.actionId, input.userId]
   );
@@ -34,7 +52,11 @@ export const recordAgentFeedback = async (input: {
     [
       input.userId,
       `agent_${normalizedStatus}`,
-      JSON.stringify({ actionId: input.actionId, ...(input.metadata ?? {}), notes: input.notes ?? null })
+      JSON.stringify({
+        actionId: input.actionId,
+        ...(input.metadata ?? {}),
+        notes: input.notes ?? null,
+      }),
     ]
   );
 
@@ -44,11 +66,12 @@ export const recordAgentFeedback = async (input: {
   const category = (payload as any).category as string | undefined;
   if (category) {
     const weights = await getUserPreferences(input.userId);
-    const delta = normalizedStatus === 'approved' || normalizedStatus === 'always_allow'
-      ? 0.03
-      : normalizedStatus === 'rejected' || normalizedStatus === 'cancelled'
-        ? -0.03
-        : 0;
+    const delta =
+      normalizedStatus === 'approved' || normalizedStatus === 'always_allow'
+        ? 0.03
+        : normalizedStatus === 'rejected' || normalizedStatus === 'cancelled'
+          ? -0.03
+          : 0;
     if (delta !== 0) {
       weights[category] = clamp((weights[category] ?? 1) + delta, 0.2, 2);
       await updateUserPreferences(input.userId, weights);
@@ -56,7 +79,8 @@ export const recordAgentFeedback = async (input: {
   }
 
   if (normalizedStatus === 'always_allow') {
-    const fallbackType = actionType ?? (input.metadata?.['action_type'] as string | undefined);
+    const fallbackType =
+      actionType ?? (input.metadata?.['action_type'] as string | undefined);
     if (fallbackType) {
       await recordAlwaysAllow(input.userId, fallbackType, workflowName);
     }

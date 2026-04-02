@@ -6,8 +6,15 @@ import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import TaskRow from '../components/TaskRow';
-import { addToCalendar, generateReply, getTasks, markImportant, snoozeTask, type Task } from '../lib/api';
-import { useApp } from '../lib/appContext';
+import {
+  addToCalendar,
+  generateReply,
+  getTasks,
+  markImportant,
+  snoozeTask,
+  type Task,
+} from '../lib/api';
+import { useApp } from '../lib/useApp';
 import { formatDate } from '../lib/presentation';
 
 const parseNumber = (value: string | null, fallback: number) => {
@@ -46,7 +53,7 @@ export default function DeadlinesPage() {
       status: 'open',
       dueOnly: true,
       sort: 'due',
-      query: query || undefined
+      query: query || undefined,
     })
       .then((data) => {
         setTasks(data.tasks);
@@ -59,7 +66,10 @@ export default function DeadlinesPage() {
       .finally(() => setLoading(false));
   }, [hasToken, limit, offset, query, setStatus]);
 
-  const handleAction = async (label: string, action: () => Promise<unknown>) => {
+  const handleAction = async (
+    label: string,
+    action: () => Promise<unknown>
+  ) => {
     setStatus(`${label}...`);
     try {
       await action();
@@ -71,14 +81,21 @@ export default function DeadlinesPage() {
   };
 
   const grouped = useMemo(() => groupByDate(tasks), [tasks]);
-  const stats = useMemo(() => ({
-    today: tasks.filter((task) => task.due_at && new Date(task.due_at).toDateString() === new Date().toDateString()).length,
-    soon: tasks.filter((task) => {
-      if (!task.due_at) return false;
-      const diff = new Date(task.due_at).getTime() - Date.now();
-      return diff > 0 && diff <= 72 * 60 * 60 * 1000;
-    }).length
-  }), [tasks]);
+  const stats = useMemo(
+    () => ({
+      today: tasks.filter(
+        (task) =>
+          task.due_at &&
+          new Date(task.due_at).toDateString() === new Date().toDateString()
+      ).length,
+      soon: tasks.filter((task) => {
+        if (!task.due_at) return false;
+        const diff = new Date(task.due_at).getTime() - Date.now();
+        return diff > 0 && diff <= 72 * 60 * 60 * 1000;
+      }).length,
+    }),
+    [tasks]
+  );
 
   if (!hasToken) {
     return <ConnectPrompt />;
@@ -91,10 +108,26 @@ export default function DeadlinesPage() {
         title="Plan work against the actual clock."
         description="This view removes inbox noise and surfaces only date-bound work, grouped in a way that helps you sequence the next few days instead of reacting late."
         stats={[
-          { label: 'Total deadlines', value: String(total), helper: 'All open tasks with due dates' },
-          { label: 'Due today', value: String(stats.today), helper: 'Immediate workload' },
-          { label: 'Due in 72h', value: String(stats.soon), helper: 'Short-window pressure' },
-          { label: 'Groups visible', value: String(grouped.length), helper: 'Date buckets on this page' }
+          {
+            label: 'Total deadlines',
+            value: String(total),
+            helper: 'All open tasks with due dates',
+          },
+          {
+            label: 'Due today',
+            value: String(stats.today),
+            helper: 'Immediate workload',
+          },
+          {
+            label: 'Due in 72h',
+            value: String(stats.soon),
+            helper: 'Short-window pressure',
+          },
+          {
+            label: 'Groups visible',
+            value: String(grouped.length),
+            helper: 'Date buckets on this page',
+          },
         ]}
       />
 
@@ -107,14 +140,25 @@ export default function DeadlinesPage() {
           className="form-input mt-4"
           placeholder="Search deadlines by title or details"
           value={query}
-          onChange={(event) => setParams({ ...Object.fromEntries(params.entries()), query: event.target.value, offset: '0' })}
+          onChange={(event) =>
+            setParams({
+              ...Object.fromEntries(params.entries()),
+              query: event.target.value,
+              offset: '0',
+            })
+          }
         />
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading deadlines...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">
+          Loading deadlines...
+        </div>
       ) : tasks.length === 0 ? (
-        <EmptyState title="No deadlines yet" message="You&apos;re clear for now. Once the inbox yields date-bound work, it will appear here grouped by day." />
+        <EmptyState
+          title="No deadlines yet"
+          message="You're clear for now. Once the inbox yields date-bound work, it will appear here grouped by day."
+        />
       ) : (
         <div className="space-y-6">
           {grouped.map(([date, items]) => (
@@ -130,10 +174,24 @@ export default function DeadlinesPage() {
                 <TaskRow
                   key={task.id}
                   task={task}
-                  onAddCalendar={(item) => handleAction('Calendar event created', () => addToCalendar(item.id))}
-                  onMarkImportant={(item) => handleAction('Marked important', () => markImportant(item.message_id))}
-                  onGenerateReply={(item) => handleAction('Reply drafted', () => generateReply(item.message_id))}
-                  onSnooze={(item) => handleAction('Snoozed', () => snoozeTask(item.id))}
+                  onAddCalendar={(item) =>
+                    handleAction('Calendar event created', () =>
+                      addToCalendar(item.id)
+                    )
+                  }
+                  onMarkImportant={(item) =>
+                    handleAction('Marked important', () =>
+                      markImportant(item.message_id)
+                    )
+                  }
+                  onGenerateReply={(item) =>
+                    handleAction('Reply drafted', () =>
+                      generateReply(item.message_id)
+                    )
+                  }
+                  onSnooze={(item) =>
+                    handleAction('Snoozed', () => snoozeTask(item.id))
+                  }
                 />
               ))}
             </section>
@@ -145,8 +203,19 @@ export default function DeadlinesPage() {
         total={total}
         limit={limit}
         offset={offset}
-        onPageChange={(nextOffset) => setParams({ ...Object.fromEntries(params.entries()), offset: String(nextOffset) })}
-        onLimitChange={(nextLimit) => setParams({ ...Object.fromEntries(params.entries()), limit: String(nextLimit), offset: '0' })}
+        onPageChange={(nextOffset) =>
+          setParams({
+            ...Object.fromEntries(params.entries()),
+            offset: String(nextOffset),
+          })
+        }
+        onLimitChange={(nextLimit) =>
+          setParams({
+            ...Object.fromEntries(params.entries()),
+            limit: String(nextLimit),
+            offset: '0',
+          })
+        }
       />
     </div>
   );

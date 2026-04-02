@@ -56,7 +56,10 @@ const buildTaskFilters = (userId: string, input: TaskQuery) => {
   }
 
   if (input.category) {
-    const categories = input.category.split(',').map((item) => item.trim()).filter(Boolean);
+    const categories = input.category
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
     if (categories.length > 1) {
       conditions.push(`t.category = ANY(${addParam(categories)})`);
     } else if (categories.length === 1) {
@@ -104,9 +107,14 @@ const buildTaskOrder = (sort?: TaskQuery['sort']) => {
   return 't.priority_score DESC, t.due_at ASC NULLS LAST';
 };
 
-export const listTasksPaginated = async (userId: string, input: TaskQuery): Promise<TaskListResult> => {
+export const listTasksPaginated = async (
+  userId: string,
+  input: TaskQuery
+): Promise<TaskListResult> => {
   const { conditions, params } = buildTaskFilters(userId, input);
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = conditions.length
+    ? `WHERE ${conditions.join(' AND ')}`
+    : '';
 
   const countResult = await query<{ total: number }>(
     `SELECT COUNT(*)::int as total
@@ -133,11 +141,13 @@ export const listTasksPaginated = async (userId: string, input: TaskQuery): Prom
     tasks: listResult.rows,
     total: countResult.rows[0]?.total ?? 0,
     limit: input.limit,
-    offset: input.offset
+    offset: input.offset,
   };
 };
 
-export const dashboardSections = async (userId: string): Promise<DashboardSections> => {
+export const dashboardSections = async (
+  userId: string
+): Promise<DashboardSections> => {
   const critical = await query<TaskRow>(
     `SELECT t.id, t.email_id, e.message_id, t.title, t.description, t.due_at, t.link, t.category, t.priority_score::float as priority_score, t.status, t.created_at
      FROM extracted_tasks t
@@ -191,6 +201,6 @@ export const dashboardSections = async (userId: string): Promise<DashboardSectio
     criticalToday: critical.rows,
     upcomingDeadlines: upcoming.rows,
     opportunities: opportunities.rows,
-    lowPriority: lowPriority.rows
+    lowPriority: lowPriority.rows,
   };
 };

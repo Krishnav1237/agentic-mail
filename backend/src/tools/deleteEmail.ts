@@ -6,7 +6,7 @@ import { moveMessage } from '../services/graph.js';
 import { resolveOutlookFolderId } from './providerConfig.js';
 
 const schema = z.object({
-  reason: z.string().max(240).optional()
+  reason: z.string().max(240).optional(),
 });
 
 type Input = z.infer<typeof schema>;
@@ -27,8 +27,11 @@ export const deleteEmailTool: ToolDefinition<Input, Output> = {
       return { deleted: true, destination: 'trash' };
     }
 
-    const deletedFolderId = await resolveOutlookFolderId(auth.accessToken, 'deleteditems');
+    const deletedFolderId = await resolveOutlookFolderId(
+      auth.accessToken,
+      'deleteditems'
+    );
     await moveMessage(auth.accessToken, ctx.messageId, deletedFolderId);
     return { deleted: true, destination: 'deleteditems' };
-  }
+  },
 };

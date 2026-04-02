@@ -25,8 +25,11 @@ export const archiveEmailTool: ToolDefinition<Input, Output> = {
       return { archived: true, destination: 'archive' };
     }
 
-    const archiveFolderId = await resolveOutlookFolderId(auth.accessToken, 'archive');
+    const archiveFolderId = await resolveOutlookFolderId(
+      auth.accessToken,
+      'archive'
+    );
     await moveMessage(auth.accessToken, ctx.messageId, archiveFolderId);
     return { archived: true, destination: 'archive' };
-  }
+  },
 };

@@ -21,18 +21,23 @@ export const markImportantTool: ToolDefinition<Input, Output> = {
   execute: async (ctx: ToolContext) => {
     const auth = await getAuthContext(ctx.userId);
     if (auth.provider === 'google') {
-      await modifyGmailMessage(auth.accessToken, ctx.messageId, { addLabelIds: ['IMPORTANT', 'STARRED'] });
-    } else {
-      const response = await fetchWithTimeout(`https://graph.microsoft.com/v1.0/me/messages/${ctx.messageId}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ importance: 'high' })
+      await modifyGmailMessage(auth.accessToken, ctx.messageId, {
+        addLabelIds: ['IMPORTANT', 'STARRED'],
       });
+    } else {
+      const response = await fetchWithTimeout(
+        `https://graph.microsoft.com/v1.0/me/messages/${ctx.messageId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${auth.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ importance: 'high' }),
+        }
+      );
       await safeJson<any>(response);
     }
     return { messageId: ctx.messageId };
-  }
+  },
 };

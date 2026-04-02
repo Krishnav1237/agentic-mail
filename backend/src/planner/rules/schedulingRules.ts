@@ -1,4 +1,8 @@
-import type { PartialPlanStep, PlannerInput, RuleResult } from '../../agent/planningTypes.js';
+import type {
+  PartialPlanStep,
+  PlannerInput,
+  RuleResult,
+} from '../../agent/planningTypes.js';
 
 const isDueSoon = (value?: string | null) => {
   if (!value) return false;
@@ -17,13 +21,17 @@ export const schedulingRules = (input: PlannerInput): RuleResult => {
         action: 'create_calendar_event',
         input: { task_id: task.id },
         reason: 'Assignments due soon should be scheduled on the calendar.',
-        confidence: 0.88
+        confidence: 0.88,
       });
     }
   }
 
   for (const email of input.filtered.emails) {
-    if (/(schedule|availability|meeting|calendar|office hours)/i.test(`${email.subject} ${email.preview ?? ''}`)) {
+    if (
+      /(schedule|availability|meeting|calendar|office hours)/i.test(
+        `${email.subject} ${email.preview ?? ''}`
+      )
+    ) {
       steps.push({
         workflow: 'Scheduling Triage',
         action: 'create_task',
@@ -31,16 +39,16 @@ export const schedulingRules = (input: PlannerInput): RuleResult => {
           email_id: email.id,
           title: `Respond to scheduling request: ${email.subject}`,
           category: 'academic',
-          priority: 76
+          priority: 76,
         },
         reason: 'Scheduling-related email likely needs a follow-up action.',
-        confidence: 0.79
+        confidence: 0.79,
       });
     }
   }
 
   return {
     steps,
-    diagnostics: steps.length > 0 ? [`scheduling:${steps.length}`] : []
+    diagnostics: steps.length > 0 ? [`scheduling:${steps.length}`] : [],
   };
 };

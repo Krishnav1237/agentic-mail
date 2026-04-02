@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import { redisConnection } from '../config/redis.js';
+import { queueRedisConnection } from '../config/redis.js';
 import { syncUserInbox } from '../services/ingestion.js';
 import { query } from '../db/index.js';
 import { ingestionQueue } from '../queues/index.js';
@@ -12,7 +12,11 @@ export const startIngestionWorker = () => {
       if (job.name === 'sync-all') {
         const result = await query<{ id: string }>('SELECT id FROM users');
         for (const row of result.rows) {
-          await ingestionQueue.add('sync-user', { userId: row.id }, { attempts: 3, backoff: { type: 'exponential', delay: 2000 } });
+          await ingestionQueue.add(
+            'sync-user',
+            { userId: row.id },
+            { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+          );
         }
         return { queued: result.rowCount };
       }
@@ -20,7 +24,7 @@ export const startIngestionWorker = () => {
       const { userId } = job.data as { userId: string };
       return syncUserInbox(userId);
     },
-    { connection: redisConnection }
+    { connection: queueRedisConnection }
   );
 
   worker.on('failed', (job, err) => {

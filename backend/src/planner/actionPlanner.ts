@@ -2,7 +2,10 @@ import type { AgentDecision } from '../ai/schemas.js';
 import type { PlannedAction } from '../agent/types.js';
 import { getToolDefinition } from '../tools/registry.js';
 
-export const planActions = (decision: AgentDecision, autopilotLevel: number): PlannedAction[] => {
+export const planActions = (
+  decision: AgentDecision,
+  autopilotLevel: number
+): PlannedAction[] => {
   return decision.actions.map((action) => {
     if (action.type === 'ignore') {
       return {
@@ -11,7 +14,7 @@ export const planActions = (decision: AgentDecision, autopilotLevel: number): Pl
         confidence: action.confidence,
         payload: action.payload,
         execution: 'ignore',
-        requiresApproval: false
+        requiresApproval: false,
       };
     }
 
@@ -21,7 +24,7 @@ export const planActions = (decision: AgentDecision, autopilotLevel: number): Pl
 
     const canExecute =
       autopilotLevel >= 1 &&
-      (!requiresApproval) &&
+      !requiresApproval &&
       (autopilotLevel === 2 || safe);
 
     if (action.confidence > 0.85 && canExecute) {
@@ -31,7 +34,7 @@ export const planActions = (decision: AgentDecision, autopilotLevel: number): Pl
         confidence: action.confidence,
         payload: action.payload,
         execution: 'execute',
-        requiresApproval
+        requiresApproval,
       };
     }
 
@@ -42,7 +45,7 @@ export const planActions = (decision: AgentDecision, autopilotLevel: number): Pl
         confidence: action.confidence,
         payload: action.payload,
         execution: 'suggest',
-        requiresApproval
+        requiresApproval,
       };
     }
 
@@ -52,7 +55,7 @@ export const planActions = (decision: AgentDecision, autopilotLevel: number): Pl
       confidence: action.confidence,
       payload: action.payload,
       execution: 'ignore',
-      requiresApproval
+      requiresApproval,
     };
   });
 };

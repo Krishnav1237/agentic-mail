@@ -11,15 +11,18 @@ export const runReflection = async (input: {
   plan: unknown;
   results: unknown;
 }) => {
-  const reflection = await reflectOnExecution({
-    goals: input.goals.goals,
-    context: input.context,
-    plan: input.plan,
-    results: input.results
-  }, {
-    userId: input.userId,
-    operation: 'execution_reflection'
-  });
+  const reflection = await reflectOnExecution(
+    {
+      goals: input.goals.goals,
+      context: input.context,
+      plan: input.plan,
+      results: input.results,
+    },
+    {
+      userId: input.userId,
+      operation: 'execution_reflection',
+    }
+  );
 
   await query(
     `INSERT INTO agent_reflections (user_id, plan_id, reflection)
@@ -30,7 +33,7 @@ export const runReflection = async (input: {
   await addEpisode({
     userId: input.userId,
     context: { planId: input.planId, context: input.context, plan: input.plan },
-    outcome: { results: input.results, reflection }
+    outcome: { results: input.results, reflection },
   });
 
   return reflection;

@@ -6,8 +6,13 @@ import EmailRow from '../components/EmailRow';
 import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
-import { generateReply, getEmails, markImportant, type EmailRow as Email } from '../lib/api';
-import { useApp } from '../lib/appContext';
+import {
+  generateReply,
+  getEmails,
+  markImportant,
+  type EmailRow as Email,
+} from '../lib/api';
+import { useApp } from '../lib/useApp';
 
 const parseNumber = (value: string | null, fallback: number) => {
   if (!value) return fallback;
@@ -36,7 +41,7 @@ export default function InboxPage() {
       offset,
       query: query || undefined,
       classification: classification || undefined,
-      status: status || undefined
+      status: status || undefined,
     })
       .then((data) => {
         setEmails(data.emails);
@@ -49,7 +54,10 @@ export default function InboxPage() {
       .finally(() => setLoading(false));
   }, [hasToken, limit, offset, query, classification, status, setStatus]);
 
-  const handleAction = async (label: string, action: () => Promise<unknown>) => {
+  const handleAction = async (
+    label: string,
+    action: () => Promise<unknown>
+  ) => {
     setStatus(`${label}...`);
     try {
       await action();
@@ -60,11 +68,14 @@ export default function InboxPage() {
     }
   };
 
-  const stats = useMemo(() => ({
-    processed: emails.filter((email) => email.status === 'processed').length,
-    pending: emails.filter((email) => email.status === 'pending').length,
-    highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 2).length
-  }), [emails]);
+  const stats = useMemo(
+    () => ({
+      processed: emails.filter((email) => email.status === 'processed').length,
+      pending: emails.filter((email) => email.status === 'pending').length,
+      highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 2).length,
+    }),
+    [emails]
+  );
 
   if (!hasToken) {
     return <ConnectPrompt />;
@@ -77,10 +88,26 @@ export default function InboxPage() {
         title="Inspect what the system saw in the inbox."
         description="This is the structured email view: classification, confidence, sender context, and direct action controls without making you read raw message lists all day."
         stats={[
-          { label: 'Inbox rows', value: String(total), helper: 'Server-paginated email list' },
-          { label: 'Processed on page', value: String(stats.processed), helper: 'Already interpreted by the system' },
-          { label: 'Pending on page', value: String(stats.pending), helper: 'Queued or still processing' },
-          { label: 'High-signal on page', value: String(stats.highSignal), helper: 'AI score above 2.00' }
+          {
+            label: 'Inbox rows',
+            value: String(total),
+            helper: 'Server-paginated email list',
+          },
+          {
+            label: 'Processed on page',
+            value: String(stats.processed),
+            helper: 'Already interpreted by the system',
+          },
+          {
+            label: 'Pending on page',
+            value: String(stats.pending),
+            helper: 'Queued or still processing',
+          },
+          {
+            label: 'High-signal on page',
+            value: String(stats.highSignal),
+            helper: 'AI score above 2.00',
+          },
         ]}
       />
 
@@ -94,16 +121,30 @@ export default function InboxPage() {
             className="form-input mt-4"
             placeholder="Search sender, subject, or message context"
             value={query}
-            onChange={(event) => setParams({ ...Object.fromEntries(params.entries()), query: event.target.value, offset: '0' })}
+            onChange={(event) =>
+              setParams({
+                ...Object.fromEntries(params.entries()),
+                query: event.target.value,
+                offset: '0',
+              })
+            }
           />
         </div>
 
         <div className="glass-card rounded-xl p-5">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Classification</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+            Classification
+          </label>
           <select
             className="form-select mt-4"
             value={classification}
-            onChange={(event) => setParams({ ...Object.fromEntries(params.entries()), classification: event.target.value, offset: '0' })}
+            onChange={(event) =>
+              setParams({
+                ...Object.fromEntries(params.entries()),
+                classification: event.target.value,
+                offset: '0',
+              })
+            }
           >
             <option value="">All</option>
             <option value="assignment">Assignment</option>
@@ -117,11 +158,19 @@ export default function InboxPage() {
         </div>
 
         <div className="glass-card rounded-xl p-5">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Processing status</label>
+          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+            Processing status
+          </label>
           <select
             className="form-select mt-4"
             value={status}
-            onChange={(event) => setParams({ ...Object.fromEntries(params.entries()), status: event.target.value, offset: '0' })}
+            onChange={(event) =>
+              setParams({
+                ...Object.fromEntries(params.entries()),
+                status: event.target.value,
+                offset: '0',
+              })
+            }
           >
             <option value="">All</option>
             <option value="pending">Pending</option>
@@ -147,17 +196,30 @@ export default function InboxPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading inbox...</div>
+        <div className="glass-card rounded-xl p-10 text-center text-neutral-300">
+          Loading inbox...
+        </div>
       ) : emails.length === 0 ? (
-        <EmptyState title="No emails found" message="Try adjusting filters or sync again. This view is built to stay useful even as your inbox grows." />
+        <EmptyState
+          title="No emails found"
+          message="Try adjusting filters or sync again. This view is built to stay useful even as your inbox grows."
+        />
       ) : (
         <div className="space-y-3">
           {emails.map((email) => (
             <EmailRow
               key={email.id}
               email={email}
-              onMarkImportant={(item) => handleAction('Marked important', () => markImportant(item.message_id))}
-              onDraftReply={(item) => handleAction('Reply drafted', () => generateReply(item.message_id))}
+              onMarkImportant={(item) =>
+                handleAction('Marked important', () =>
+                  markImportant(item.message_id)
+                )
+              }
+              onDraftReply={(item) =>
+                handleAction('Reply drafted', () =>
+                  generateReply(item.message_id)
+                )
+              }
             />
           ))}
         </div>
@@ -167,8 +229,19 @@ export default function InboxPage() {
         total={total}
         limit={limit}
         offset={offset}
-        onPageChange={(nextOffset) => setParams({ ...Object.fromEntries(params.entries()), offset: String(nextOffset) })}
-        onLimitChange={(nextLimit) => setParams({ ...Object.fromEntries(params.entries()), limit: String(nextLimit), offset: '0' })}
+        onPageChange={(nextOffset) =>
+          setParams({
+            ...Object.fromEntries(params.entries()),
+            offset: String(nextOffset),
+          })
+        }
+        onLimitChange={(nextLimit) =>
+          setParams({
+            ...Object.fromEntries(params.entries()),
+            limit: String(nextLimit),
+            offset: '0',
+          })
+        }
       />
     </div>
   );

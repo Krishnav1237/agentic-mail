@@ -15,8 +15,8 @@ export const reasonAboutEmail = async (input: {
       senderEmail: input.email.senderEmail,
       bodyPreview: input.email.bodyPreview,
       receivedAt: input.email.receivedAt,
-      importance: input.email.importance
+      importance: input.email.importance,
     },
-    memorySummary: input.memorySummary
+    memorySummary: input.memorySummary,
   });
 };

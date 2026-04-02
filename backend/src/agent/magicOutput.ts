@@ -1,4 +1,5 @@
 import { getToolDefinition } from '../tools/registry.js';
+import type { ToolName } from '../tools/types.js';
 
 type ActionLike = {
   id: string;
@@ -9,26 +10,35 @@ type ActionLike = {
 };
 
 const completedStatuses = new Set(['executed', 'approved', 'always_allow']);
-const pendingStatuses = new Set(['preview', 'suggest', 'suggested', 'modified']);
+const pendingStatuses = new Set([
+  'preview',
+  'suggest',
+  'suggested',
+  'modified',
+]);
 
 export const summarizeActions = <T extends ActionLike>(actions: T[]) => {
-  const groups = new Map<string, {
-    workflowId: string;
-    workflowName: string;
-    actions: T[];
-    completed: number;
-    pending: number;
-    savedSeconds: number;
-  }>();
+  const groups = new Map<
+    string,
+    {
+      workflowId: string;
+      workflowName: string;
+      actions: T[];
+      completed: number;
+      pending: number;
+      savedSeconds: number;
+    }
+  >();
 
   let savedSeconds = 0;
   let automationsCompleted = 0;
   let approvalsPending = 0;
 
   for (const action of actions) {
-    const workflowId = action.workflow_id ?? `ungrouped:${action.workflow_name ?? 'General'}`;
+    const workflowId =
+      action.workflow_id ?? `ungrouped:${action.workflow_name ?? 'General'}`;
     const workflowName = action.workflow_name ?? 'General';
-    const tool = getToolDefinition(action.action_type as any);
+    const tool = getToolDefinition(action.action_type as ToolName);
     const estimatedSeconds = tool?.estimatedSecondsSaved ?? 0;
     const completed = completedStatuses.has(action.status);
     const pending = pendingStatuses.has(action.status);
@@ -40,7 +50,7 @@ export const summarizeActions = <T extends ActionLike>(actions: T[]) => {
         actions: [],
         completed: 0,
         pending: 0,
-        savedSeconds: 0
+        savedSeconds: 0,
       });
     }
 
@@ -65,8 +75,8 @@ export const summarizeActions = <T extends ActionLike>(actions: T[]) => {
     counts: {
       total: group.actions.length,
       completed: group.completed,
-      pending: group.pending
-    }
+      pending: group.pending,
+    },
   }));
 
   const workflowSummaries = [...groups.values()].map((group) => ({
@@ -75,7 +85,7 @@ export const summarizeActions = <T extends ActionLike>(actions: T[]) => {
     totalActions: group.actions.length,
     completedActions: group.completed,
     pendingActions: group.pending,
-    savedTimeMinutes: Number((group.savedSeconds / 60).toFixed(1))
+    savedTimeMinutes: Number((group.savedSeconds / 60).toFixed(1)),
   }));
 
   return {
@@ -84,7 +94,7 @@ export const summarizeActions = <T extends ActionLike>(actions: T[]) => {
     impact: {
       savedTimeMinutes: Number((savedSeconds / 60).toFixed(1)),
       automationsCompleted,
-      approvalsPending
-    }
+      approvalsPending,
+    },
   };
 };

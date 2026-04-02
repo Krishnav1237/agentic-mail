@@ -14,7 +14,12 @@ import { generateDailyActivityFeed } from './activityFeed.js';
 import { getIntentState } from './intent.js';
 import { getEnergyContext } from './energy.js';
 import { filterPlanningContext } from './contextFilter.js';
-import { buildDecisionState, computeDecisionStateHash, getStoredStateHash, storeStateHash } from './stateManager.js';
+import {
+  buildDecisionState,
+  computeDecisionStateHash,
+  getStoredStateHash,
+  storeStateHash,
+} from './stateManager.js';
 import { runFastPlanner } from './fastPlanner.js';
 import { runHeavyPlanner } from './heavyPlanner.js';
 import { mergeAndDedupePlans } from './planMerge.js';
@@ -24,13 +29,17 @@ import type { PlannerInput } from './planningTypes.js';
 const DAILY_PLAN_INTERVAL_HOURS = 6;
 const HEAVY_PLANNER_MIN_BUDGET_MS = 2500;
 
-const getDailyPlanInterval = (personality: 'chill' | 'proactive' | 'aggressive') => {
+const getDailyPlanInterval = (
+  personality: 'chill' | 'proactive' | 'aggressive'
+) => {
   if (personality === 'aggressive') return 4;
   if (personality === 'chill') return 8;
   return DAILY_PLAN_INTERVAL_HOURS;
 };
 
-const getContinuousIntervalMinutes = (personality: 'chill' | 'proactive' | 'aggressive') => {
+const getContinuousIntervalMinutes = (
+  personality: 'chill' | 'proactive' | 'aggressive'
+) => {
   if (personality === 'aggressive') return 5;
   if (personality === 'chill') return 20;
   return 10;
@@ -70,7 +79,7 @@ const fetchPerception = async (userId: string) => {
     receivedAt: row.received_at,
     preview: row.body_preview ?? '',
     importance: row.importance,
-    classification: row.classification
+    classification: row.classification,
   }));
 
   const openTasksResult = await query<{
@@ -95,10 +104,15 @@ const fetchPerception = async (userId: string) => {
     dueAt: row.due_at,
     category: row.category,
     priorityScore: row.priority_score,
-    status: row.status
+    status: row.status,
   }));
 
-  const recentActionsResult = await query<{ id: string; action_type: string; status: string; workflow_name: string | null }>(
+  const recentActionsResult = await query<{
+    id: string;
+    action_type: string;
+    status: string;
+    workflow_name: string | null;
+  }>(
     `SELECT id, action_type, status, workflow_name
      FROM agent_actions
      WHERE user_id = $1
@@ -109,7 +123,11 @@ const fetchPerception = async (userId: string) => {
 
   const recentActions = recentActionsResult.rows;
 
-  let upcomingEvents: Array<{ id: string; subject: string; start?: string | null }> = [];
+  let upcomingEvents: Array<{
+    id: string;
+    subject: string;
+    start?: string | null;
+  }> = [];
   try {
     const auth = await getAuthContext(userId);
     if (auth.provider === 'google') {
@@ -117,14 +135,14 @@ const fetchPerception = async (userId: string) => {
       upcomingEvents = (events?.items ?? []).map((event: any) => ({
         id: event.id,
         subject: event.summary ?? 'Event',
-        start: event.start?.dateTime ?? event.start?.date ?? null
+        start: event.start?.dateTime ?? event.start?.date ?? null,
       }));
     } else {
       const events = await listEvents(auth.accessToken, 10);
       upcomingEvents = (events?.value ?? []).map((event: any) => ({
         id: event.id,
         subject: event.subject ?? 'Event',
-        start: event.start?.dateTime ?? null
+        start: event.start?.dateTime ?? null,
       }));
     }
   } catch {
@@ -134,14 +152,20 @@ const fetchPerception = async (userId: string) => {
   return { pendingEmails, openTasks, recentActions, upcomingEvents };
 };
 
-const shouldRunDailyPlan = (lastPlanTime: string | null, intervalHours: number) => {
+const shouldRunDailyPlan = (
+  lastPlanTime: string | null,
+  intervalHours: number
+) => {
   if (!lastPlanTime) return true;
   const last = new Date(lastPlanTime).getTime();
   const diffHours = (Date.now() - last) / (1000 * 60 * 60);
   return diffHours >= intervalHours;
 };
 
-const shouldRunContinuousPlan = (lastPlanTime: string | null, intervalMinutes: number) => {
+const shouldRunContinuousPlan = (
+  lastPlanTime: string | null,
+  intervalMinutes: number
+) => {
   if (!lastPlanTime) return true;
   const last = new Date(lastPlanTime).getTime();
   const diffMinutes = (Date.now() - last) / (1000 * 60);
@@ -158,12 +182,21 @@ const getPendingPreviewCount = async (userId: string) => {
   return result.rows[0]?.count ?? 0;
 };
 
-const shouldUseHeavyPlanner = (input: { fastPlanCount: number; plannerInput: PlannerInput; remainingBudgetMs: number | undefined }) => {
+const shouldUseHeavyPlanner = (input: {
+  fastPlanCount: number;
+  plannerInput: PlannerInput;
+  remainingBudgetMs: number | undefined;
+}) => {
   if (input.remainingBudgetMs === undefined) return true;
   if (input.remainingBudgetMs < HEAVY_PLANNER_MIN_BUDGET_MS) return false;
   if (input.fastPlanCount === 0) return true;
-  if (input.fastPlanCount < Math.min(2, input.plannerInput.filtered.emails.length)) return true;
-  return input.plannerInput.filtered.emails.some((email) => email.importance === 'high');
+  if (
+    input.fastPlanCount < Math.min(2, input.plannerInput.filtered.emails.length)
+  )
+    return true;
+  return input.plannerInput.filtered.emails.some(
+    (email) => email.importance === 'high'
+  );
 };
 
 export const runCoreLoop = async (userId: string) => {
@@ -176,7 +209,7 @@ export const runCoreLoop = async (userId: string) => {
   const filtered = filterPlanningContext({
     pendingEmails: perception.pendingEmails,
     openTasks: perception.openTasks,
-    upcomingEvents: perception.upcomingEvents
+    upcomingEvents: perception.upcomingEvents,
   });
 
   const context = await buildContext({
@@ -187,20 +220,20 @@ export const runCoreLoop = async (userId: string) => {
       subject: email.subject,
       sender: email.sender,
       receivedAt: email.receivedAt,
-      preview: email.preview
+      preview: email.preview,
     })),
     openTasks: filtered.tasks.map((task) => ({
       id: task.id,
       title: task.title,
       dueAt: task.dueAt,
-      category: task.category
+      category: task.category,
     })),
     upcomingEvents: filtered.events.map((event) => ({
       id: event.id,
       subject: event.subject,
-      start: event.start
+      start: event.start,
     })),
-    recentActions: perception.recentActions
+    recentActions: perception.recentActions,
   });
 
   const plannerInput: PlannerInput = {
@@ -212,14 +245,20 @@ export const runCoreLoop = async (userId: string) => {
     intents,
     energy,
     filtered,
-    recentActions: perception.recentActions
+    recentActions: perception.recentActions,
   };
 
-  const plans: Array<{ planId: string; plan: { plan: any[] }; planType: 'continuous' | 'daily'; stateHash: string; counts: Record<string, number> }> = [];
+  const plans: Array<{
+    planId: string;
+    plan: { plan: any[] };
+    planType: 'continuous' | 'daily';
+    stateHash: string;
+    counts: Record<string, number>;
+  }> = [];
   const counts = {
     emails: filtered.emails.length,
     tasks: filtered.tasks.length,
-    events: filtered.events.length
+    events: filtered.events.length,
   };
 
   const buildAndQueuePlan = async (planType: 'continuous' | 'daily') => {
@@ -228,7 +267,7 @@ export const runCoreLoop = async (userId: string) => {
       goals,
       intents,
       strategist,
-      recentActions: perception.recentActions
+      recentActions: perception.recentActions,
     });
     const { stateHash } = computeDecisionStateHash(decisionState);
     const previous = await getStoredStateHash(userId, planType);
@@ -239,22 +278,28 @@ export const runCoreLoop = async (userId: string) => {
         userId,
         step: 'state_skip',
         message: `Skipped ${planType} planning because decision state is unchanged`,
-        data: { planType, stateHash, counts }
+        data: { planType, stateHash, counts },
       });
       return;
     }
 
     const currentInput: PlannerInput = { ...plannerInput, planType };
     const fastPlan = await runFastPlanner(currentInput);
-    const remainingBudgetMs = planType === 'continuous' ? Math.max(env.agentLoopMaxMs - (Date.now() - startedAt), 0) : undefined;
+    const remainingBudgetMs =
+      planType === 'continuous'
+        ? Math.max(env.agentLoopMaxMs - (Date.now() - startedAt), 0)
+        : undefined;
     const useHeavyPlanner = shouldUseHeavyPlanner({
       fastPlanCount: fastPlan.plan.length,
       plannerInput: currentInput,
-      remainingBudgetMs
+      remainingBudgetMs,
     });
 
     const mergedPlan = useHeavyPlanner
-      ? mergeAndDedupePlans([fastPlan, await runHeavyPlanner({ ...currentInput, remainingBudgetMs })])
+      ? mergeAndDedupePlans([
+          fastPlan,
+          await runHeavyPlanner({ ...currentInput, remainingBudgetMs }),
+        ])
       : mergeAndDedupePlans([fastPlan]);
 
     if (mergedPlan.plan.length === 0) {
@@ -263,7 +308,11 @@ export const runCoreLoop = async (userId: string) => {
         userId,
         step: 'plan_empty',
         message: `No ${planType} actions produced after fast/heavy planning`,
-        data: { planType, diagnostics: mergedPlan.diagnostics, useHeavyPlanner }
+        data: {
+          planType,
+          diagnostics: mergedPlan.diagnostics,
+          useHeavyPlanner,
+        },
       });
       return;
     }
@@ -276,8 +325,8 @@ export const runCoreLoop = async (userId: string) => {
         source: mergedPlan.source,
         diagnostics: mergedPlan.diagnostics,
         filteredDiagnostics: filtered.diagnostics,
-        useHeavyPlanner
-      }
+        useHeavyPlanner,
+      },
     });
 
     plans.push({
@@ -285,13 +334,18 @@ export const runCoreLoop = async (userId: string) => {
       plan: persisted.plan,
       planType,
       stateHash,
-      counts
+      counts,
     });
   };
 
   const lastContinuous = await getLastPlanTime(userId, 'continuous');
-  const continuousInterval = getContinuousIntervalMinutes(goals.personalityMode);
-  if (filtered.emails.length > 0 && shouldRunContinuousPlan(lastContinuous, continuousInterval)) {
+  const continuousInterval = getContinuousIntervalMinutes(
+    goals.personalityMode
+  );
+  if (
+    filtered.emails.length > 0 &&
+    shouldRunContinuousPlan(lastContinuous, continuousInterval)
+  ) {
     await buildAndQueuePlan('continuous');
   }
 
@@ -303,8 +357,17 @@ export const runCoreLoop = async (userId: string) => {
 
   for (const planItem of plans) {
     await markPlanStatus(planItem.planId, 'running');
-    const execution = await executePlan({ userId, plan: planItem.plan as any, goals, planId: planItem.planId, contextSummary: context.summary });
-    await markPlanStatus(planItem.planId, execution.failed > 0 ? 'partial' : 'completed');
+    const execution = await executePlan({
+      userId,
+      plan: planItem.plan as any,
+      goals,
+      planId: planItem.planId,
+      contextSummary: context.summary,
+    });
+    await markPlanStatus(
+      planItem.planId,
+      execution.failed > 0 ? 'partial' : 'completed'
+    );
 
     const reflection = await runReflection({
       userId,
@@ -312,29 +375,46 @@ export const runCoreLoop = async (userId: string) => {
       context: context.summary,
       planId: planItem.planId,
       plan: planItem.plan,
-      results: execution.results
+      results: execution.results,
     });
 
     await logAgentStep({
       userId,
       step: 'reflection',
       message: reflection.improvement_suggestion,
-      data: reflection
+      data: reflection,
     });
 
     if (execution.failed > 0) {
-      await logAgentStep({ userId, step: 'replan', message: 'Replanning after failures' });
-      const retryFastPlan = await runFastPlanner({ ...plannerInput, planType: 'continuous' });
+      await logAgentStep({
+        userId,
+        step: 'replan',
+        message: 'Replanning after failures',
+      });
+      const retryFastPlan = await runFastPlanner({
+        ...plannerInput,
+        planType: 'continuous',
+      });
       const retryMerged = mergeAndDedupePlans([retryFastPlan]);
       if (retryMerged.plan.length > 0) {
         const retryPlan = await persistPlan({
           userId,
           planType: 'continuous',
           plan: { plan: retryMerged.plan },
-          metadata: { source: retryMerged.source, diagnostics: retryMerged.diagnostics, retryOf: planItem.planId }
+          metadata: {
+            source: retryMerged.source,
+            diagnostics: retryMerged.diagnostics,
+            retryOf: planItem.planId,
+          },
         });
         await markPlanStatus(retryPlan.planId, 'running');
-        await executePlan({ userId, plan: retryPlan.plan as any, goals, planId: retryPlan.planId, contextSummary: context.summary });
+        await executePlan({
+          userId,
+          plan: retryPlan.plan as any,
+          goals,
+          planId: retryPlan.planId,
+          contextSummary: context.summary,
+        });
         await markPlanStatus(retryPlan.planId, 'completed');
       }
     }
@@ -343,7 +423,7 @@ export const runCoreLoop = async (userId: string) => {
       userId,
       loopType: planItem.planType,
       stateHash: planItem.stateHash,
-      counts: planItem.counts
+      counts: planItem.counts,
     });
   }
 
@@ -361,7 +441,7 @@ export const runCoreLoop = async (userId: string) => {
       userId,
       step: 'pending_previews',
       message: `${pendingPreviews} preview actions awaiting review`,
-      data: { pendingPreviews }
+      data: { pendingPreviews },
     });
   }
 

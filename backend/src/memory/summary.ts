@@ -3,8 +3,10 @@ import { query } from '../db/index.js';
 import { getUserPreferences } from '../services/preferences.js';
 
 export const buildMemorySummary = async (userId: string) => {
-  const recentEmails = (await getMemory<any[]>(userId, 'short', 'recent_emails')) ?? [];
-  const recentActions = (await getMemory<any[]>(userId, 'short', 'recent_actions')) ?? [];
+  const recentEmails =
+    (await getMemory<any[]>(userId, 'short', 'recent_emails')) ?? [];
+  const recentActions =
+    (await getMemory<any[]>(userId, 'short', 'recent_actions')) ?? [];
   const preferences = await getUserPreferences(userId);
   const strategist = await getMemory<any>(userId, 'long', 'strategist_state');
   const policy = await getMemory<any>(userId, 'long', 'policy_state');

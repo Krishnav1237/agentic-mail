@@ -2,17 +2,33 @@ import { useEffect, useState } from 'react';
 import { LockKeyhole, Settings2, ShieldCheck, Target } from 'lucide-react';
 import ConnectPrompt from '../components/ConnectPrompt';
 import PageHeader from '../components/PageHeader';
-import { getGoals, getPreferences, updateGoals, updatePreferences } from '../lib/api';
-import { useApp } from '../lib/appContext';
+import {
+  getGoals,
+  getPreferences,
+  updateGoals,
+  updatePreferences,
+} from '../lib/api';
+import { useApp } from '../lib/useApp';
 import { autopilotLabels, personalityDescriptions } from '../lib/presentation';
 
-const categories = ['assignment', 'academic', 'internship', 'event', 'personal', 'other'];
+const categories = [
+  'assignment',
+  'academic',
+  'internship',
+  'event',
+  'personal',
+  'other',
+];
 
 export default function SettingsPage() {
   const { hasToken, setStatus } = useApp();
-  const [goals, setGoals] = useState<Array<{ goal: string; weight: number }>>([]);
+  const [goals, setGoals] = useState<Array<{ goal: string; weight: number }>>(
+    []
+  );
   const [autopilotLevel, setAutopilotLevel] = useState<0 | 1 | 2>(0);
-  const [personalityMode, setPersonalityMode] = useState<'chill' | 'proactive' | 'aggressive'>('proactive');
+  const [personalityMode, setPersonalityMode] = useState<
+    'chill' | 'proactive' | 'aggressive'
+  >('proactive');
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -36,23 +52,36 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [hasToken, setStatus]);
 
-  const updateGoal = (index: number, field: 'goal' | 'weight', value: string) => {
-    setGoals((prev) => prev.map((item, i) => {
-      if (i !== index) return item;
-      if (field === 'weight') {
-        const nextWeight = Number(value);
-        return { ...item, weight: Number.isFinite(nextWeight) ? nextWeight : item.weight };
-      }
-      return { ...item, goal: value };
-    }));
+  const updateGoal = (
+    index: number,
+    field: 'goal' | 'weight',
+    value: string
+  ) => {
+    setGoals((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        if (field === 'weight') {
+          const nextWeight = Number(value);
+          return {
+            ...item,
+            weight: Number.isFinite(nextWeight) ? nextWeight : item.weight,
+          };
+        }
+        return { ...item, goal: value };
+      })
+    );
   };
 
   const addGoal = () => setGoals((prev) => [...prev, { goal: '', weight: 1 }]);
-  const removeGoal = (index: number) => setGoals((prev) => prev.filter((_, i) => i !== index));
+  const removeGoal = (index: number) =>
+    setGoals((prev) => prev.filter((_, i) => i !== index));
 
   const updateWeight = (key: string, value: string) => {
     const next = Number(value);
-    setWeights((prev) => ({ ...prev, [key]: Number.isFinite(next) ? next : prev[key] ?? 1 }));
+    setWeights((prev) => ({
+      ...prev,
+      [key]: Number.isFinite(next) ? next : (prev[key] ?? 1),
+    }));
   };
 
   const handleSave = async () => {
@@ -61,7 +90,7 @@ export default function SettingsPage() {
       await updateGoals({
         goals: goals.filter((goal) => goal.goal.trim().length > 0),
         autopilotLevel,
-        personalityMode
+        personalityMode,
       });
       await updatePreferences(weights);
       setStatus('Settings saved.');
@@ -76,7 +105,11 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading settings...</div>;
+    return (
+      <div className="glass-card rounded-xl p-10 text-center text-neutral-300">
+        Loading settings...
+      </div>
+    );
   }
 
   return (
@@ -85,16 +118,32 @@ export default function SettingsPage() {
         eyebrow="Control surface"
         title="Tune the product without falling into admin sprawl."
         description="Goals, agent posture, and category weights all influence planning. This page keeps those controls visible and understandable instead of burying them in a complex settings maze."
-        actions={(
+        actions={
           <button className="btn-primary" onClick={handleSave}>
             <Settings2 size={16} /> Save settings
           </button>
-        )}
+        }
         stats={[
-          { label: 'Autopilot', value: autopilotLabels[autopilotLevel], helper: 'Current execution posture' },
-          { label: 'Personality', value: personalityMode, helper: personalityDescriptions[personalityMode] },
-          { label: 'Goals', value: String(goals.filter((goal) => goal.goal.trim()).length), helper: 'Active goal entries' },
-          { label: 'Weighted categories', value: String(Object.keys(weights).length || categories.length), helper: 'Preference model inputs' }
+          {
+            label: 'Autopilot',
+            value: autopilotLabels[autopilotLevel],
+            helper: 'Current execution posture',
+          },
+          {
+            label: 'Personality',
+            value: personalityMode,
+            helper: personalityDescriptions[personalityMode],
+          },
+          {
+            label: 'Goals',
+            value: String(goals.filter((goal) => goal.goal.trim()).length),
+            helper: 'Active goal entries',
+          },
+          {
+            label: 'Weighted categories',
+            value: String(Object.keys(weights).length || categories.length),
+            helper: 'Preference model inputs',
+          },
         ]}
       />
 
@@ -105,26 +154,38 @@ export default function SettingsPage() {
             Goals
           </div>
           <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">
-            Weighted goals influence priority, planning aggressiveness, and which opportunities the agent keeps visible.
+            Weighted goals influence priority, planning aggressiveness, and
+            which opportunities the agent keeps visible.
           </p>
           <div className="mt-5 space-y-3">
             {goals.map((goal, index) => (
-              <div key={`${goal.goal}-${index}`} className="grid gap-3 rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 md:grid-cols-[1fr_120px_auto]">
+              <div
+                key={`${goal.goal}-${index}`}
+                className="grid gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:grid-cols-[1fr_120px_auto]"
+              >
                 <input
                   className="form-input"
                   placeholder="Example: get an internship for summer"
                   value={goal.goal}
-                  onChange={(event) => updateGoal(index, 'goal', event.target.value)}
+                  onChange={(event) =>
+                    updateGoal(index, 'goal', event.target.value)
+                  }
                 />
                 <input
                   className="form-input"
                   value={goal.weight}
-                  onChange={(event) => updateGoal(index, 'weight', event.target.value)}
+                  onChange={(event) =>
+                    updateGoal(index, 'weight', event.target.value)
+                  }
                 />
-                <button className="btn-ghost" onClick={() => removeGoal(index)}>Remove</button>
+                <button className="btn-ghost" onClick={() => removeGoal(index)}>
+                  Remove
+                </button>
               </div>
             ))}
-            <button className="btn-secondary" onClick={addGoal}>Add goal</button>
+            <button className="btn-secondary" onClick={addGoal}>
+              Add goal
+            </button>
           </div>
         </div>
 
@@ -136,11 +197,15 @@ export default function SettingsPage() {
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Autopilot</label>
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+                  Autopilot
+                </label>
                 <select
                   className="form-select mt-2"
                   value={autopilotLevel}
-                  onChange={(event) => setAutopilotLevel(Number(event.target.value) as 0 | 1 | 2)}
+                  onChange={(event) =>
+                    setAutopilotLevel(Number(event.target.value) as 0 | 1 | 2)
+                  }
                 >
                   <option value={0}>Level 0 (Suggest only)</option>
                   <option value={1}>Level 1 (Safe actions)</option>
@@ -148,11 +213,17 @@ export default function SettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">Personality</label>
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300">
+                  Personality
+                </label>
                 <select
                   className="form-select mt-2"
                   value={personalityMode}
-                  onChange={(event) => setPersonalityMode(event.target.value as 'chill' | 'proactive' | 'aggressive')}
+                  onChange={(event) =>
+                    setPersonalityMode(
+                      event.target.value as 'chill' | 'proactive' | 'aggressive'
+                    )
+                  }
                 >
                   <option value="chill">Chill</option>
                   <option value="proactive">Proactive</option>
@@ -160,7 +231,9 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">{personalityDescriptions[personalityMode]}</p>
+            <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
+              {personalityDescriptions[personalityMode]}
+            </p>
           </div>
 
           <div className="surface-card">
@@ -169,7 +242,8 @@ export default function SettingsPage() {
               Security posture
             </div>
             <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
-              Email sending remains approval-gated, workflows are logged, and the agent’s execution history is retained for review and rollback.
+              Email sending remains approval-gated, workflows are logged, and
+              the agent’s execution history is retained for review and rollback.
             </p>
           </div>
         </div>
@@ -181,11 +255,15 @@ export default function SettingsPage() {
           Priority weights
         </div>
         <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">
-          These weights help the model adapt when multiple useful items compete for attention.
+          These weights help the model adapt when multiple useful items compete
+          for attention.
         </p>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => (
-            <label key={category} className="rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 text-sm text-neutral-400 font-light">
+            <label
+              key={category}
+              className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400 font-light"
+            >
               <div className="capitalize text-neutral-100">{category}</div>
               <input
                 className="form-input mt-3"

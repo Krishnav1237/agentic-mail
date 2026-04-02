@@ -2,15 +2,23 @@ import type { PlannerEmail } from '../planningTypes.js';
 import type { PartialPlanStep } from '../planningTypes.js';
 
 const recruiterSignal = (email: PlannerEmail) =>
-  /(recruit|talent|hiring|candidate|interview|application|offer)/i.test(`${email.subject} ${email.preview ?? ''} ${email.sender}`);
+  /(recruit|talent|hiring|candidate|interview|application|offer)/i.test(
+    `${email.subject} ${email.preview ?? ''} ${email.sender}`
+  );
 
 const interviewSignal = (email: PlannerEmail) =>
-  /(interview|availability|schedule|calendar|timeslot|meeting)/i.test(`${email.subject} ${email.preview ?? ''}`);
+  /(interview|availability|schedule|calendar|timeslot|meeting)/i.test(
+    `${email.subject} ${email.preview ?? ''}`
+  );
 
 const responseSignal = (email: PlannerEmail) =>
-  /(respond|reply|confirm|follow up|next steps|availability)/i.test(`${email.subject} ${email.preview ?? ''}`);
+  /(respond|reply|confirm|follow up|next steps|availability)/i.test(
+    `${email.subject} ${email.preview ?? ''}`
+  );
 
-export const buildRecruiterWorkflow = (email: PlannerEmail): PartialPlanStep[] => {
+export const buildRecruiterWorkflow = (
+  email: PlannerEmail
+): PartialPlanStep[] => {
   if (!recruiterSignal(email)) return [];
 
   const workflow = 'Recruiter Pipeline';
@@ -20,8 +28,9 @@ export const buildRecruiterWorkflow = (email: PlannerEmail): PartialPlanStep[] =
     workflow,
     action: 'label_email',
     input: { email_id: email.id, label: 'Recruiter' },
-    reason: 'Recruiter-related communication should be tagged for pipeline visibility.',
-    confidence: 0.89
+    reason:
+      'Recruiter-related communication should be tagged for pipeline visibility.',
+    confidence: 0.89,
   });
 
   if (responseSignal(email)) {
@@ -30,7 +39,7 @@ export const buildRecruiterWorkflow = (email: PlannerEmail): PartialPlanStep[] =
       action: 'draft_reply',
       input: { email_id: email.id },
       reason: 'Recruiter email appears to need a candidate response.',
-      confidence: 0.86
+      confidence: 0.86,
     });
   }
 
@@ -39,15 +48,17 @@ export const buildRecruiterWorkflow = (email: PlannerEmail): PartialPlanStep[] =
       workflow: 'Interview Scheduling',
       action: 'create_calendar_event',
       input: { email_id: email.id, title: email.subject },
-      reason: 'Interview-related messages benefit from a calendar hold for planning.',
-      confidence: 0.81
+      reason:
+        'Interview-related messages benefit from a calendar hold for planning.',
+      confidence: 0.81,
     });
     steps.push({
       workflow: 'Interview Scheduling',
       action: 'move_to_folder',
       input: { email_id: email.id, folder: 'archive' },
-      reason: 'Once tagged and planned, interview scheduling emails can move out of the inbox for focus.',
-      confidence: 0.68
+      reason:
+        'Once tagged and planned, interview scheduling emails can move out of the inbox for focus.',
+      confidence: 0.68,
     });
   } else {
     steps.push({
@@ -57,10 +68,11 @@ export const buildRecruiterWorkflow = (email: PlannerEmail): PartialPlanStep[] =
         email_id: email.id,
         title: `Follow up with recruiter: ${email.subject}`,
         category: 'internship',
-        priority: 82
+        priority: 82,
       },
-      reason: 'Recruiter messages should generate a follow-up task in the pipeline.',
-      confidence: 0.84
+      reason:
+        'Recruiter messages should generate a follow-up task in the pipeline.',
+      confidence: 0.84,
     });
   }
 

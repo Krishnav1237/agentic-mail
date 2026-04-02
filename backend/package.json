@@ -1,13 +1,17 @@
 {
-  "name": "student-intelligence-backend",
+  "name": "inbox-intelligence-backend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\"",
+    "format:check": "prettier . --check --ignore-path ./.prettierignore",
     "start": "node dist/server.js",
-    "worker": "tsx src/workers/index.ts"
+    "worker": "tsx src/workers/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bullmq": "^5.8.2",
@@ -22,17 +26,28 @@
     "pg": "^8.12.0",
     "pino": "^9.3.2",
     "pino-http": "^10.3.0",
+    "resend": "^6.10.0",
     "zod": "^3.23.8"
   },
+  "overrides": {
+    "path-to-regexp": "0.1.13"
+  },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@eslint/js": "^9.24.0",
     "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.12.12",
     "@types/pg": "^8.11.10",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.2",
+    "globals": "^16.0.0",
     "pino-pretty": "^11.2.2",
+    "prettier": "^3.5.3",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.29.1",
+    "vitest": "^4.1.2"
   }
 }

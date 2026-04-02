@@ -1,7 +1,6 @@
 import { LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000';
+import { API_BASE } from '../lib/apiBase';
 
 export default function ConnectPrompt() {
   return (
@@ -15,7 +14,9 @@ export default function ConnectPrompt() {
             Start with Gmail now, add Outlook when you are ready.
           </h3>
           <p className="mt-4 max-w-2xl text-sm leading-8 text-neutral-400 font-light md:text-base">
-            The product is designed to onboard real users quickly: secure OAuth, low-friction setup, and a dashboard that only appears once the session is trusted and the data pipeline is ready.
+            The product is designed to onboard real users quickly: secure OAuth,
+            low-friction setup, and a dashboard that only appears once the
+            session is trusted and the data pipeline is ready.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a className="btn-primary" href={`${API_BASE}/auth/google`}>
@@ -48,7 +49,9 @@ export default function ConnectPrompt() {
               <span className="font-semibold">What happens next</span>
             </div>
             <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
-              After sign-in, the platform syncs email, structures tasks and opportunities, and opens a dashboard tuned for scale rather than a one-screen prototype.
+              After sign-in, the platform syncs email, structures tasks and
+              opportunities, and opens a dashboard tuned for scale rather than a
+              one-screen prototype.
             </p>
           </div>
         </div>

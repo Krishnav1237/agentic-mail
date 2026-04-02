@@ -1,6 +1,6 @@
 # Testing Guide
 
-This is the production validation checklist for Student Intelligence Layer. Use it before onboarding real users, before enabling higher autopilot levels, and before every major release.
+This is the production validation checklist for Inbox Intelligence Layer. Use it before onboarding real users, before enabling higher autopilot levels, and before every major release.
 
 ## How To Use This Document
 
@@ -657,4 +657,3 @@ Keep:
 - logs from failure drills
 
 If you want a single source of truth for ongoing QA, this is the document to operationalize into a release checklist or test management tool.
-

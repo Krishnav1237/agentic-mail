@@ -16,9 +16,9 @@ export const persistPlan = async (input: {
       input.planType,
       JSON.stringify({
         ...input.plan,
-        metadata: input.metadata ?? {}
+        metadata: input.metadata ?? {},
       }),
-      'pending'
+      'pending',
     ]
   );
 

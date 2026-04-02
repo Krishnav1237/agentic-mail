@@ -11,7 +11,7 @@ const schema = z.object({
   description: z.string().optional(),
   start_at: z.string().optional(),
   end_at: z.string().optional(),
-  due_at: z.string().optional()
+  due_at: z.string().optional(),
 });
 
 type Input = z.infer<typeof schema>;
@@ -36,7 +36,10 @@ export const createCalendarEventTool: ToolDefinition<Input, Output> = {
         title: string;
         description: string | null;
         due_at: string | null;
-      }>('SELECT title, description, due_at FROM extracted_tasks WHERE id = $1 AND user_id = $2', [input.task_id, ctx.userId]);
+      }>(
+        'SELECT title, description, due_at FROM extracted_tasks WHERE id = $1 AND user_id = $2',
+        [input.task_id, ctx.userId]
+      );
       const task = taskResult.rows[0];
       if (task) {
         title = task.title;
@@ -45,8 +48,14 @@ export const createCalendarEventTool: ToolDefinition<Input, Output> = {
       }
     }
 
-    const end = input.end_at ? new Date(input.end_at) : dueAt ? new Date(dueAt) : new Date(Date.now() + 60 * 60 * 1000);
-    const start = input.start_at ? new Date(input.start_at) : new Date(end.getTime() - 60 * 60 * 1000);
+    const end = input.end_at
+      ? new Date(input.end_at)
+      : dueAt
+        ? new Date(dueAt)
+        : new Date(Date.now() + 60 * 60 * 1000);
+    const start = input.start_at
+      ? new Date(input.start_at)
+      : new Date(end.getTime() - 60 * 60 * 1000);
 
     const auth = await getAuthContext(ctx.userId);
     if (auth.provider === 'google') {
@@ -54,26 +63,29 @@ export const createCalendarEventTool: ToolDefinition<Input, Output> = {
         title,
         description,
         start,
-        end
+        end,
       });
       return { eventId: event.id };
     }
 
-    const response = await fetchWithTimeout('https://graph.microsoft.com/v1.0/me/events', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${auth.accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        subject: title,
-        body: { contentType: 'HTML', content: description },
-        start: { dateTime: start.toISOString(), timeZone: 'UTC' },
-        end: { dateTime: end.toISOString(), timeZone: 'UTC' }
-      })
-    });
+    const response = await fetchWithTimeout(
+      'https://graph.microsoft.com/v1.0/me/events',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subject: title,
+          body: { contentType: 'HTML', content: description },
+          start: { dateTime: start.toISOString(), timeZone: 'UTC' },
+          end: { dateTime: end.toISOString(), timeZone: 'UTC' },
+        }),
+      }
+    );
 
     const data = await safeJson<any>(response);
     return { eventId: data.id };
-  }
+  },
 };

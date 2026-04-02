@@ -8,7 +8,7 @@ export const gmailAllowedLabels = new Set([
   'CATEGORY_SOCIAL',
   'CATEGORY_UPDATES',
   'CATEGORY_FORUMS',
-  'CATEGORY_PROMOTIONS'
+  'CATEGORY_PROMOTIONS',
 ]);
 
 export const gmailAllowedFolders = new Set(['inbox', 'archive']);
@@ -19,16 +19,24 @@ export const outlookAllowedCategories = new Set([
   'Internship',
   'Interview',
   'Recruiter',
-  'NeedsResponse'
+  'NeedsResponse',
 ]);
 
-export const outlookAllowedFolders = new Set(['inbox', 'archive', 'deleteditems']);
+export const outlookAllowedFolders = new Set([
+  'inbox',
+  'archive',
+  'deleteditems',
+]);
 
-export const normalizeFolderName = (value: string) => value.trim().toLowerCase().replace(/\s+/g, '');
+export const normalizeFolderName = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, '');
 
 export const normalizeLabelName = (value: string) => value.trim();
 
-export const resolveOutlookFolderId = async (accessToken: string, folderName: string) => {
+export const resolveOutlookFolderId = async (
+  accessToken: string,
+  folderName: string
+) => {
   const normalized = normalizeFolderName(folderName);
   if (!outlookAllowedFolders.has(normalized)) {
     throw new Error(`Folder ${folderName} is not allowed`);
@@ -36,8 +44,10 @@ export const resolveOutlookFolderId = async (accessToken: string, folderName: st
 
   const folders = await listMailFolders(accessToken);
   const match = (folders?.value ?? []).find((folder: any) => {
-    const byKnownName = normalizeFolderName(folder.wellKnownName ?? '') === normalized;
-    const byDisplayName = normalizeFolderName(folder.displayName ?? '') === normalized;
+    const byKnownName =
+      normalizeFolderName(folder.wellKnownName ?? '') === normalized;
+    const byDisplayName =
+      normalizeFolderName(folder.displayName ?? '') === normalized;
     return byKnownName || byDisplayName;
   });
 

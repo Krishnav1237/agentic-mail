@@ -10,6 +10,12 @@ export const logAgentStep = async (input: {
   await query(
     `INSERT INTO agent_logs (user_id, email_id, step, message, data)
      VALUES ($1, $2, $3, $4, $5)`,
-    [input.userId, input.emailId ?? null, input.step, input.message ?? null, JSON.stringify(input.data ?? {})]
+    [
+      input.userId,
+      input.emailId ?? null,
+      input.step,
+      input.message ?? null,
+      JSON.stringify(input.data ?? {}),
+    ]
   );
 };

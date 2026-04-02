@@ -1,5 +1,5 @@
 import { query } from '../db/index.js';
-import { redis } from '../config/redis.js';
+import { cacheRedis } from '../config/redis.js';
 
 export type AiUsageMetrics = {
   promptTokens: number;
@@ -40,7 +40,8 @@ const ALL_WORKFLOWS = '__all__';
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
 
-const normalizeWorkflowKey = (workflowId?: string | null) => workflowId?.trim() || ALL_WORKFLOWS;
+const normalizeWorkflowKey = (workflowId?: string | null) =>
+  workflowId?.trim() || ALL_WORKFLOWS;
 
 const toNumber = (value: string | number) => Number(value ?? 0);
 
@@ -52,14 +53,14 @@ const pricingTable: Array<{
   { match: /gemini-1\.5-pro/i, inputPer1k: 0.00125, outputPer1k: 0.005 },
   { match: /gemini/i, inputPer1k: 0.00035, outputPer1k: 0.00105 },
   { match: /gpt-4o/i, inputPer1k: 0.005, outputPer1k: 0.015 },
-  { match: /llama|mixtral/i, inputPer1k: 0.0006, outputPer1k: 0.0008 }
+  { match: /llama|mixtral/i, inputPer1k: 0.0006, outputPer1k: 0.0008 },
 ];
 
 const cacheKey = (userId: string, summaryDate: string, workflowKey: string) =>
   `llm-cost:${userId}:${summaryDate}:${workflowKey}`;
 
 const setAggregateCache = async (userId: string, row: AggregateRow) => {
-  await redis.hset(cacheKey(userId, row.summary_date, row.workflow_key), {
+  await cacheRedis.hset(cacheKey(userId, row.summary_date, row.workflow_key), {
     summary_date: row.summary_date,
     workflow_key: row.workflow_key,
     total_requests: String(row.total_requests),
@@ -71,14 +72,24 @@ const setAggregateCache = async (userId: string, row: AggregateRow) => {
     successful_actions: String(row.successful_actions),
     cost_per_action: String(row.cost_per_action),
     cost_per_successful_action: String(row.cost_per_successful_action),
-    cost_per_workflow: String(row.cost_per_workflow)
+    cost_per_workflow: String(row.cost_per_workflow),
   });
-  await redis.expire(cacheKey(userId, row.summary_date, row.workflow_key), 60 * 60 * 24 * 7);
+  await cacheRedis.expire(
+    cacheKey(userId, row.summary_date, row.workflow_key),
+    60 * 60 * 24 * 7
+  );
 };
 
-export const estimateAiCost = (provider: string, model: string, promptTokens: number, completionTokens: number) => {
-  const pricing = pricingTable.find((entry) => entry.match.test(model))
-    ?? { inputPer1k: provider === 'groq' ? 0.0006 : 0.001, outputPer1k: provider === 'groq' ? 0.0008 : 0.002 };
+export const estimateAiCost = (
+  provider: string,
+  model: string,
+  promptTokens: number,
+  completionTokens: number
+) => {
+  const pricing = pricingTable.find((entry) => entry.match.test(model)) ?? {
+    inputPer1k: provider === 'groq' ? 0.0006 : 0.001,
+    outputPer1k: provider === 'groq' ? 0.0008 : 0.002,
+  };
 
   const promptCost = (promptTokens / 1000) * pricing.inputPer1k;
   const completionCost = (completionTokens / 1000) * pricing.outputPer1k;
@@ -144,7 +155,7 @@ const upsertAggregate = async (input: {
       totalTokens,
       totalCost,
       actionsCreated,
-      successfulActions
+      successfulActions,
     ]
   );
 
@@ -178,7 +189,7 @@ export const recordAiUsage = async (input: AiUsageRecordInput) => {
       input.metrics.estimatedCost,
       createdActions,
       successfulActions,
-      JSON.stringify(input.metadata ?? {})
+      JSON.stringify(input.metadata ?? {}),
     ]
   );
 
@@ -189,7 +200,7 @@ export const recordAiUsage = async (input: AiUsageRecordInput) => {
     metrics: input.metrics,
     totalRequests: 1,
     actionsCreated: createdActions,
-    successfulActions
+    successfulActions,
   });
 
   if (workflowKey !== ALL_WORKFLOWS) {
@@ -200,7 +211,7 @@ export const recordAiUsage = async (input: AiUsageRecordInput) => {
       metrics: input.metrics,
       totalRequests: 1,
       actionsCreated: createdActions,
-      successfulActions
+      successfulActions,
     });
   }
 };
@@ -220,7 +231,7 @@ export const recordWorkflowOutcomeMetrics = async (input: {
     workflowKey: ALL_WORKFLOWS,
     metrics: {},
     actionsCreated: input.actionsCreated,
-    successfulActions: input.successfulActions
+    successfulActions: input.successfulActions,
   });
 
   if (workflowKey !== ALL_WORKFLOWS) {
@@ -230,15 +241,21 @@ export const recordWorkflowOutcomeMetrics = async (input: {
       workflowKey,
       metrics: {},
       actionsCreated: input.actionsCreated,
-      successfulActions: input.successfulActions
+      successfulActions: input.successfulActions,
     });
   }
 };
 
-export const getCostAggregate = async (input: { userId: string; summaryDate?: string; workflowId?: string | null }) => {
+export const getCostAggregate = async (input: {
+  userId: string;
+  summaryDate?: string;
+  workflowId?: string | null;
+}) => {
   const summaryDate = input.summaryDate ?? todayDate();
   const workflowKey = normalizeWorkflowKey(input.workflowId);
-  const cached = await redis.hgetall(cacheKey(input.userId, summaryDate, workflowKey));
+  const cached = await cacheRedis.hgetall(
+    cacheKey(input.userId, summaryDate, workflowKey)
+  );
   if (Object.keys(cached).length > 0) {
     return {
       summaryDate,
@@ -252,7 +269,7 @@ export const getCostAggregate = async (input: { userId: string; summaryDate?: st
       successfulActions: Number(cached.successful_actions ?? 0),
       costPerAction: Number(cached.cost_per_action ?? 0),
       costPerSuccessfulAction: Number(cached.cost_per_successful_action ?? 0),
-      costPerWorkflow: Number(cached.cost_per_workflow ?? 0)
+      costPerWorkflow: Number(cached.cost_per_workflow ?? 0),
     };
   }
 
@@ -282,6 +299,6 @@ export const getCostAggregate = async (input: { userId: string; summaryDate?: st
     successfulActions: row.successful_actions,
     costPerAction: toNumber(row.cost_per_action),
     costPerSuccessfulAction: toNumber(row.cost_per_successful_action),
-    costPerWorkflow: toNumber(row.cost_per_workflow)
+    costPerWorkflow: toNumber(row.cost_per_workflow),
   };
 };

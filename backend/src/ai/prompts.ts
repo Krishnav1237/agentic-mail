@@ -4,7 +4,7 @@ export const classificationPrompt = (input: {
   senderEmail?: string | null;
   bodyPreview?: string | null;
 }) => {
-  return `You are an email classifier for a student intelligence system.
+  return `You are an email classifier for an inbox intelligence system.
 Classify the email into one of: assignment, internship, event, spam, academic, personal, other.
 Return STRICT JSON only. No prose, no markdown.
 Schema:
@@ -129,8 +129,19 @@ export const plannerPrompt = (input: {
   energyLevel?: 'low' | 'medium' | 'high';
   bestTime?: string;
   personalityMode?: 'chill' | 'proactive' | 'aggressive';
-  pendingEmails: Array<{ id: string; subject: string; sender: string; receivedAt?: string | null; preview?: string }>;
-  openTasks: Array<{ id: string; title: string; dueAt?: string | null; category?: string | null }>;
+  pendingEmails: Array<{
+    id: string;
+    subject: string;
+    sender: string;
+    receivedAt?: string | null;
+    preview?: string;
+  }>;
+  openTasks: Array<{
+    id: string;
+    title: string;
+    dueAt?: string | null;
+    category?: string | null;
+  }>;
   upcomingEvents: Array<{ id: string; subject: string; start?: string | null }>;
   recentActions: Array<{ id: string; action_type: string; status: string }>;
 }) => {
