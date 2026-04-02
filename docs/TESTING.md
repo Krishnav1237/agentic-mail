@@ -1,147 +1,332 @@
 # Testing Guide
 
-This is the production validation checklist for Student Intelligence Layer. Use it before onboarding real users, before enabling higher autopilot levels, and before every major release.
+This document is the deep validation matrix for Student Intelligence Layer.
 
-## How To Use This Document
+Use it before:
 
-Test in this order:
+- onboarding real users
+- enabling higher autopilot levels
+- changing OAuth/provider configuration
+- changing planner, executor, preview, or tool behavior
+- releasing any production deployment
 
-1. Core infrastructure and auth
-2. Provider integrations
-3. Product workflows
-4. Agent autonomy and safety
-5. Recovery and rollback
-6. Security and abuse cases
-7. Performance, scale, and cost
+This document is intentionally broader than a unit-test checklist. The current product is a full-stack SaaS with async workers, provider integrations, and an autonomous agent loop. That means release confidence must come from a mix of:
 
-Run tests in both:
+- build validation
+- manual end-to-end testing
+- database inspection
+- queue inspection
+- safety verification
+- security testing
+- scale and failure drills
 
-- Gmail-connected accounts
-- Outlook-connected accounts
+## 1. Current Testing Reality
 
-Where provider behavior differs, test both explicitly.
+Important honest note:
 
-## Test Environments
+- the repository currently does **not** contain a comprehensive automated test suite wired into package scripts
+- production confidence therefore depends heavily on a disciplined manual validation process
+- this guide is the practical release gate until automated coverage is expanded
 
-Use at least three environments:
+## 2. Core Test Environments
 
-- local development
-- staging with real provider credentials
-- production-like environment with realistic data volume
+At minimum, maintain these environments:
 
-Use at least three mailbox personas:
+### Local development
 
-- heavy academic inbox
-- internship and recruiter-heavy inbox
-- noisy promotional inbox
+Use for:
 
-## 1. Infrastructure and Startup
+- UI iteration
+- route/auth sanity checks
+- API contract verification
+- basic provider smoke tests
 
-### What to test
+### Staging
 
-- backend boots with valid env
-- worker boots with valid env
-- frontend boots and talks to backend
-- Postgres connection succeeds
-- Redis connection succeeds
-- migrations apply cleanly in order
-- production builds succeed
+Use for:
 
-### Expected result
+- real OAuth credentials
+- realistic mailbox volume
+- queue behavior
+- migration rehearsal
+- preview and rollback validation
 
-- no boot-time crashes
-- no missing env surprises
-- worker connects to BullMQ and Redis cleanly
-- dashboard loads without API errors
+### Production-like verification
 
-## 2. Authentication and Session Flows
+Use for:
 
-### Gmail OAuth
+- cost and latency checks under realistic load
+- scaling exercises
+- deployment rollback rehearsal
+- backup/restore drills
+
+## 3. Mailbox Personas To Test
+
+The product should be tested against at least these data shapes:
+
+### Academic-heavy inbox
+
+Expected content:
+
+- assignment emails
+- professor announcements
+- syllabus updates
+- deadline reminders
+- lab or club meeting notices
+
+### Recruiter-heavy inbox
+
+Expected content:
+
+- internship outreach
+- interview requests
+- scheduling threads
+- recruiter follow-ups
+- networking conversations
+
+### Noisy inbox
+
+Expected content:
+
+- newsletters
+- promotions
+- campus digests
+- spam-like but technically valid mail
+- low-signal event announcements
+
+Why this matters:
+
+- the planner and context filter behave very differently depending on inbox mix
+- many bugs only show up when signal and noise are blended together
+
+## 4. Release Gate Order
+
+Validate in this order:
+
+1. environment and startup
+2. auth and session
+3. provider connectivity
+4. sync and ingestion
+5. extraction and task creation
+6. frontend UI states
+7. autonomous agent loop
+8. preview and approval flows
+9. tool execution and recovery
+10. cost, logs, and observability
+11. security and abuse cases
+12. scale and failure drills
+
+## 5. Environment and Startup Tests
+
+### Backend startup
+
+Validate:
+
+- process boots with full env
+- process fails loudly on missing required env
+- `/health` returns `200`
+
+Check specifically:
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `AUTH_JWT_SECRET`
+- `TOKEN_ENC_KEY`
+- Microsoft env vars currently required by backend boot
+
+### Worker startup
+
+Validate:
+
+- worker boots cleanly
+- repeat jobs are scheduled
+- no Redis or BullMQ startup errors
+
+### Frontend startup
+
+Validate:
+
+- Vite app boots
+- landing renders
+- internal routes load when authenticated
+- Supabase env is present so the landing page does not crash at import time
+
+### Build validation
+
+Run and validate:
+
+```bash
+cd /Users/HP/outlook-bot/backend && npm run build
+cd /Users/HP/outlook-bot/frontend && npm run build
+```
+
+Expected result:
+
+- no compile errors
+- no missing import/runtime startup surprises
+
+## 6. Authentication and Session Testing
+
+## 6.1 Gmail OAuth
 
 Test:
 
-- connect Gmail account
-- reject consent flow
-- reconnect existing Gmail user
-- token refresh path
-- session survives page refresh
-- logout clears session
+- connect a brand-new Gmail user
+- reconnect an existing Gmail user
+- reject consent mid-flow
+- refresh the page after login
+- logout and confirm session clears
 
 Verify:
 
-- user record updated correctly
-- tokens stored and encrypted
-- `/auth/session` reflects login state
-- landing page and dashboard redirect correctly
+- `users.google_user_id` is set
+- encrypted Google token fields exist
+- `/auth/session` returns `authenticated: true`
+- protected routes load only after session resolves
 
-### Outlook OAuth
+## 6.2 Microsoft OAuth
 
 Test:
 
-- connect Outlook account
-- reconnect existing Outlook user
-- Graph subscription creation if webhook URL is configured
+- connect a brand-new Outlook user
+- reconnect an existing Outlook user
+- refresh after login
 - logout and reconnect
 
 Verify:
 
-- Graph subscription is persisted
-- session cookie is set
-- redirect lands on `/auth/callback`
+- `users.ms_user_id` is set
+- encrypted Microsoft token fields exist
+- Graph subscription record is created when webhook URL is configured
 
-### Auth edge cases
+## 6.3 Session persistence
+
+Test:
+
+- reload `/dashboard`
+- reload `/inbox`
+- open a new tab on a protected route
+- expire the auth cookie manually and reload
+
+Expected result:
+
+- valid session persists across refresh
+- expired session redirects to `/`
+- internal shell never flashes for unauthenticated state
+
+## 6.4 Auth edge cases
 
 Test:
 
 - invalid OAuth state
-- expired cookie
-- expired bearer token
-- issuer/audience mismatch
-- unauthenticated access to protected routes
+- callback without code
+- invalid JWT issuer or audience
+- stale bearer token in storage
+- protected route access without auth
 
 Expected result:
 
 - graceful failure
-- no silent partial login state
-- no protected data leakage
+- no shell leakage
+- no false “logged in” state
 
-## 3. Inbox Sync and Ingestion
+## 7. Provider Connectivity Tests
 
-### What to test
+## 7.1 Gmail capabilities
 
-- `POST /emails/sync` queues work
-- worker ingests recent emails
-- duplicate syncs do not create duplicate emails
-- noisy inboxes still process
-- large inbox batches respect limits
-- provider API failures trigger retries
+Validate:
 
-### Verify in depth
+- inbox read works
+- label operations work
+- archive works
+- draft creation works
+- send-reply guarded flow works
+- calendar event creation works if scope granted
 
-- `emails` table contents
-- sender metadata correctness
-- thread IDs are stored consistently
-- status transitions from pending to processed
-- sync latency under repeated runs
+## 7.2 Outlook capabilities
 
-### Failure scenarios
+Validate:
 
-- provider rate limiting
+- inbox read works
+- mark important works
+- draft flow works
+- send-reply guarded flow works
+- calendar event creation works
+- webhook callback path works if configured
+
+## 7.3 Token refresh and longevity
+
+Test:
+
+- long-lived sessions
 - revoked provider token
-- bad message payload from provider
-- worker restart mid-sync
+- invalid refresh token
+- provider quota exhaustion or rate limiting
 
 Expected result:
 
-- retries happen
-- failures are logged
-- no permanent duplicate spam in the database
+- failures are visible in logs
+- sync/jobs fail gracefully
+- the rest of the product remains stable
 
-## 4. Email Intelligence and Extraction
+## 8. Inbox Sync and Ingestion Tests
 
-### Classification
+## 8.1 Manual sync
 
-Test these classes thoroughly:
+Trigger:
+
+- `POST /emails/sync`
+- frontend sync button from authenticated pages
+
+Verify:
+
+- response is quick and returns queued status
+- sync job appears in BullMQ
+- new emails land in `emails`
+- `users.last_sync_at` updates
+
+## 8.2 Duplicate handling
+
+Test:
+
+- run sync repeatedly against the same mailbox state
+- run multiple sync triggers close together
+
+Verify:
+
+- `emails` unique `(user_id, message_id)` prevents duplicates
+- task generation does not explode from repeated syncs
+
+## 8.3 Worker restart resilience
+
+Test:
+
+- restart worker during or immediately after a sync burst
+
+Verify:
+
+- queue recovers
+- ingestion resumes
+- no silent job loss that leaves the UI permanently stale
+
+## 8.4 Sync visibility in UI
+
+Check frontend behavior when:
+
+- sync has started but no emails have rendered yet
+- there are no emails and no errors
+- sync fails
+
+Expected result:
+
+- user sees a meaningful loading or “processing” state
+- not a blank, broken-looking screen
+
+## 9. Email Intelligence and Extraction Tests
+
+## 9.1 Classification accuracy
+
+Validate these classes specifically:
 
 - assignment
 - internship
@@ -151,510 +336,432 @@ Test these classes thoroughly:
 - spam
 - other
 
-### Extraction
+## 9.2 Extraction quality
 
-Verify:
+For each scenario, check JSON shape and user-visible outcomes:
 
-- deadlines extracted accurately
-- tasks extracted accurately
-- links preserved
-- relevant entities captured
-- malformed or low-signal emails do not generate junk tasks
+- deadline extraction
+- task extraction
+- multiple tasks from one email
+- link extraction
+- entity extraction
+- recruiter/company signal extraction
+- event scheduling signal extraction
 
-### Prompt robustness cases
+## 9.3 Robustness cases
 
 Test:
 
-- forwarded emails
+- forwarded threads
 - reply chains
-- newsletters
-- professor emails with vague dates
-- recruiter outreach with scheduling intent
-- emails with no deadline but clear action
-- emails with multiple tasks
-
-### Expected result
-
-- structured JSON remains valid
-- retries happen on invalid model outputs
-- extraction errors do not crash ingestion
-
-## 5. Task System and Dashboard Integrity
-
-### Task generation
-
-Test:
-
-- one email creates one task
-- one email creates multiple tasks
-- due dates map correctly
-- priority scores are populated
-- category is correct
-
-### Task actions
-
-Test:
-
-- mark task completed
-- snooze task
-- create calendar event from task
-- direct task updates reflect immediately in UI
-
-### Dashboard
-
-Verify:
-
-- `criticalToday` is correct
-- `upcomingDeadlines` is correct
-- `opportunities` is correct
-- `lowPriority` is correct
-- `groupedActions`, `workflowSummaries`, and `impact` are populated sensibly
-
-### Pagination and filters
-
-Test:
-
-- large task counts
-- high offset values
-- search text
-- category filters
-- due-date filters
-- sort order stability
+- vague professor deadline phrasing
+- newsletters with false urgency language
+- recruiter emails with no explicit deadline
+- conflicting date expressions
 
 Expected result:
 
-- counts remain correct
-- filters are consistent with server state
-- no broken pagination when data changes
+- invalid model outputs are retried or rejected safely
+- malformed extraction does not crash the pipeline
+- junk tasks are minimized
 
-## 6. Inbox UI and Email Operations
+## 10. Task System and Dashboard Tests
 
-### Inbox list
+## 10.1 Task creation
+
+Verify:
+
+- source email links correctly to task
+- category is set appropriately
+- priority score is populated
+- due date is correct when present
+- open tasks appear in dashboard and tasks page
+
+## 10.2 Task updates
+
+Test:
+
+- mark completed
+- snooze
+- filter by category/status
+- high offset pagination
+- search with partial phrases
+
+Verify:
+
+- dashboard cache invalidates correctly
+- UI updates reflect server truth
+- counts stay accurate under pagination
+
+## 10.3 Dashboard summary integrity
+
+Validate:
+
+- `criticalToday`
+- `upcomingDeadlines`
+- `opportunities`
+- `lowPriority`
+- additive workflow metadata from backend:
+  - `groupedActions`
+  - `workflowSummaries`
+  - `impact`
+
+Expected result:
+
+- dashboard reflects real workload and recent automation value
+
+## 11. Inbox UI Tests
+
+## 11.1 List behavior
 
 Test:
 
 - pagination
-- classification filters
 - search
-- rendering with long subjects and senders
-- empty state behavior
+- classification filters
+- very long sender names
+- very long subjects
+- empty mailbox state
 
-### Direct actions
+## 11.2 Direct actions
 
-Test:
+Test from the inbox page:
 
 - mark important
 - draft reply
-- snooze from related task
-- add to calendar where context exists
-
-### Provider-specific behavior
-
-Gmail:
-
-- labels update correctly
-- archive removes from inbox
-- draft appears in Gmail drafts
-
-Outlook:
-
-- importance/category changes apply
-- folder movement behaves correctly
-- draft exists in Outlook mailbox
-
-## 7. Agent Planning and Autonomy
-
-### State-aware skip behavior
-
-This needs careful validation.
-
-Test:
-
-- same semantic inbox state twice
-- same inbox with changed timestamps only
-- same inbox with reordered thread messages
-- changed goals
-- changed intent
-- changed strategist output
-- changed recent actions
+- sync now
 
 Verify:
 
-- unchanged semantic state skips heavy planning
-- semantic changes trigger replanning
-- normalized threads hash stably
+- success/failure states are understandable
+- no silent UI failure on timeouts or backend errors
 
-### Fast planner
+## 11.3 Loading and empty states
 
-Test rule modules independently:
+Expected text patterns should exist for:
 
-- recruiter rules
-- scheduling rules
-- cleanup rules
+- loading
+- syncing / processing
+- no data yet
+- error state
 
-Verify:
+The page should never look blank or broken while the worker is simply behind.
 
-- deterministic outputs
-- correct workflow labels
-- no cross-rule dependency bugs
+## 12. Agent Loop Tests
 
-### Heavy planner fallback
+## 12.1 Core loop execution
+
+Validate the full runtime path:
+
+1. perceive new state
+2. load goals
+3. run strategist
+4. load intent
+5. load energy context
+6. filter context
+7. hash state
+8. skip or plan
+9. merge and dedupe actions
+10. preview or execute
+11. reflect and write memory
+12. update activity feed
+
+## 12.2 State-aware skip behavior
 
 Test:
 
-- no fast-plan output
-- partial fast-plan output
-- low remaining loop budget
+- run the loop repeatedly with no semantic change
+- change only non-semantic timestamps or IDs
+- then change an actually meaningful task/email/goal field
 
 Expected result:
 
-- heavy planner runs only when needed
-- low budget forces fast-planner-only path
+- unchanged semantic state skips heavy planning
+- meaningful state changes trigger planning
 
-## 8. Preview, Approval, and Workflow UX
-
-### Preview generation
+## 12.3 Fast planner versus heavy planner
 
 Test:
 
-- preview created for each suggested step
-- workflow preview summary created
-- preview includes risk and estimated time saved
+- obvious deterministic cases
+- ambiguous complex inbox cases
+- low latency budget conditions
 
-### Approval actions
+Expected result:
+
+- fast planner handles obvious cases
+- heavy planner only runs when needed
+- latency budget fallback prevents long loop stalls
+
+## 12.4 Dedupe and workflow consistency
 
 Test:
 
+- duplicate candidate actions from merged plans
+- retries after partial workflow failure
+- replan after an execution error
+
+Expected result:
+
+- highest-confidence duplicate survives
+- workflow order remains stable
+- already executed steps are not duplicated
+
+## 13. Preview, Approval, and Recovery Tests
+
+## 13.1 Preview lifecycle
+
+Test:
+
+- preview creation for guarded actions
 - approve one action
 - modify one action
 - cancel one action
-- approve all actions in a workflow
-
-Verify:
-
-- approved action executes once
-- modified payload is what executes
-- cancelled action never executes
-- workflow ordering is preserved
-
-### UI expectations
-
-Test:
-
-- approval queue renders pending previews
-- grouped workflow cards feel coherent
-- after approval, feed reflects execution quickly
-
-## 9. Execution, Idempotency, and Dedupe
-
-### Dedupe
-
-Test:
-
-- same step produced by fast and heavy planners
-- same step produced on rapid consecutive runs
-- same target with differently ordered input fields
-
-Verify:
-
-- only one persisted action remains
-- highest-confidence action wins
-- ties keep earliest order
-
-### Idempotency
-
-Test:
-
-- worker restart during execution
-- retry after network timeout
-- repeated approval click
+- approve a workflow bundle via `approve-all`
 
 Expected result:
 
-- no duplicate side effects
-- same execution key reused
-- action status converges correctly
+- action status changes are correct
+- approved actions execute once
+- modified actions preserve override payload
+- cancelled actions do not execute
 
-## 10. Tool-by-Tool Validation
-
-### `create_task`
-
-Test:
-
-- valid task creation
-- duplicate avoidance
-- undo path
-
-### `create_calendar_event`
+## 13.2 Undo and rollback
 
 Test:
 
-- Gmail calendar event creation
-- Outlook calendar event creation
-- undo path
+- undo a reversible single action
+- rollback a workflow with multiple executed steps
+- attempt undo on a non-reversible action
 
-### `draft_reply`
+Expected result:
 
-Test:
+- reversible tools revert cleanly when supported
+- non-reversible actions fail safely and visibly
 
-- draft generation quality
-- provider draft creation
-- undo path
+## 13.3 Human alignment tests
 
-### `send_reply`
+Validate:
 
-Test:
+- `delete_email` never auto-executes
+- `send_reply` requires approval
+- `always_allow` only affects appropriate tool/workflow behavior
 
-- never auto-executes
-- requires approval
-- risky outcome logging exists
+## 14. Feedback, Policy, and Memory Tests
 
-### `snooze`
-
-Test:
-
-- task snooze
-- notification updates
-- undo path
-
-### `mark_important`
-
-Test:
-
-- Gmail important/starred handling
-- Outlook importance reset on undo
-
-### `archive_email`
-
-Test:
-
-- Gmail archive
-- Outlook move to archive
-- undo returns to inbox
-
-### `delete_email`
-
-Test:
-
-- approval required
-- Gmail trash
-- Outlook move to deleted items
-- undo path
-- risky outcome signal
-
-### `move_to_folder`
-
-Test:
-
-- allowlisted destination only
-- Outlook folder resolution
-- undo behavior
-
-### `label_email`
-
-Test:
-
-- allowed labels only
-- Gmail label add/remove
-- Outlook category add/remove
-
-## 11. Feedback, Policy, and Learning
-
-### Feedback system
+## 14.1 Feedback outcomes
 
 Test:
 
 - approve
 - reject
-- always_allow
 - modify
+- always_allow
 - cancel
 
 Verify:
 
-- feedback is stored
-- confidence changes over time
-- workflow and tool policy updates are reflected
-- `always_allow` persists across future similar actions
+- policy state updates persist where appropriate
+- confidence adjustments happen over time
+- action history remains traceable
 
-### Contextual learning
+## 14.2 Memory optimizer safeguards
 
-Test:
+Test with seeded historical data:
 
-- repeated approvals improve action confidence
-- repeated rejections lower confidence
-- stale behavior decays toward neutral
-
-## 12. Memory and Reflection
-
-### Reflection
-
-Test:
-
-- successful execution reflection
-- failed execution reflection
-- partial workflow reflection
-
-Verify:
-
-- reflection records exist
-- suggestions are reasonable
-- future planning changes after repeated outcomes
-
-### Memory optimization
-
-Test:
-
-- old episodic memory summarization
-- active workflow markers remain intact
-- recent signals are preserved
-- always-allow policy survives optimization
-
-## 13. Cost Tracking and Observability
-
-### LLM usage events
-
-Test:
-
-- classification call logs tokens
-- extraction call logs tokens
-- planning call logs tokens
-- reflection call logs tokens
-- strategist call logs tokens
-
-Verify:
-
-- rows appear in `llm_usage_events`
-- provider/model are correct
-- latency and token counts are plausible
-
-### Aggregates
-
-Test:
-
-- daily per-user cost aggregation
-- per-workflow aggregation
-- cost per action
-- cost per successful action
-
-Verify:
-
-- Redis and Postgres aggregates stay in sync enough for reads
-- no negative or impossible cost values
-
-## 14. Security and Abuse Testing
-
-### Input validation
-
-Test all write endpoints with:
-
-- wrong types
-- missing required fields
-- oversized strings
-- invalid enums
-- malicious nested payloads
-
-### Authorization
-
-Test:
-
-- user A trying to access user B data
-- invalid action ID on approve/undo
-- invalid workflow ID on approve-all/rollback
-
-### Rate limits
-
-Test:
-
-- burst auth attempts
-- burst sync requests
-- burst webhook traffic
-
-### Expected result
-
-- safe rejection
-- no cross-user leakage
-- no stack trace leakage
-
-## 15. Performance and Scale
-
-### Data scale tests
-
-Test with:
-
-- 10k emails
-- 50k emails
-- 100k+ tasks and actions in staging if possible
-
-Watch:
-
-- `/emails` pagination latency
-- `/tasks` pagination latency
-- `/agent/actions` latency
-- dashboard cache hit rate
-- queue backlog growth
-
-### Agent efficiency tests
-
-Test:
-
-- repeated loop runs against mostly unchanged data
-- large noisy inboxes
-- recruiter-heavy inboxes
+- active memory entries
+- stale low-value entries
+- policy entries
+- recently used patterns
 
 Expected result:
 
-- skip rate rises on unchanged state
-- heavy planner usage remains controlled
-- cost per action stays reasonable
+- active and recently used items remain intact
+- `always_allow` policy survives optimization
+- stale entries are summarized/decayed appropriately
 
-## 16. UX Quality and Product Trust
+## 15. Cost and Observability Tests
 
-This product is not only about correctness. It has to feel trustworthy.
+## 15.1 AI usage tracking
 
-Test:
+Verify in `llm_usage_events`:
 
-- landing page clarity
-- dashboard clarity with real data
-- agent page explanation of what happened
-- preview wording
-- approval button confidence
-- visibility of undo/rollback
-- empty states
-- loading states
-- error states
+- provider
+- model
+- operation
+- tokens
+- latency
+- estimated cost
+- workflow key
 
-Ask during testing:
+## 15.2 Aggregates
 
-- does the user understand what the agent did?
-- does the user understand why it did it?
-- does the user know what can be undone?
-- does the UI feel stable when the dataset grows?
+Verify in `llm_cost_daily_aggregates`:
 
-## 17. Release Gate
+- total requests
+- prompt tokens
+- completion tokens
+- total cost
+- actions created
+- successful actions
+- cost per action
+- cost per successful action
+- cost per workflow
 
-Before shipping to real users, do not skip these:
+## 15.3 Activity feed and logs
 
-1. Gmail OAuth end-to-end
-2. Outlook OAuth end-to-end
-3. Inbox sync and extraction on real mailboxes
-4. Preview and approve-all workflow tests
-5. High-risk action gating for `delete_email` and `send_reply`
-6. Undo and rollback tests
-7. State-aware skip validation
-8. Cost aggregate validation
-9. Security negative tests
-10. Full frontend and backend production builds
+Verify:
 
-## Suggested Test Artifacts
+- `agent_activity_feed` updates
+- `agent_logs` capture errors and key lifecycle events
+- dashboard and agent pages surface grouped workflow value
 
-Keep:
+## 16. Frontend Stability Tests
 
-- screenshots of each core page
-- sample inbox fixtures
-- provider-specific test accounts
-- query results for `agent_actions`, `agent_plans`, `agent_reflections`, `llm_usage_events`
-- logs from failure drills
+Validate across all authenticated pages:
 
-If you want a single source of truth for ongoing QA, this is the document to operationalize into a release checklist or test management tool.
+- route loads without console errors
+- loading state is clear
+- empty state is clear
+- processing state is clear
+- transient API failures surface useful messages
+- refresh does not lose session unexpectedly
 
+Pages to test explicitly:
+
+- `/dashboard`
+- `/tasks`
+- `/deadlines`
+- `/opportunities`
+- `/inbox`
+- `/agent`
+- `/settings`
+
+Also test:
+
+- `/`
+- `/auth/callback`
+
+## 17. Security and Abuse Tests
+
+### Auth and session
+
+- protected route access without cookie
+- stale bearer token fallback
+- logout behavior
+- invalid JWT issuer/audience
+
+### OAuth
+
+- invalid state
+- reused callback URL
+- provider denial flow
+
+### Write endpoints
+
+- invalid payloads on `/actions`, `/agent/preview/*`, `/preferences`, `/feedback`, `/agent/intent`, `/agent/goals`
+- ownership enforcement on action IDs and workflow IDs
+
+### Tool misuse
+
+- invalid folder names
+- invalid label names
+- forged email/message targets
+- repeated preview approval calls
+
+### Webhooks
+
+- invalid `clientState`
+- unknown subscription IDs
+- excessive webhook request bursts
+
+## 18. Performance and Scale Tests
+
+## 18.1 List scale
+
+Test with:
+
+- thousands of emails
+- thousands of tasks
+- many recent agent actions
+
+Verify:
+
+- paginated endpoints remain responsive
+- filters return correct totals
+- frontend paging remains stable
+
+## 18.2 Worker load
+
+Test with:
+
+- many users queued for sync
+- many users queued for agent runs
+- repeated provider latency spikes
+
+Verify:
+
+- queues drain predictably
+- no catastrophic planner duplication
+- timeouts are visible and recoverable
+
+## 18.3 Cost under load
+
+Verify:
+
+- heavy planner invocation rate stays reasonable
+- state skip rate remains meaningful
+- cost per action does not spike unexpectedly
+
+## 19. Deployment and Migration Testing
+
+Before a production rollout:
+
+1. apply migrations to staging
+2. run full auth + sync + dashboard smoke tests
+3. validate previews and recovery
+4. validate provider actions for enabled providers
+5. confirm frontend and backend builds
+6. confirm worker starts on new code
+7. confirm rollback path exists for deploy and schema
+
+## 20. Recommended Manual Smoke Test Script
+
+This is the fastest practical end-to-end release check:
+
+1. load `/`
+2. submit the waitlist form
+3. authenticate with Gmail or Microsoft
+4. land on `/dashboard`
+5. trigger `Sync Now`
+6. confirm inbox rows appear
+7. confirm at least one task is created or visible
+8. open `/agent` and inspect action history
+9. approve a previewable action if one exists
+10. verify action result in provider system
+11. refresh the app and confirm session persists
+12. logout and confirm internal routes are blocked
+
+## 21. Release Sign-Off Checklist
+
+Ship only when all of these are true:
+
+- builds pass
+- env is correct
+- OAuth works for enabled providers
+- sync works
+- dashboard and inbox are populated
+- preview approval works
+- guarded actions remain guarded
+- undo/rollback behave as expected
+- cost tracking records real activity
+- no critical console or backend errors remain
+
+## 22. Known Gaps To Keep In Mind
+
+These are not reasons to panic, but they are reasons to stay disciplined:
+
+- there is no full automated test suite yet
+- much of release safety currently depends on manual validation
+- provider behavior differs and must be tested separately
+- the system is asynchronous, so UI timing issues can easily look like logic bugs if you do not inspect workers and DB state together

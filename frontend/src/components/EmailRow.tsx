@@ -20,7 +20,7 @@ export default function EmailRow({ email, onMarkImportant, onDraftReply }: Email
             </span>
             {email.status && <span className={clsx('badge', getStatusTone(email.status))}>{email.status}</span>}
           </div>
-          <h4 className="mt-3 truncate text-lg font-semibold text-neutral-100  ">
+          <h4 className="mt-3 truncate text-lg font-semibold text-neutral-100">
             {email.subject ?? 'No subject'}
           </h4>
           <p className="mt-2 text-sm leading-7 text-neutral-400 font-light">

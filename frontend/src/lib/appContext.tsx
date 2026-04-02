@@ -3,10 +3,12 @@ import { getSession, logout as apiLogout, syncInbox as apiSyncInbox } from './ap
 
 type AppContextValue = {
   hasToken: boolean;
+  isAuthenticated: boolean;
   token: string | null;
   userEmail: string | null;
   authMode: 'cookie' | 'bearer' | null;
   authLoading: boolean;
+  loading: boolean;
   lastSyncedAt: string | null;
   setToken: (token: string | null) => void;
   refreshSession: () => Promise<boolean>;
@@ -23,8 +25,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem('auth_token'));
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'cookie' | 'bearer' | null>(null);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
@@ -38,33 +40,54 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setTokenState(next);
   }, []);
 
+  const clearStoredToken = useCallback(() => {
+    localStorage.removeItem('auth_token');
+    setTokenState(null);
+  }, []);
+
   const refreshSession = useCallback(async () => {
-    setAuthLoading(true);
+    setLoading(true);
     try {
       const session = await getSession();
-      setAuthenticated(session.authenticated);
-      setUserEmail(session.user?.email ?? null);
-      setAuthMode(session.authMode ?? null);
+      if (session.authenticated && session.user) {
+        setIsAuthenticated(true);
+        setUserEmail(session.user.email);
+        setAuthMode(session.authMode ?? null);
 
-      if (session.authenticated && session.authMode === 'cookie' && token) {
-        localStorage.removeItem('auth_token');
-        setTokenState(null);
+        if (session.authMode === 'cookie' && token) {
+          clearStoredToken();
+        }
+        return true;
       }
-      return session.authenticated;
+
+      setIsAuthenticated(false);
+      setUserEmail(null);
+      setAuthMode(null);
+      if (token) {
+        clearStoredToken();
+      }
+      return false;
     } catch (error) {
       console.error(error);
-      setAuthenticated(Boolean(token));
+      setIsAuthenticated(false);
       setUserEmail(null);
-      setAuthMode(token ? 'bearer' : null);
-      return Boolean(token);
+      setAuthMode(null);
+      if (token) {
+        clearStoredToken();
+      }
+      return false;
     } finally {
-      setAuthLoading(false);
+      setLoading(false);
     }
-  }, [token]);
+  }, [clearStoredToken, token]);
 
   useEffect(() => {
     void refreshSession();
   }, [refreshSession]);
+
+  useEffect(() => {
+    console.log('SESSION_CHECK', { isAuthenticated, loading });
+  }, [isAuthenticated, loading]);
 
   const syncInbox = useCallback(async () => {
     setSyncing(true);
@@ -73,6 +96,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       await apiSyncInbox();
       const now = new Date().toISOString();
       setLastSyncedAt(now);
+      console.log('INBOX_SYNC', { lastSyncedAt: now });
       setStatus('Sync queued. Fresh email intelligence is on the way.');
     } catch (error) {
       console.error(error);
@@ -90,7 +114,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.error(error);
     } finally {
       setToken(null);
-      setAuthenticated(false);
+      setIsAuthenticated(false);
       setUserEmail(null);
       setAuthMode(null);
       setStatus('Signed out.');
@@ -98,11 +122,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }, [setToken]);
 
   const value = useMemo(() => ({
-    hasToken: authenticated,
+    hasToken: isAuthenticated,
+    isAuthenticated,
     token,
     userEmail,
     authMode,
-    authLoading,
+    authLoading: loading,
+    loading,
     lastSyncedAt,
     setToken,
     refreshSession,
@@ -112,11 +138,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     syncing,
     syncInbox
   }), [
-    authenticated,
+    isAuthenticated,
     token,
     userEmail,
     authMode,
-    authLoading,
+    loading,
     lastSyncedAt,
     setToken,
     refreshSession,
@@ -125,6 +151,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     syncing,
     syncInbox
   ]);
+
+  if (loading) {
+    return null;
+  }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

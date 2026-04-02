@@ -29,7 +29,7 @@ export default function Section({
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral-800 pb-4">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-300">Dashboard section</div>
-          <h2 className="mt-2 font-display text-3xl font-bold text-neutral-100  ">{title}</h2>
+          <h2 className="mt-2 font-display text-3xl font-bold text-neutral-100">{title}</h2>
           <p className="mt-2 text-sm leading-7 text-neutral-400 font-light">{subtitle}</p>
         </div>
         <span className="status-pill border-neutral-800 bg-neutral-900 text-neutral-300">{tasks.length} items</span>

@@ -1,25 +1,59 @@
 # API Reference
 
-All endpoints are JSON over HTTPS. Protected endpoints require either:
+This document describes the current backend HTTP surface implemented in `/Users/HP/outlook-bot/backend/src/routes`.
 
-- an HttpOnly session cookie, or
-- `Authorization: Bearer <jwt>`
+Important implementation note:
 
-Base URL examples:
+- the backend does **not** use an `/api` prefix
+- local base URL is typically `http://localhost:4000`
+- the frontend talks to the backend with `credentials: 'include'`
+- authenticated requests work through either:
+  - the HttpOnly session cookie, or
+  - `Authorization: Bearer <jwt>` as a compatibility fallback
 
-- local backend: `http://localhost:4000`
-- frontend dev app: `http://localhost:5173`
+## Route Registration
+
+The backend mounts routes in `/Users/HP/outlook-bot/backend/src/app.ts` as follows:
+
+- `/auth`
+- `/emails`
+- `/tasks`
+- `/preferences`
+- `/feedback`
+- `/actions`
+- `/agent`
+- `/webhooks`
+
+Additional public endpoints:
+
+- `GET /health`
+- `GET /.well-known/security.txt`
 
 ## Conventions
 
+### Authentication
+
+Protected endpoints use `authMiddleware` and require a valid authenticated user.
+
+Unauthenticated protected requests generally return:
+
+```json
+{ "error": "Unauthorized" }
+```
+
+### Validation
+
+Request validation is enforced through Zod schemas and the `validate` middleware.
+
+Typical validation failures return HTTP `400` with a JSON error payload from the backend middleware layer.
+
 ### Pagination
 
-List endpoints use:
+List endpoints use `limit` and `offset`.
 
-- `limit`
-- `offset`
+Current max page size on validated list routes is `200`.
 
-Typical response shape:
+Typical list response pattern:
 
 ```json
 {
@@ -30,74 +64,70 @@ Typical response shape:
 }
 ```
 
-### Common status values
+Actual route-specific keys vary by endpoint. For example:
 
-Agent action statuses commonly seen:
+- `/emails` returns `emails`
+- `/tasks` returns `tasks`
+- `/agent/actions` returns `actions`
 
-- `preview`
-- `modified`
-- `executed`
-- `failed`
-- `cancelled`
-- `undone`
+### Error Shape
 
-Task statuses:
-
-- `open`
-- `snoozed`
-- `completed`
-
-### Magic-moment fields
-
-Dashboard and agent responses may include additive fields:
-
-- `groupedActions`
-- `workflowSummaries`
-- `impact`
-
-Example:
+The backend commonly returns one of these shapes:
 
 ```json
-{
-  "impact": {
-    "savedTimeMinutes": 12.5,
-    "automationsCompleted": 6,
-    "approvalsPending": 2
-  }
-}
+{ "error": "Unauthorized" }
 ```
 
-## Auth
+```json
+{ "error": "Task not found" }
+```
 
-### `GET /auth/google`
+```json
+{ "ok": true }
+```
 
-Starts Google OAuth.
+The frontend additionally wraps transport errors and timeouts into a normalized `ApiRequestError` in `/Users/HP/outlook-bot/frontend/src/lib/api.ts`.
 
-### `GET /auth/google/callback`
+## Public Endpoints
 
-OAuth callback endpoint used by Google.
+### `GET /health`
 
-Behavior:
+Purpose:
 
-- validates state cookie
-- exchanges code for tokens
-- stores provider tokens
-- creates session cookie
-- redirects to frontend callback
+- basic liveness check
 
-### `GET /auth/microsoft`
+Response:
 
-Starts Microsoft OAuth.
+```json
+{ "ok": true }
+```
 
-### `GET /auth/microsoft/callback`
+### `GET /.well-known/security.txt`
 
-OAuth callback endpoint used by Microsoft Graph.
+Purpose:
+
+- publishes a simple security contact and policy location
+
+Response type:
+
+- plain text
+
+## Authentication Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/auth.ts`.
 
 ### `GET /auth/session`
 
-Returns session state.
+Purpose:
 
-Example response:
+- determine whether the current request is authenticated
+- return user identity needed by the frontend session provider
+
+Auth required:
+
+- no
+
+Response when authenticated:
 
 ```json
 {
@@ -110,9 +140,28 @@ Example response:
 }
 ```
 
+Response when not authenticated:
+
+```json
+{
+  "authenticated": false
+}
+```
+
+Notes:
+
+- this is the authoritative session check used by `/Users/HP/outlook-bot/frontend/src/lib/appContext.tsx`
+- `authMode` may be `cookie` or `bearer`
+
 ### `POST /auth/logout`
 
-Clears the auth cookie.
+Purpose:
+
+- clear the auth cookie
+
+Auth required:
+
+- no explicit middleware, but meaningful only when a session cookie exists
 
 Response:
 
@@ -120,15 +169,114 @@ Response:
 { "ok": true }
 ```
 
+### `GET /auth/google`
+
+Purpose:
+
+- start Google OAuth
+
+Behavior:
+
+- creates an `oauth_state_google` cookie
+- redirects the browser to Google OAuth
+
+Auth required:
+
+- no
+
+### `GET /auth/google/callback`
+
+Purpose:
+
+- complete Google OAuth
+
+Behavior:
+
+- validates `oauth_state_google`
+- exchanges code for Google tokens
+- reads Google profile
+- upserts the user and stores encrypted provider tokens
+- issues the application auth cookie
+- redirects the browser to frontend `/auth/callback`
+
+Redirect query params:
+
+- success: `status=connected&provider=google`
+- failure: `status=error&provider=google`
+
+### `GET /auth/microsoft`
+
+Purpose:
+
+- start Microsoft OAuth
+
+Behavior:
+
+- creates an `oauth_state` cookie
+- redirects to Azure/Microsoft OAuth
+
+### `GET /auth/microsoft/callback`
+
+Purpose:
+
+- complete Microsoft OAuth
+
+Behavior:
+
+- validates `oauth_state`
+- exchanges code for Graph tokens
+- reads profile
+- upserts the user and stores encrypted provider tokens
+- optionally creates a Graph webhook subscription when `MS_WEBHOOK_NOTIFICATION_URL` is configured
+- issues the application auth cookie
+- redirects to frontend `/auth/callback`
+
+Redirect query params:
+
+- success: `status=connected&provider=microsoft`
+- failure: `status=error&provider=microsoft`
+
 ### `GET /auth/verify`
 
-Protected verification endpoint.
+Purpose:
 
-## Emails
+- authenticated verification/debug endpoint
+
+Auth required:
+
+- yes
+
+Response:
+
+```json
+{
+  "ok": true,
+  "user": {
+    "userId": "uuid",
+    "email": "student@example.com"
+  },
+  "authMode": "cookie"
+}
+```
+
+## Email Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/emails.ts`.
 
 ### `POST /emails/sync`
 
-Queues an inbox sync job.
+Purpose:
+
+- queue an inbox sync job for the current user
+
+Auth required:
+
+- yes
+
+Behavior:
+
+- adds a `sync-user` job to the `email-ingestion` queue
+- BullMQ retry policy: `attempts: 3`, exponential backoff, `delay: 2000`
 
 Response:
 
@@ -138,17 +286,27 @@ Response:
 
 ### `GET /emails`
 
-Returns paginated inbox records.
+Purpose:
+
+- return a paginated email list for the authenticated user
+
+Auth required:
+
+- yes
 
 Query parameters:
 
-- `limit` - integer, 1 to 200
-- `offset` - integer, 0+
-- `status` - optional email processing status
-- `classification` - optional classification filter
-- `query` - sender/subject search
+- `limit`: integer, default `50`, min `1`, max `200`
+- `offset`: integer, default `0`
+- `status`: optional email processing status
+- `classification`: optional email classification filter
+- `query`: optional sender/subject search, max length `200`
 
-Example response:
+Sort order:
+
+- `received_at DESC NULLS LAST`
+
+Response shape:
 
 ```json
 {
@@ -159,7 +317,7 @@ Example response:
       "subject": "Internship application reminder",
       "sender_email": "recruiter@company.com",
       "sender_name": "Hiring Team",
-      "received_at": "2026-03-22T07:30:00.000Z",
+      "received_at": "2026-03-24T07:30:00.000Z",
       "classification": "internship",
       "ai_score": 0.92,
       "status": "processed"
@@ -171,27 +329,46 @@ Example response:
 }
 ```
 
-## Tasks
+Common values:
+
+- `classification`: `assignment`, `internship`, `event`, `academic`, `personal`, `spam`, `other`
+- `status`: typically `pending` or `processed`
+
+## Task Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/tasks.ts`.
 
 ### `GET /tasks`
 
-Returns paginated tasks.
+Purpose:
+
+- return paginated extracted tasks for the current user
+
+Auth required:
+
+- yes
 
 Query parameters:
 
-- `limit`
-- `offset`
-- `status`
-- `category`
-- `query`
-- `sort` - `priority`, `due`, `created`
-- `minPriority`
-- `maxPriority`
-- `dueOnly`
-- `dueFrom`
-- `dueTo`
+- `limit`: integer, default `50`, min `1`, max `200`
+- `offset`: integer, default `0`
+- `status`: optional task status
+- `category`: optional category or comma-separated categories
+- `query`: optional text search across title/description
+- `sort`: one of `priority`, `due`, `created`
+- `minPriority`: optional numeric threshold
+- `maxPriority`: optional numeric threshold
+- `dueOnly`: optional boolean
+- `dueFrom`: optional ISO-like date string
+- `dueTo`: optional ISO-like date string
 
-Example response:
+Sort semantics:
+
+- `priority`: `priority_score DESC, due_at ASC NULLS LAST`
+- `due`: `due_at ASC NULLS LAST, priority_score DESC`
+- `created`: `created_at DESC`
+
+Response shape:
 
 ```json
 {
@@ -216,11 +393,29 @@ Example response:
 }
 ```
 
+Task status values:
+
+- `open`
+- `snoozed`
+- `completed`
+
 ### `GET /tasks/dashboard`
 
-Returns dashboard task sections plus workflow visibility.
+Purpose:
 
-Example response:
+- return dashboard sections plus additive automation summary fields
+
+Auth required:
+
+- yes
+
+Behavior:
+
+- serves from cache when available
+- cache key is `dashboard:<userId>`
+- cache is invalidated on task status patch operations
+
+Response shape:
 
 ```json
 {
@@ -238,9 +433,24 @@ Example response:
 }
 ```
 
+Sections:
+
+- `criticalToday`
+- `upcomingDeadlines`
+- `opportunities`
+- `lowPriority`
+
+The additive fields come from `/Users/HP/outlook-bot/backend/src/agent/magicOutput.ts`.
+
 ### `PATCH /tasks/:id`
 
-Updates a task status.
+Purpose:
+
+- update an extracted task status
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -250,43 +460,74 @@ Body:
 }
 ```
 
+Allowed values:
+
+- `open`
+- `snoozed`
+- `completed`
+
 Response:
 
 ```json
 { "ok": true }
 ```
 
-## Preferences
+Side effect:
+
+- invalidates dashboard cache for the current user
+
+## Preferences Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/preferences.ts`.
 
 ### `GET /preferences`
 
-Returns user-defined weights.
+Purpose:
 
-Example response:
+- read user preference weights
+
+Auth required:
+
+- yes
+
+Response:
 
 ```json
 {
   "weights": {
     "assignment": 1.5,
-    "internship": 1.8
+    "internship": 2,
+    "event": 1
   }
 }
 ```
 
 ### `PUT /preferences`
 
-Updates weights.
+Purpose:
+
+- update user preference weights
+
+Auth required:
+
+- yes
 
 Body:
 
 ```json
 {
   "weights": {
-    "assignment": 1.4,
-    "internship": 1.8
+    "assignment": 1.5,
+    "internship": 2,
+    "event": 1
   }
 }
 ```
+
+Validation:
+
+- values must be numeric
+- each value must be between `0` and `10`
 
 Response:
 
@@ -294,11 +535,19 @@ Response:
 { "ok": true }
 ```
 
-## Legacy Feedback
+## Feedback Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/feedback.ts`.
 
 ### `POST /feedback`
 
-Stores lightweight user feedback not tied to a planner preview action.
+Purpose:
+
+- record lightweight user behavior feedback tied to an email and/or category
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -306,18 +555,41 @@ Body:
 {
   "emailId": "uuid",
   "action": "thumbs_up",
-  "category": "academic",
+  "category": "assignment",
   "metadata": {
-    "source": "dashboard"
+    "surface": "dashboard"
   }
 }
 ```
 
-## Direct Actions
+Fields:
 
-These are user-triggered shortcut operations that bypass the autonomous planner and invoke tools directly.
+- `emailId`: optional UUID
+- `action`: required string, max length `50`
+- `category`: optional string, max length `50`
+- `metadata`: optional object
+
+Response:
+
+```json
+{ "ok": true }
+```
+
+## Direct User Action Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/actions.ts`.
+
+These endpoints execute tools directly outside the autonomous planner, usually from explicit user clicks in the UI.
 
 ### `POST /actions/calendar`
+
+Purpose:
+
+- create a calendar event from a task
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -327,7 +599,25 @@ Body:
 }
 ```
 
+Behavior:
+
+- resolves the task to its source email and message context
+- executes tool `create_calendar_event`
+
+Possible errors:
+
+- `401 Unauthorized`
+- `404 Task not found`
+
 ### `POST /actions/important`
+
+Purpose:
+
+- mark an email as important
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -337,7 +627,25 @@ Body:
 }
 ```
 
+Behavior:
+
+- resolves the message context in the `emails` table
+- executes tool `mark_important`
+
+Possible errors:
+
+- `401 Unauthorized`
+- `404 Email not found`
+
 ### `POST /actions/reply`
+
+Purpose:
+
+- draft a reply and optionally send it
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -348,7 +656,37 @@ Body:
 }
 ```
 
+Behavior:
+
+- always executes tool `draft_reply`
+- if `send === true` and a draft ID is available, also executes `send_reply`
+
+Response shape:
+
+```json
+{
+  "draftId": "provider-draft-id",
+  "subject": "Re: Internship conversation",
+  "body": "Thanks for reaching out...",
+  "sent": false
+}
+```
+
+Important note:
+
+- the autonomous system keeps `send_reply` approval-gated
+- this direct endpoint can still send when explicitly instructed with `send: true`
+- treat this endpoint carefully in production UI and testing
+
 ### `POST /actions/snooze`
+
+Purpose:
+
+- snooze a task
+
+Auth required:
+
+- yes
 
 Body:
 
@@ -359,141 +697,264 @@ Body:
 }
 ```
 
-## Agent
+Behavior:
 
-### `GET /agent/goals`
+- resolves task and message context
+- executes tool `snooze`
 
-Returns goals and autopilot settings.
+## Agent Endpoints
 
-### `PUT /agent/goals`
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/agent.ts`.
 
-Body:
+## `GET /agent/goals`
+
+Purpose:
+
+- return the current user’s goals, autopilot level, and personality mode
+
+Auth required:
+
+- yes
+
+Response:
 
 ```json
 {
   "goals": [
-    { "goal": "focus on academics", "weight": 2 },
-    { "goal": "get internship", "weight": 3 }
+    { "goal": "get internship", "weight": 2 },
+    { "goal": "focus on academics", "weight": 3 }
   ],
   "autopilotLevel": 1,
   "personalityMode": "proactive"
 }
 ```
 
-### `GET /agent/intent`
+## `PUT /agent/goals`
 
-Reads active short-term intent state.
+Purpose:
 
-Optional query parameter:
+- update goals and agent posture
 
-- `sessionId`
+Auth required:
 
-### `POST /agent/intent`
-
-Updates short-term intent state.
+- yes
 
 Body:
 
 ```json
 {
-  "intents": ["finish assignments this week"],
-  "sessionOverrides": ["ignore club outreach today"],
-  "priorityBoosts": {
-    "academic": 1.2
-  },
-  "sessionId": "study-session-1",
-  "ttlHours": 24
+  "goals": [
+    { "goal": "get internship", "weight": 2 }
+  ],
+  "autopilotLevel": 1,
+  "personalityMode": "proactive"
 }
 ```
 
-### `GET /agent/actions`
+Validation:
 
-Returns paginated agent actions plus grouped workflow output.
+- goal text max `200`
+- weight between `0` and `10`
+- autopilot allowed values: `0`, `1`, `2`
+- personality allowed values: `chill`, `proactive`, `aggressive`
+
+Response:
+
+```json
+{ "ok": true }
+```
+
+## `POST /agent/feedback`
+
+Purpose:
+
+- record higher-fidelity agent feedback tied to a specific agent action
+
+Auth required:
+
+- yes
+
+Body:
+
+```json
+{
+  "actionId": "uuid",
+  "status": "approve",
+  "notes": "This was exactly right",
+  "metadata": {
+    "surface": "agent_page"
+  }
+}
+```
+
+Accepted status aliases:
+
+- `accepted`
+- `approved`
+- `approve`
+- `rejected`
+- `reject`
+- `modified`
+- `always_allow`
+- `cancel`
+- `cancelled`
+
+Response:
+
+```json
+{ "ok": true }
+```
+
+## `GET /agent/activity-feed`
+
+Purpose:
+
+- return the latest activity feed plus additive workflow/impact summary fields
+
+Auth required:
+
+- yes
+
+Response shape:
+
+```json
+{
+  "feed": {
+    "summary_date": "2026-03-24",
+    "summary": {
+      "actions_taken": ["Created task", "Drafted reply"],
+      "improvements": ["Confidence improved for recruiter emails"],
+      "insights": ["Assignment emails peaked in the morning"]
+    }
+  },
+  "groupedActions": [],
+  "workflowSummaries": [],
+  "impact": {
+    "savedTimeMinutes": 10,
+    "automationsCompleted": 4,
+    "approvalsPending": 1
+  }
+}
+```
+
+## `GET /agent/actions`
+
+Purpose:
+
+- return paginated agent action history
+
+Auth required:
+
+- yes
 
 Query parameters:
 
-- `limit`
-- `offset`
-- `status`
+- `limit`: integer, default `50`, max `200`
+- `offset`: integer, default `0`
+- `status`: optional status filter
 
-Example response:
+Response shape:
 
 ```json
 {
   "actions": [
     {
       "id": "uuid",
-      "action_type": "create_task",
+      "action_type": "draft_reply",
       "status": "preview",
-      "workflow_name": "Scheduling Triage",
-      "workflow_id": "a1b2c3",
-      "action_payload": {
-        "__preview": {
-          "summary": "Create task: Respond to scheduling request"
-        }
-      }
+      "workflow_name": "Recruiter Follow-up",
+      "workflow_id": "abc123",
+      "action_payload": {},
+      "confidence": 0.81,
+      "decision_reason": "Recruiter email with clear scheduling intent",
+      "requires_approval": true,
+      "created_at": "2026-03-24T09:00:00.000Z",
+      "email_id": "uuid",
+      "subject": "Screening Call",
+      "sender_name": "Recruiter",
+      "sender_email": "recruiter@example.com"
     }
   ],
-  "total": 32,
+  "total": 20,
   "limit": 50,
   "offset": 0,
   "groupedActions": [],
   "workflowSummaries": [],
   "impact": {
-    "savedTimeMinutes": 4.5,
-    "automationsCompleted": 3,
+    "savedTimeMinutes": 4,
+    "automationsCompleted": 1,
     "approvalsPending": 2
   }
 }
 ```
 
-### `GET /agent/activity-feed`
+Common status values currently seen in code and UI:
 
-Returns the latest daily activity feed plus grouped workflow output.
-
-### `POST /agent/feedback`
-
-Records feedback for a specific agent action.
-
-Canonical statuses:
-
-- `approve`
-- `reject`
-- `always_allow`
+- `preview`
+- `suggest`
+- `suggested`
 - `modified`
-- `cancel`
+- `executed`
+- `approved`
+- `failed`
+- `cancelled`
+- `undone`
+- `discarded`
 
-Accepted aliases are also supported for compatibility.
+## `GET /agent/intent`
+
+Purpose:
+
+- inspect active intent/session override state
+
+Auth required:
+
+- yes
+
+Query parameter:
+
+- `sessionId` optional
+
+Response:
+
+- whatever is returned by `/Users/HP/outlook-bot/backend/src/agent/intent.ts`
+- typically includes short-term intents, session overrides, and priority boosts
+
+## `POST /agent/intent`
+
+Purpose:
+
+- update short-term intent state
+
+Auth required:
+
+- yes
 
 Body:
 
 ```json
 {
-  "actionId": "uuid",
-  "status": "always_allow",
-  "notes": "This kind of archive is always fine",
-  "metadata": {
-    "source": "agent_page"
-  }
+  "intents": ["focus on recruiting today"],
+  "sessionOverrides": ["deprioritize newsletters"],
+  "priorityBoosts": { "internship": 2 },
+  "sessionId": "browser-tab-1",
+  "ttlHours": 24
 }
 ```
+
+Validation:
+
+- intent strings max `200`
+- session ID max `120`
+- `ttlHours` between `1` and `168`
+
+## Preview And Approval Endpoints
 
 ### `POST /agent/preview/approve`
 
-Approves a single preview action.
+Purpose:
 
-Body:
-
-```json
-{
-  "actionId": "uuid",
-  "payloadOverride": {}
-}
-```
-
-### `POST /agent/preview/modify`
-
-Modifies a preview action before approval.
+- approve and execute a single preview action
 
 Body:
 
@@ -501,14 +962,79 @@ Body:
 {
   "actionId": "uuid",
   "payloadOverride": {
-    "title": "Reworded task title"
+    "until": "2026-03-25T09:00:00.000Z"
   }
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "result": {}
+}
+```
+
+### `POST /agent/preview/modify`
+
+Purpose:
+
+- modify a pending preview action payload before execution
+
+Body:
+
+```json
+{
+  "actionId": "uuid",
+  "payloadOverride": {
+    "label": "important"
+  }
+}
+```
+
+Validation note:
+
+- `payloadOverride` is required on this route
+
+Response:
+
+```json
+{
+  "ok": true,
+  "actionId": "uuid",
+  "status": "modified"
+}
+```
+
+### `POST /agent/preview/approve-all`
+
+Purpose:
+
+- approve all preview actions for a workflow bundle
+
+Body:
+
+```json
+{
+  "workflowId": "abc123"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "results": []
 }
 ```
 
 ### `POST /agent/preview/cancel`
 
-Cancels a pending preview.
+Purpose:
+
+- cancel a pending preview action
 
 Body:
 
@@ -519,21 +1045,22 @@ Body:
 }
 ```
 
-### `POST /agent/preview/approve-all`
-
-Approves every pending action in a workflow.
-
-Body:
+Response:
 
 ```json
 {
-  "workflowId": "a1b2c3"
+  "ok": true,
+  "result": {}
 }
 ```
 
+## Recovery Endpoints
+
 ### `POST /agent/recovery/undo`
 
-Attempts to undo one executed action.
+Purpose:
+
+- undo a reversible executed action
 
 Body:
 
@@ -543,42 +1070,109 @@ Body:
 }
 ```
 
+Response:
+
+```json
+{
+  "ok": true,
+  "result": {}
+}
+```
+
 ### `POST /agent/recovery/rollback`
 
-Attempts to rollback an entire workflow in reverse execution order.
+Purpose:
+
+- rollback a workflow when supported by underlying tools
 
 Body:
 
 ```json
 {
-  "workflowId": "a1b2c3"
+  "workflowId": "abc123"
 }
 ```
 
-## Webhooks
+Response:
+
+```json
+{
+  "ok": true,
+  "result": {}
+}
+```
+
+## Webhook Endpoints
+
+Implemented in `/Users/HP/outlook-bot/backend/src/routes/webhooks.ts`.
 
 ### `POST /webhooks/graph`
 
-Receives Microsoft Graph change notifications.
+Purpose:
 
-Behavior:
+- handle Microsoft Graph mailbox webhook events
 
-- validates subscription mapping
-- queues mailbox sync for the affected user
+Modes:
 
-## Health and Security
+1. Graph validation handshake
+2. actual notification processing
 
-### `GET /health`
+Validation handshake behavior:
 
-Health endpoint.
+- if `validationToken` query param exists, backend returns the token as plain text
 
-Response:
+Notification behavior:
+
+- reads `subscriptionId` and optional `clientState`
+- matches against `graph_subscriptions`
+- enqueues `sync-user` jobs for matching users
+
+Response after notification processing:
 
 ```json
 { "ok": true }
 ```
 
-### `GET /.well-known/security.txt`
+## Tool Names Used Across APIs And Agent Payloads
 
-Serves security disclosure metadata.
+Current tool registry names:
 
+- `create_task`
+- `create_calendar_event`
+- `draft_reply`
+- `send_reply`
+- `snooze`
+- `mark_important`
+- `archive_email`
+- `delete_email`
+- `move_to_folder`
+- `label_email`
+
+## Route-to-Frontend Mapping
+
+These frontend files depend on the API surface described above:
+
+- `/Users/HP/outlook-bot/frontend/src/lib/api.ts`
+- `/Users/HP/outlook-bot/frontend/src/lib/appContext.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/AuthCallback.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/Dashboard.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/Inbox.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/Tasks.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/Agent.tsx`
+- `/Users/HP/outlook-bot/frontend/src/pages/Settings.tsx`
+
+## API Smoke Test Checklist
+
+Before calling the API “healthy,” verify:
+
+1. `GET /health` returns `{ "ok": true }`
+2. `GET /auth/session` returns `authenticated: false` for logged-out requests
+3. OAuth connects and `GET /auth/session` returns the user
+4. `POST /emails/sync` returns `{ "status": "queued" }`
+5. `GET /emails` returns rows after worker ingestion
+6. `GET /tasks/dashboard` returns section arrays
+7. `GET /agent/actions` returns rows after planner execution
+8. preview approval routes work for a queued preview action
+9. recovery routes work only on supported reversible actions
+
+For full validation, use `/Users/HP/outlook-bot/docs/TESTING.md`.

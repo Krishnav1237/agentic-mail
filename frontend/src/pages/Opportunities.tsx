@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BriefcaseBusiness, Search, Sparkles } from 'lucide-react';
+import { BriefcaseBusiness, Search } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import ConnectPrompt from '../components/ConnectPrompt';
 import EmptyState from '../components/EmptyState';

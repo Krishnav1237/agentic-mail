@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock, CheckCircle2, ShieldCheck, Sparkles, Target } from 'lucide-react';
 import ConnectPrompt from '../components/ConnectPrompt';
+import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import Section from '../components/Section';
 import { addToCalendar, generateReply, getDashboard, markImportant, recordFeedback, snoozeTask, type DashboardSections, type Task } from '../lib/api';
@@ -16,9 +17,10 @@ const emptySections: DashboardSections = {
 const limitTasks = (tasks: Task[], count = 5) => tasks.slice(0, count);
 
 export default function DashboardPage() {
-  const { hasToken, setStatus, syncInbox, syncing } = useApp();
+  const { hasToken, setStatus, syncInbox, syncing, status } = useApp();
   const [sections, setSections] = useState<DashboardSections>(emptySections);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasToken) {
@@ -27,10 +29,12 @@ export default function DashboardPage() {
     }
 
     setLoading(true);
+    setLoadError(null);
     getDashboard()
       .then((data) => setSections(data))
       .catch((error) => {
         console.error(error);
+        setLoadError(error instanceof Error ? error.message : 'Unable to load dashboard.');
         setStatus('Unable to load dashboard. Please sync again.');
       })
       .finally(() => setLoading(false));
@@ -71,6 +75,9 @@ export default function DashboardPage() {
       category: task.category ?? undefined
     }));
 
+  const isProcessing = syncing || status.toLowerCase().includes('sync');
+  const hasNoData = totals.totalTracked === 0;
+
   if (!hasToken) {
     return <ConnectPrompt />;
   }
@@ -88,9 +95,9 @@ export default function DashboardPage() {
         )}
         aside={(
           <div className="surface-card border-neutral-800 relative overflow-hidden group">
-            <div className="absolute inset-0       opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100 relative z-10">
-              <ShieldCheck size={18} className="text-neutral-400  " />
+              <ShieldCheck size={18} className="text-neutral-400" />
               Trust rails active
             </div>
             <p className="mt-3 text-sm leading-7 text-neutral-400 font-light relative z-10">
@@ -109,7 +116,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
-            <Target size={18} className="text-neutral-300 group-hover:  transition-all" />
+            <Target size={18} className="text-neutral-300 group-hover:text-neutral-100 transition-all" />
             What the system is optimizing
           </div>
           <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
@@ -118,7 +125,7 @@ export default function DashboardPage() {
         </div>
         <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
-            <CalendarClock size={18} className="text-neutral-400 group-hover:  transition-all" />
+            <CalendarClock size={18} className="text-neutral-400 group-hover:text-neutral-100 transition-all" />
             Today&apos;s pressure
           </div>
           <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
@@ -127,7 +134,7 @@ export default function DashboardPage() {
         </div>
         <div className="surface-card group hover:-translate-y-1 hover:border-neutral-800 transition-all shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-neutral-100">
-            <CheckCircle2 size={18} className="text-neutral-400 group-hover:  transition-all" />
+            <CheckCircle2 size={18} className="text-neutral-400 group-hover:text-neutral-100 transition-all" />
             Lower-noise handling
           </div>
           <p className="mt-4 text-sm leading-7 text-neutral-400 font-light">
@@ -140,6 +147,13 @@ export default function DashboardPage() {
         <div className="glass-card rounded-xl p-10 text-center text-neutral-300   font-semibold tracking-wide border-neutral-800">
           Loading your dashboard...
         </div>
+      ) : loadError ? (
+        <EmptyState title="Dashboard unavailable" message={loadError} />
+      ) : hasNoData ? (
+        <EmptyState
+          title={isProcessing ? 'Processing your emails...' : 'No data yet'}
+          message={isProcessing ? 'Sync is running and the dashboard will fill in once email processing completes.' : 'No data yet. Try syncing your inbox.'}
+        />
       ) : (
         <>
           <Section

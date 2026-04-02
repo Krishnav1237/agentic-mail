@@ -11,7 +11,7 @@ export default function ConnectPrompt() {
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-300">
             Connect your workspace
           </div>
-          <h3 className="mt-4 font-display text-3xl font-semibold tracking-tight text-neutral-100  ">
+          <h3 className="mt-4 font-display text-3xl font-semibold tracking-tight text-neutral-100">
             Start with Gmail now, add Outlook when you are ready.
           </h3>
           <p className="mt-4 max-w-2xl text-sm leading-8 text-neutral-400 font-light md:text-base">

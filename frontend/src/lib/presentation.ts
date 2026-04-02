@@ -1,25 +1,31 @@
 export const categoryTones: Record<string, string> = {
-  assignment: 'bg-amber-100 text-amber-700 ring-amber-200',
-  internship: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
-  event: 'bg-cyan-100 text-cyan-700 ring-cyan-200',
-  academic: 'bg-indigo-100 text-indigo-700 ring-indigo-200',
-  personal: 'bg-slate-100 text-slate-700 ring-slate-200',
-  spam: 'bg-rose-100 text-rose-700 ring-rose-200',
-  other: 'bg-slate-100 text-slate-700 ring-slate-200'
+  assignment: 'border-amber-400/20 text-amber-200',
+  internship: 'border-emerald-400/20 text-emerald-300',
+  event: 'border-cyan-400/20 text-cyan-300',
+  academic: 'border-blue-400/20 text-blue-300',
+  personal: 'border-white/10 text-white/70',
+  spam: 'border-rose-400/20 text-rose-300',
+  other: 'border-white/10 text-white/70'
 };
 
 export const statusTones: Record<string, string> = {
-  open: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  snoozed: 'bg-amber-50 text-amber-700 ring-amber-200',
-  completed: 'bg-slate-100 text-slate-700 ring-slate-200',
-  pending: 'bg-cyan-50 text-cyan-700 ring-cyan-200',
-  processed: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  approved: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  preview: 'bg-amber-50 text-amber-700 ring-amber-200',
-  suggest: 'bg-amber-50 text-amber-700 ring-amber-200',
-  suggested: 'bg-amber-50 text-amber-700 ring-amber-200',
-  failed: 'bg-rose-50 text-rose-700 ring-rose-200',
-  cancelled: 'bg-slate-100 text-slate-700 ring-slate-200'
+  open: 'border-emerald-400/20 text-emerald-300',
+  snoozed: 'border-amber-400/20 text-amber-200',
+  completed: 'border-white/10 text-white/60',
+  pending: 'border-cyan-400/20 text-cyan-300',
+  processed: 'border-blue-400/20 text-blue-300',
+  approved: 'border-emerald-400/20 text-emerald-300',
+  preview: 'border-amber-400/20 text-amber-200',
+  suggest: 'border-amber-400/20 text-amber-200',
+  suggested: 'border-amber-400/20 text-amber-200',
+  modified: 'border-violet-400/20 text-violet-300',
+  rejected: 'border-rose-400/20 text-rose-300',
+  failed: 'border-rose-400/20 text-rose-300',
+  cancelled: 'border-white/10 text-white/50',
+  canceled: 'border-white/10 text-white/50',
+  executed: 'border-emerald-400/20 text-emerald-300',
+  ignored: 'border-white/10 text-white/50',
+  discarded: 'border-white/10 text-white/50'
 };
 
 export const autopilotLabels: Record<0 | 1 | 2, string> = {
@@ -78,8 +84,8 @@ export const getPriorityLabel = (score: number) => {
 };
 
 export const getPriorityTone = (score: number) => {
-  if (score >= 3) return 'text-rose-600';
-  if (score >= 2) return 'text-amber-600';
-  if (score >= 1) return 'text-cyan-600';
-  return 'text-slate-500';
+  if (score >= 3) return 'text-rose-300';
+  if (score >= 2) return 'text-white';
+  if (score >= 1) return 'text-white/80';
+  return 'text-white/60';
 };

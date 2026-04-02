@@ -109,7 +109,7 @@ export default function SettingsPage() {
           </p>
           <div className="mt-5 space-y-3">
             {goals.map((goal, index) => (
-              <div key={`${goal.goal}-${index}`} className="grid gap-3 rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 md:grid-cols-[1fr_120px_auto]">
+              <div key={`${goal.goal}-${index}`} className="grid gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4 md:grid-cols-[1fr_120px_auto]">
                 <input
                   className="form-input"
                   placeholder="Example: get an internship for summer"
@@ -185,7 +185,7 @@ export default function SettingsPage() {
         </p>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => (
-            <label key={category} className="rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 p-4 text-sm text-neutral-400 font-light">
+            <label key={category} className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400 font-light">
               <div className="capitalize text-neutral-100">{category}</div>
               <input
                 className="form-input mt-3"

@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import type { Task } from '../lib/api';
 import { formatDateTime, getCategoryTone, getPriorityLabel, getPriorityTone, getStatusTone, relativeWindow } from '../lib/presentation';
 
-export type TaskCardProps = {
+type TaskCardProps = {
   task: Task;
   onAddCalendar?: (task: Task) => void;
   onMarkImportant?: (task: Task) => void;
@@ -29,11 +29,11 @@ export default function TaskCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className={clsx('badge', getCategoryTone(task.category))}>{task.category ?? 'other'}</span>
             <span className={clsx('badge', getStatusTone(task.status))}>{task.status}</span>
-            <span className={clsx('text-[10px] font-bold uppercase tracking-[0.2em]    ', getPriorityTone(task.priority_score))}>
+            <span className={clsx('text-[10px] font-bold uppercase tracking-[0.2em]', getPriorityTone(task.priority_score))}>
               {getPriorityLabel(task.priority_score)} priority
             </span>
           </div>
-          <h3 className="mt-4 text-xl font-bold text-neutral-100 group-hover:text-neutral-300 transition-colors  ">{task.title}</h3>
+          <h3 className="mt-4 text-xl font-bold text-neutral-100 group-hover:text-neutral-300 transition-colors">{task.title}</h3>
           {task.description && (
             <p className="mt-3 text-sm leading-7 text-neutral-400 font-light">{task.description}</p>
           )}
@@ -41,7 +41,7 @@ export default function TaskCard({
 
         <div className="surface-subtle min-w-[220px] bg-neutral-900 border-neutral-800">
           <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Delivery window</div>
-          <div className="mt-3 text-lg font-bold text-neutral-100  ">{formatDateTime(task.due_at)}</div>
+          <div className="mt-3 text-lg font-bold text-neutral-100">{formatDateTime(task.due_at)}</div>
           <div className="mt-1 text-sm text-neutral-400 font-light">{relativeWindow(task.due_at)}</div>
           <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">
             Score {task.priority_score.toFixed(2)}

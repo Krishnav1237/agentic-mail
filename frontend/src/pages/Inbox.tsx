@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Inbox, Search, ShieldCheck } from 'lucide-react';
+import { Search, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import ConnectPrompt from '../components/ConnectPrompt';
 import EmailRow from '../components/EmailRow';
@@ -16,11 +16,12 @@ const parseNumber = (value: string | null, fallback: number) => {
 };
 
 export default function InboxPage() {
-  const { hasToken, setStatus } = useApp();
+  const { hasToken, setStatus, syncInbox, syncing, status: appStatus } = useApp();
   const [params, setParams] = useSearchParams();
   const [emails, setEmails] = useState<Email[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const limit = parseNumber(params.get('limit'), 50);
   const offset = parseNumber(params.get('offset'), 0);
@@ -31,6 +32,7 @@ export default function InboxPage() {
   useEffect(() => {
     if (!hasToken) return;
     setLoading(true);
+    setLoadError(null);
     getEmails({
       limit,
       offset,
@@ -44,6 +46,7 @@ export default function InboxPage() {
       })
       .catch((error) => {
         console.error(error);
+        setLoadError(error instanceof Error ? error.message : 'Unable to load inbox.');
         setStatus('Unable to load inbox.');
       })
       .finally(() => setLoading(false));
@@ -65,6 +68,8 @@ export default function InboxPage() {
     pending: emails.filter((email) => email.status === 'pending').length,
     highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 2).length
   }), [emails]);
+
+  const isProcessing = syncing || appStatus.toLowerCase().includes('sync');
 
   if (!hasToken) {
     return <ConnectPrompt />;
@@ -148,8 +153,17 @@ export default function InboxPage() {
 
       {loading ? (
         <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading inbox...</div>
+      ) : loadError ? (
+        <EmptyState title="Inbox unavailable" message={loadError} />
       ) : emails.length === 0 ? (
-        <EmptyState title="No emails found" message="Try adjusting filters or sync again. This view is built to stay useful even as your inbox grows." />
+        <div className="glass-card rounded-xl p-8 text-center">
+          <div className="text-sm font-light leading-relaxed text-white/60">
+            {isProcessing ? 'Syncing your inbox. This may take a few seconds.' : 'No data yet. Try syncing your inbox.'}
+          </div>
+          <button className="btn-secondary mt-5" onClick={() => void syncInbox()} disabled={syncing}>
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
           {emails.map((email) => (

@@ -28,16 +28,113 @@ html, body {
   text-shadow: 0 0 80px rgba(255,255,255,0.4);
 }
 
-.glass-panel {
-  background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.02);
-}
-
 /* Hide scrollbar for a cleaner cinematic experience */
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+}
+
+@layer components {
+  .glass-panel {
+    @apply border backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  }
+
+  .glass-card {
+    @apply border backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .surface-card {
+    @apply rounded-[24px] border p-6 backdrop-blur-md transition-all duration-500;
+    background: rgba(255, 255, 255, 0.01);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  .surface-subtle {
+    @apply rounded-[20px] border px-4 py-4;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-primary {
+    @apply inline-flex h-[44px] items-center justify-center gap-2 rounded-full px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-black transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+    background: #fff;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-secondary {
+    @apply inline-flex h-[44px] items-center justify-center gap-2 rounded-full border px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-ghost {
+    @apply inline-flex h-[44px] items-center justify-center gap-2 rounded-full border px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-white/70 transition-all hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+    background: rgba(255, 255, 255, 0.01);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .btn-danger {
+    @apply inline-flex h-[44px] items-center justify-center gap-2 rounded-full border px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-rose-200 transition-all hover:text-rose-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+    background: rgba(255, 255, 255, 0.01);
+    border-color: rgba(251, 113, 133, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .form-input,
+  .form-select {
+    @apply w-full rounded-[20px] border px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-60;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .form-input:focus,
+  .form-select:focus {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .form-select {
+    @apply appearance-none;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em];
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .status-pill {
+    @apply inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .animate-fade {
+    animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

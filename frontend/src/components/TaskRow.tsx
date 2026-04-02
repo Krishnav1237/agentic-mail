@@ -32,7 +32,7 @@ export default function TaskRow({
               {getPriorityLabel(task.priority_score)}
             </span>
           </div>
-          <h4 className="mt-3 truncate text-lg font-semibold text-neutral-100  ">{task.title}</h4>
+          <h4 className="mt-3 truncate text-lg font-semibold text-neutral-100">{task.title}</h4>
           {task.description && (
             <p className="mt-2 text-sm leading-7 text-neutral-400 font-light">{task.description}</p>
           )}

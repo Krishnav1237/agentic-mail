@@ -24,29 +24,27 @@ export default function PageHeader({
   aside
 }: PageHeaderProps) {
   return (
-    <section className="glass-card relative overflow-hidden rounded-xl p-6 md:p-8 border border-neutral-800 shadow-sm">
-      <div className="absolute inset-0" />
-      <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-neutral-900    " />
-      <div className="absolute left-0 top-0 h-32 w-32 rounded-full bg-neutral-900    " style={{ animationDelay: '1s' }} />
-
-      <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between z-10">
+    <section className="glass-card rounded-[32px] p-6 md:p-8">
+      <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-3xl">
           {eyebrow && (
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-neutral-300 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-900 shadow-sm"></span>
-              {eyebrow}
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                {eyebrow}
+              </span>
             </div>
           )}
-          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-neutral-100  ">
+
+          <h1 className="mt-6 text-[32px] font-light leading-[1.05] tracking-tight text-transparent md:text-[48px] lg:text-[60px] bg-clip-text bg-gradient-to-b from-white to-white/60">
             {title}
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-8 text-neutral-400 font-light md:text-lg">
+          <p className="mt-4 max-w-2xl text-sm font-light leading-relaxed text-white/50 md:text-base">
             {description}
           </p>
         </div>
 
         {(actions || aside) && (
-          <div className="flex w-full flex-col gap-4 xl:w-auto xl:min-w-[280px]">
+          <div className="flex w-full flex-col gap-4 xl:w-auto xl:min-w-[300px]">
             {actions && <div className="flex flex-wrap gap-3 xl:justify-end">{actions}</div>}
             {aside}
           </div>
@@ -54,20 +52,20 @@ export default function PageHeader({
       </div>
 
       {stats && stats.length > 0 && (
-        <div className="relative mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4 z-10">
-          {stats.map((stat, i) => (
-            <div
-              key={`${stat.label}-${stat.value}`}
-              className="group rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-5 shadow-sm backdrop-  hover:-translate-y-1 hover:border-neutral-800 hover:bg-neutral-900 transition-all duration-300"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300 group-hover:text-neutral-300 transition-colors">
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={`${stat.label}-${stat.value}`} className="surface-card">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
                 {stat.label}
               </div>
-              <div className="mt-3 text-4xl font-display font-bold tracking-tight text-neutral-100   group-hover:  transition-all">
+              <div className="mt-3 text-4xl font-light tracking-tight text-white">
                 {stat.value}
               </div>
-              {stat.helper && <div className="mt-3 text-xs leading-5 text-neutral-400 font-light group-hover:text-neutral-400 transition-colors">{stat.helper}</div>}
+              {stat.helper && (
+                <div className="mt-3 text-sm font-light leading-relaxed text-white/40">
+                  {stat.helper}
+                </div>
+              )}
             </div>
           ))}
         </div>

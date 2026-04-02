@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Filter, ListChecks, Sparkles, TimerReset } from 'lucide-react';
+import { Filter, TimerReset } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import ConnectPrompt from '../components/ConnectPrompt';
 import EmptyState from '../components/EmptyState';
@@ -16,11 +16,12 @@ const parseNumber = (value: string | null, fallback: number) => {
 };
 
 export default function TasksPage() {
-  const { hasToken, setStatus } = useApp();
+  const { hasToken, setStatus, syncing, status: appStatus } = useApp();
   const [params, setParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const limit = parseNumber(params.get('limit'), 50);
   const offset = parseNumber(params.get('offset'), 0);
@@ -34,6 +35,7 @@ export default function TasksPage() {
   useEffect(() => {
     if (!hasToken) return;
     setLoading(true);
+    setLoadError(null);
     getTasks({
       limit,
       offset,
@@ -50,6 +52,7 @@ export default function TasksPage() {
       })
       .catch((error) => {
         console.error(error);
+        setLoadError(error instanceof Error ? error.message : 'Unable to load tasks.');
         setStatus('Unable to load tasks.');
       })
       .finally(() => setLoading(false));
@@ -88,6 +91,8 @@ export default function TasksPage() {
 
     return { openCount, withDeadline, averagePriority };
   }, [tasks]);
+
+  const isProcessing = syncing || appStatus.toLowerCase().includes('sync');
 
   if (!hasToken) {
     return <ConnectPrompt />;
@@ -200,8 +205,13 @@ export default function TasksPage() {
 
       {loading ? (
         <div className="glass-card rounded-xl p-10 text-center text-neutral-300   font-semibold border-neutral-800">Loading tasks...</div>
+      ) : loadError ? (
+        <EmptyState title="Task graph unavailable" message={loadError} />
       ) : tasks.length === 0 ? (
-        <EmptyState title="No tasks found" message="Try widening your filters or run another inbox sync to refresh the task graph." />
+        <EmptyState
+          title={isProcessing ? 'Processing your emails...' : 'No tasks found'}
+          message={isProcessing ? 'The task graph is still being built from your latest sync.' : 'No data yet. Try syncing your inbox.'}
+        />
       ) : (
         <div className="space-y-3">
           {tasks.map((task) => (

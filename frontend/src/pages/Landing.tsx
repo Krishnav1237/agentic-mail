@@ -1,11 +1,13 @@
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { motion, useScroll, useTransform, AnimatePresence, Variants } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, type Variants } from 'framer-motion';
+import type { Points } from 'three';
+import { supabase } from '../lib/supabase';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:4000';
 
 function Starfield() {
-  const ref = useRef<any>();
+  const ref = useRef<Points | null>(null);
   
   const positions = useMemo(() => {
     const pos = new Float32Array(8000 * 3);
@@ -20,7 +22,7 @@ function Starfield() {
     return pos;
   }, []);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (ref.current) {
       ref.current.rotation.x -= delta / 18;
       ref.current.rotation.y -= delta / 22;
@@ -47,7 +49,7 @@ const fadeUpChild: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 1.4, ease: [0.16, 1, 0.3, 1] } }
 };
 
-const FadeInText = ({ children, delay = 0, className = '' }: { children: React.ReactNode, delay?: number, className?: string }) => (
+const FadeInText = ({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) => (
   <motion.div
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -90,7 +92,12 @@ export default function LandingPage() {
   const y = useTransform(scrollYProgress, [0, 1], [0, -100]); 
 
   const [email, setEmail] = useState('');
-  const [joined, setJoined] = useState(false);
+  const [role, setRole] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
   // Hidden Admin Keyboard Listener
   useEffect(() => {
@@ -113,9 +120,55 @@ export default function LandingPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleWaitlist = (e: React.FormEvent) => {
+  const handleWaitlist = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if(email) setJoined(true);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const insertPromise = supabase
+        .from('waitlist')
+        .insert([{ email: normalizedEmail, role: role.trim().toLowerCase() || null }]);
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error('timeout')), 8000);
+      });
+
+      const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]);
+
+      if (insertError) {
+        const duplicateMessage = insertError.message?.toLowerCase().includes('duplicate');
+        if (insertError.code === '23505' || duplicateMessage) {
+          setError("You're already on the waitlist.");
+        } else {
+          setError('Something went wrong. Please try again.');
+        }
+        return;
+      }
+
+      console.log('WAITLIST_SIGNUP', {
+        email: normalizedEmail,
+        role: role.trim().toLowerCase() || null,
+        timestamp: new Date().toISOString()
+      });
+
+      setEmail('');
+      setRole('');
+      setSuccess(true);
+      window.setTimeout(() => setSuccess(false), 4000);
+    } catch (err) {
+      console.error(err);
+      setError('Network issue. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -169,19 +222,47 @@ export default function LandingPage() {
 
                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }} className="mt-10 w-full max-w-lg">
                  <AnimatePresence mode="wait">
-                   {!joined ? (
-                     <motion.form key="form" onSubmit={handleWaitlist} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col sm:flex-row items-center gap-2 p-1.5 rounded-full border border-white/10 bg-white/[0.02] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] focus-within:border-white/30 focus-within:bg-white/[0.04] transition-all duration-500">
-                       <input 
-                         type="email" required placeholder="personal or .edu email" value={email} onChange={e => setEmail(e.target.value)}
-                         className="flex-1 w-full bg-transparent border-none text-sm text-white px-6 py-4 outline-none placeholder:text-white/30"
-                       />
-                       <button type="submit" className="w-full sm:w-auto h-[44px] px-8 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-[0.15em] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                         Priority Access
-                       </button>
-                     </motion.form>
+                   {!success ? (
+                     <motion.div key="form" exit={{ opacity: 0, scale: 0.95 }} className="w-full">
+                       <motion.form onSubmit={handleWaitlist} className="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/[0.02] p-1.5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:flex-row sm:items-center">
+                         <input
+                           type="email"
+                           required
+                           placeholder="personal or .edu email"
+                           value={email}
+                           onChange={(event) => setEmail(event.target.value)}
+                           disabled={loading}
+                           className="flex-1 w-full bg-transparent border-none px-6 py-4 text-sm text-white outline-none placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-60"
+                         />
+                         <select
+                           value={role}
+                           onChange={(event) => setRole(event.target.value)}
+                           disabled={loading}
+                           className="w-full bg-transparent border-none px-6 py-4 text-sm text-white/80 outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:w-[180px]"
+                         >
+                           <option value="" className="bg-black text-white">Role (optional)</option>
+                           <option value="Student" className="bg-black text-white">Student</option>
+                           <option value="Recruiter" className="bg-black text-white">Recruiter</option>
+                           <option value="Founder" className="bg-black text-white">Founder</option>
+                           <option value="Other" className="bg-black text-white">Other</option>
+                         </select>
+                         <button
+                           type="submit"
+                           disabled={loading}
+                           className="flex h-[44px] w-full items-center justify-center gap-2 rounded-full bg-white px-8 text-[11px] font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                         >
+                           {loading ? 'Joining...' : 'Priority Access'}
+                         </button>
+                       </motion.form>
+                       {error && (
+                         <p className="mt-3 text-center text-[11px] font-medium tracking-[0.08em] text-white/60">
+                           {error}
+                         </p>
+                       )}
+                     </motion.div>
                    ) : (
-                     <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-3 px-8 py-5 rounded-full bg-white/10 border border-white/20 text-white font-medium text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-                       Waitlist Secured. We'll be in touch.
+                     <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-3 rounded-full border border-white/20 bg-white/10 px-8 py-5 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                       You're on the waitlist.
                      </motion.div>
                    )}
                  </AnimatePresence>
@@ -313,19 +394,47 @@ export default function LandingPage() {
                <p className="text-base md:text-lg text-white/40 font-light mb-12">Connect your domain and let the agent govern the chaos.</p>
                
                <AnimatePresence mode="wait">
-                 {!joined ? (
-                   <motion.form key="form-bottom" onSubmit={handleWaitlist} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col sm:flex-row items-center gap-3 w-full p-2 rounded-full border border-white/10 bg-white/[0.01] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_20px_40px_rgba(0,0,0,0.5)] focus-within:border-white/20 transition-colors">
-                     <input 
-                       type="email" required placeholder="personal or .edu email" value={email} onChange={e => setEmail(e.target.value)}
-                       className="w-full h-12 bg-transparent border-none text-[15px] text-white px-6 outline-none placeholder:text-white/20"
-                     />
-                     <button type="submit" className="w-full sm:w-auto h-12 px-10 rounded-full bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 flex-shrink-0">
-                        Join Waitlist
-                     </button>
-                   </motion.form>
+                 {!success ? (
+                   <motion.div key="form-bottom" exit={{ opacity: 0, scale: 0.95 }} className="w-full">
+                     <motion.form onSubmit={handleWaitlist} className="flex w-full flex-col gap-3 rounded-[30px] border border-white/10 bg-white/[0.01] p-2 backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_20px_40px_rgba(0,0,0,0.5)] transition-colors focus-within:border-white/20 sm:flex-row sm:items-center">
+                       <input
+                         type="email"
+                         required
+                         placeholder="personal or .edu email"
+                         value={email}
+                         onChange={(event) => setEmail(event.target.value)}
+                         disabled={loading}
+                         className="h-12 w-full bg-transparent border-none px-6 text-[15px] text-white outline-none placeholder:text-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+                       />
+                       <select
+                         value={role}
+                         onChange={(event) => setRole(event.target.value)}
+                         disabled={loading}
+                         className="h-12 w-full bg-transparent border-none px-6 text-[15px] text-white/80 outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:w-[180px]"
+                       >
+                         <option value="" className="bg-black text-white">Role (optional)</option>
+                         <option value="Student" className="bg-black text-white">Student</option>
+                         <option value="Recruiter" className="bg-black text-white">Recruiter</option>
+                         <option value="Founder" className="bg-black text-white">Founder</option>
+                         <option value="Other" className="bg-black text-white">Other</option>
+                       </select>
+                       <button
+                         type="submit"
+                         disabled={loading}
+                         className="flex h-12 w-full flex-shrink-0 items-center justify-center gap-2 rounded-full bg-white px-10 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                       >
+                        {loading ? 'Joining...' : 'Join Waitlist'}
+                       </button>
+                     </motion.form>
+                     {error && (
+                       <p className="mt-4 text-center text-[11px] font-medium tracking-[0.08em] text-white/60">
+                         {error}
+                       </p>
+                     )}
+                   </motion.div>
                  ) : (
-                   <motion.div key="success-bottom" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white/5 border border-white/10 text-white font-medium text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-                     Waitlist Secured. We'll be in touch.
+                   <motion.div key="success-bottom" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-[13px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                     You're on the waitlist.
                    </motion.div>
                  )}
                </AnimatePresence>

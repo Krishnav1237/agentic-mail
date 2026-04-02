@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, Bot, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Activity, Bot, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import ConnectPrompt from '../components/ConnectPrompt';
 import EmptyState from '../components/EmptyState';
@@ -20,12 +20,14 @@ const parseNumber = (value: string | null, fallback: number) => {
 const parsePreview = (payload: Record<string, any>) => payload?.__preview ?? null;
 
 export default function AgentPage() {
-  const { hasToken, setStatus } = useApp();
+  const { hasToken, setStatus, syncing, status: appStatus } = useApp();
   const [params, setParams] = useSearchParams();
   const [actions, setActions] = useState<AgentActionRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(false);
   const [feed, setFeed] = useState<{ summary_date: string; summary: any } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const limit = parseNumber(params.get('limit'), 50);
   const offset = parseNumber(params.get('offset'), 0);
@@ -33,14 +35,17 @@ export default function AgentPage() {
 
   useEffect(() => {
     if (!hasToken) return;
+    setFeedLoading(true);
     getActivityFeed()
       .then((data) => setFeed(data.feed))
-      .catch((error) => console.error(error));
+      .catch((error) => console.error(error))
+      .finally(() => setFeedLoading(false));
   }, [hasToken]);
 
   useEffect(() => {
     if (!hasToken) return;
     setLoading(true);
+    setLoadError(null);
     getAgentActions({ limit, offset, status: statusFilter || undefined })
       .then((data) => {
         setActions(data.actions);
@@ -48,6 +53,7 @@ export default function AgentPage() {
       })
       .catch((error) => {
         console.error(error);
+        setLoadError(error instanceof Error ? error.message : 'Unable to load agent actions.');
         setStatus('Unable to load agent actions.');
       })
       .finally(() => setLoading(false));
@@ -58,7 +64,10 @@ export default function AgentPage() {
     [actions]
   );
 
+  const isProcessing = syncing || appStatus.toLowerCase().includes('sync');
+
   const handleApprove = async (actionId: string) => {
+    console.log('AGENT_ACTION', { action: 'approve', actionId });
     setStatus('Approving action...');
     try {
       await approveAction(actionId);
@@ -68,11 +77,13 @@ export default function AgentPage() {
       setTotal(updated.total);
     } catch (error) {
       console.error(error);
+      console.log('AGENT_ACTION_ERROR', { action: 'approve', actionId, error });
       setStatus('Approval failed.');
     }
   };
 
   const handleCancel = async (actionId: string) => {
+    console.log('AGENT_ACTION', { action: 'cancel', actionId });
     setStatus('Cancelling action...');
     try {
       await cancelAction(actionId, 'user_cancelled');
@@ -82,6 +93,7 @@ export default function AgentPage() {
       setTotal(updated.total);
     } catch (error) {
       console.error(error);
+      console.log('AGENT_ACTION_ERROR', { action: 'cancel', actionId, error });
       setStatus('Cancel failed.');
     }
   };
@@ -110,7 +122,9 @@ export default function AgentPage() {
             <Activity size={16} className="text-neutral-300" />
             Daily activity feed
           </div>
-          {feed ? (
+          {feedLoading ? (
+            <p className="mt-4 text-sm leading-7 text-neutral-300">Loading...</p>
+          ) : feed ? (
             <div className="mt-4 space-y-4">
               <div className="status-pill">{feed.summary_date}</div>
               <div className="grid gap-3 md:grid-cols-3">
@@ -135,7 +149,9 @@ export default function AgentPage() {
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm leading-7 text-neutral-300">No activity feed yet. It will appear once the planner completes live work.</p>
+            <p className="mt-4 text-sm leading-7 text-neutral-300">
+              {isProcessing ? 'Processing your emails...' : 'No data yet. Try syncing your inbox.'}
+            </p>
           )}
         </div>
 
@@ -184,14 +200,14 @@ export default function AgentPage() {
             {approvals.map((action) => {
               const preview = parsePreview(action.action_payload ?? {});
               return (
-                <div key={action.id} className="rounded-xl border border-neutral-800 bg-neutral-900 border border-neutral-800 px-4 py-4">
+                <div key={action.id} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`badge ${getStatusTone(action.status)}`}>{action.status}</span>
                         <span className="status-pill normal-case tracking-normal">{action.workflow_name ?? 'Workflow bundle'}</span>
                       </div>
-                      <div className="mt-3 text-lg font-semibold text-neutral-100  ">{action.action_type}</div>
+                      <div className="mt-3 text-lg font-semibold text-neutral-100">{action.action_type}</div>
                       <div className="mt-1 text-sm text-neutral-300">
                         {action.subject ? `${action.subject} • ` : ''}
                         {action.sender_name ?? action.sender_email ?? 'Unknown sender'}
@@ -217,8 +233,13 @@ export default function AgentPage() {
 
       {loading ? (
         <div className="glass-card rounded-xl p-10 text-center text-neutral-300">Loading agent history...</div>
+      ) : loadError ? (
+        <EmptyState title="Agent history unavailable" message={loadError} />
       ) : actions.length === 0 ? (
-        <EmptyState title="No agent actions yet" message="Once the planner begins working through email and daily plans, the history and approval trail will show up here." />
+        <EmptyState
+          title={isProcessing ? 'Processing your emails...' : 'No agent actions yet'}
+          message={isProcessing ? 'The agent is still working through your latest sync.' : 'No data yet. Try syncing your inbox.'}
+        />
       ) : (
         <div className="space-y-3">
           {actions.map((action) => (
@@ -229,7 +250,7 @@ export default function AgentPage() {
                     <span className={`badge ${getStatusTone(action.status)}`}>{action.status}</span>
                     {action.workflow_name && <span className="status-pill normal-case tracking-normal">{action.workflow_name}</span>}
                   </div>
-                  <div className="mt-3 text-lg font-semibold text-neutral-100  ">{action.action_type}</div>
+                  <div className="mt-3 text-lg font-semibold text-neutral-100">{action.action_type}</div>
                   <div className="mt-1 text-sm text-neutral-300">
                     {action.subject ? `${action.subject} • ` : ''}
                     {action.sender_name ?? action.sender_email ?? 'No linked email'}
