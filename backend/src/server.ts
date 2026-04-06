@@ -20,7 +20,8 @@ const start = async () => {
       logger.info(`API listening on ${env.port}`);
     });
   } catch (error) {
-    logger.error(error, 'Failed to start server');
+    console.error('Failed to start server:', error);
+    logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to start server');
     process.exit(1);
   }
 };
