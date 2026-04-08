@@ -72,6 +72,7 @@ agentic-mail
 └── docs
     ├── API.md
     ├── ARCHITECTURE.md
+    ├── LAUNCH.md
     ├── OPS.md
     ├── SECURITY.md
     └── TESTING.md
@@ -310,6 +311,7 @@ Details: `docs/SECURITY.md`
 Production operations guidance:
 
 - `docs/OPS.md`
+- `docs/LAUNCH.md` for launch messaging and organic distribution
 
 This covers:
 
