@@ -18,26 +18,26 @@ import { joinWaitlist } from '../lib/waitlist';
 const launchProofCards = [
   {
     label: 'Intent recognized',
-    title: 'The message is read for what it requires.',
-    desc: 'IIL identifies requests, deadlines, decisions, and next actions inside the thread.',
+    title: 'The hidden work inside the message becomes explicit.',
+    desc: 'Requests, deadlines, approvals, and next actions are pulled out of the thread.',
   },
   {
     label: 'Work prepared',
-    title: 'Execution starts with context already in place.',
-    desc: 'Replies, tasks, timing, and follow-ups are prepared from the state of the conversation.',
+    title: 'The next move is assembled with context.',
+    desc: 'Replies, timing, and follow-ups are prepared from what has already happened.',
   },
   {
     label: 'Continuity maintained',
-    title: 'The work stays live after the email is gone.',
-    desc: 'Open loops remain tracked across threads and time until they move forward or close.',
+    title: 'The obligation remains live until it is resolved.',
+    desc: 'Open loops stay visible across threads and time instead of disappearing back into the inbox.',
   },
 ] as const;
 
 const narrativeSections = [
   {
     label: 'Commitment Extraction',
-    title: 'See what the message actually requires.',
-    desc: 'Instead of rereading threads to figure out what matters, IIL pulls out the commitment, owner, timing, and next step.',
+    title: 'Messages carry work. The system makes it legible.',
+    desc: 'Email rarely arrives as a clean task. IIL interprets the thread, identifies the obligation, and turns it into something that can be acted on.',
     src: '/assets/syllabus.png',
     glowColor: 'bg-blue-500/20',
     reverse: false,
@@ -45,8 +45,8 @@ const narrativeSections = [
   },
   {
     label: 'Response Preparation',
-    title: 'Replies that move the work forward.',
-    desc: 'Responses are prepared from thread history and current context, so the next email reflects what has happened and what still needs to happen.',
+    title: 'Replies are part of execution, not an afterthought.',
+    desc: 'When communication is required, IIL prepares the response using thread history, current context, and the state of the work already in motion.',
     src: '/assets/drafts.png',
     glowColor: 'bg-purple-500/20',
     reverse: true,
@@ -54,8 +54,8 @@ const narrativeSections = [
   },
   {
     label: 'Commitment Continuity',
-    title: 'The follow-through does not disappear with the thread.',
-    desc: 'IIL keeps open commitments visible, tracks what is waiting, and maintains continuity until the loop is closed.',
+    title: 'The thread can end. The responsibility should not.',
+    desc: 'IIL tracks what is still open, what is waiting on others, and what needs another touchpoint, even after the message has been read and archived.',
     src: '/assets/inbox.png',
     glowColor: 'bg-rose-500/20',
     reverse: false,
@@ -64,7 +64,7 @@ const narrativeSections = [
   {
     label: 'Opportunity Execution',
     title: 'Timing-sensitive messages stay actionable.',
-    desc: 'Introductions, meetings, requests, and opportunities stay attached to the response and follow-through they require.',
+    desc: 'Introductions, meeting requests, offers, and other high-value emails stay attached to the response, timing, and follow-through they require.',
     src: '/assets/network.png',
     glowColor: 'bg-emerald-500/20',
     reverse: true,
@@ -75,19 +75,19 @@ const narrativeSections = [
 const featureCards = [
   {
     title: 'Intent Extraction',
-    desc: 'The thread is read for what it requires, not just what it says.',
+    desc: 'The system reads the message for what it requires.',
   },
   {
-    title: 'Response Preparation',
-    desc: 'Replies are prepared from thread history and execution context.',
+    title: 'Response Drafting',
+    desc: 'Replies are prepared with full thread context.',
   },
   {
     title: 'Deadline Tracking',
-    desc: 'Deadlines are identified, recorded, and kept visible while they matter.',
+    desc: 'Time-sensitive obligations stay visible.',
   },
   {
     title: 'Follow-Up Continuity',
-    desc: 'Open loops stay active across threads and time until they are closed.',
+    desc: 'Open loops remain active until they close.',
   },
   {
     title: 'Approval Controls',
@@ -98,8 +98,8 @@ const featureCards = [
     desc: 'The system keeps track of what is pending, waiting, active, and done.',
   },
   {
-    title: 'Opportunity Tracking',
-    desc: 'Timing-sensitive messages stay connected to the next move they require.',
+    title: 'Execution Memory',
+    desc: 'Context carries forward across threads.',
   },
   {
     title: 'Privacy First',
@@ -316,9 +316,9 @@ export default function LandingPage() {
               }}
               className="bg-gradient-to-b from-white via-white/80 to-white/30 bg-clip-text pb-4 text-[60px] font-light leading-[0.95] tracking-tighter text-transparent md:text-[100px] lg:text-[140px]"
             >
-              Email creates commitments.
+              From email
               <br />
-              IIL runs them.
+              to Execution!
             </motion.h1>
 
             <motion.p
@@ -331,9 +331,10 @@ export default function LandingPage() {
               }}
               className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/50 md:text-xl"
             >
-              Requests, deadlines, follow-ups, scheduling, and opportunities all
-              arrive through email. IIL turns that incoming communication into
-              structured execution.
+              Work now enters through communication. Requests, deadlines,
+              coordination, and follow-ups all arrive by email. IIL turns that
+              incoming communication into execution that stays active until the
+              loop is closed.
             </motion.p>
 
             <motion.div
@@ -395,15 +396,15 @@ export default function LandingPage() {
           <FadeInText className="mx-auto flex max-w-6xl flex-col items-center text-center">
             <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
-                Inbox to Execution
+                Execution Layer
               </span>
             </div>
             <h2 className="mt-6 max-w-3xl text-3xl font-light tracking-tight text-white md:text-5xl">
-              From incoming message to live execution.
+              Where email becomes work.
             </h2>
             <p className="mt-4 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-lg">
-              The system reads the thread, prepares the next step, and keeps the
-              work moving after the message has been read.
+              The system reads the thread, extracts what is required, and keeps
+              the obligation moving after the message has been read.
             </p>
           </FadeInText>
 
@@ -431,11 +432,10 @@ export default function LandingPage() {
         {narrativeSections.map((section, index) => (
           <section
             key={section.label}
-            className={`flex w-full flex-col items-center justify-center gap-12 border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32 ${
-              section.layout === 'reverse'
-                ? 'md:flex-row-reverse'
-                : 'md:flex-row'
-            } md:gap-24`}
+            className={`flex w-full flex-col items-center justify-center gap-12 border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32 ${section.layout === 'reverse'
+              ? 'md:flex-row-reverse'
+              : 'md:flex-row'
+              } md:gap-24`}
           >
             <div className="w-full max-w-2xl flex-1">
               <motion.div
@@ -468,11 +468,10 @@ export default function LandingPage() {
             </div>
 
             <div
-              className={`flex w-full flex-1 justify-center ${
-                section.layout === 'reverse'
-                  ? 'lg:justify-start'
-                  : 'lg:justify-end'
-              }`}
+              className={`flex w-full flex-1 justify-center ${section.layout === 'reverse'
+                ? 'lg:justify-start'
+                : 'lg:justify-end'
+                }`}
             >
               <FadeInText
                 delay={0.2}
@@ -493,11 +492,11 @@ export default function LandingPage() {
         <section className="flex w-full flex-col items-center justify-center border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32">
           <FadeInText className="mb-16 max-w-3xl text-center md:mb-24">
             <h3 className="mb-6 text-3xl font-light tracking-tight text-white md:text-5xl">
-              What the system keeps running.
+              What stays running after the message arrives.
             </h3>
             <p className="text-base font-light leading-relaxed text-white/40 md:text-lg">
-              Prepared responses, tracked commitments, deadlines, approvals, and
-              continuity across email-driven work.
+              Extraction, response preparation, deadline tracking, continuity,
+              approvals, and follow-through across email-driven work.
             </p>
           </FadeInText>
           <div className="grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
@@ -525,8 +524,8 @@ export default function LandingPage() {
               Ready to stop carrying every thread in your head?
             </h2>
             <p className="mb-12 text-base font-light text-white/40 md:text-lg">
-              Join early access to an execution layer that keeps email-driven
-              work moving.
+              Join the waitlist for early access to an execution layer that
+              keeps email-driven work moving.
             </p>
 
             <AnimatePresence mode="wait">
