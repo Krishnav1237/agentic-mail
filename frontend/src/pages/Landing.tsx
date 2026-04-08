@@ -316,9 +316,9 @@ export default function LandingPage() {
               }}
               className="bg-gradient-to-b from-white via-white/80 to-white/30 bg-clip-text pb-4 text-[60px] font-light leading-[0.95] tracking-tighter text-transparent md:text-[100px] lg:text-[140px]"
             >
-              From email
+              Your inbox
               <br />
-              to Execution!
+              runs itself!
             </motion.h1>
 
             <motion.p
@@ -331,10 +331,8 @@ export default function LandingPage() {
               }}
               className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/50 md:text-xl"
             >
-              Work now enters through communication. Requests, deadlines,
-              coordination, and follow-ups all arrive by email. IIL turns that
-              incoming communication into execution that stays active until the
-              loop is closed.
+              IIL turns incoming communication into execution
+              that stays active until the loop is closed.
             </motion.p>
 
             <motion.div
