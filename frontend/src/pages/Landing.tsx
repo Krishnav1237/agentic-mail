@@ -1,6 +1,7 @@
 import {
   type FormEvent,
   type ReactNode,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -106,6 +107,76 @@ const featureCards = [
     desc: 'Encrypted tokens. You control what the agent can execute.',
   },
 ] as const;
+
+// ─── Nav Checkpoints ──────────────────────────────────────────────────────────
+
+const checkpoints = [
+  { id: 'hero',      label: 'Intro' },
+  { id: 'problem',   label: 'Problem' },
+  { id: 'execution', label: 'How It Works' },
+  { id: 'features',  label: 'Features' },
+  { id: 'waitlist',  label: 'Join Waitlist' },
+];
+
+function NavCheckpoints() {
+  const [activeSection, setActiveSection] = useState('hero');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '-20% 0px -40% 0px',
+        threshold: [0.3],
+      }
+    );
+
+    checkpoints.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="hidden md:flex items-center gap-1.5">
+      {checkpoints.map((cp) => (
+        <a
+          key={cp.id}
+          href={`#${cp.id}`}
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById(cp.id)?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="group relative flex h-6 w-6 items-center justify-center"
+          aria-label={cp.label}
+        >
+          <motion.div
+            initial={false}
+            animate={{
+              width: activeSection === cp.id ? 20 : 4,
+              backgroundColor: activeSection === cp.id ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.2)',
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="h-1 rounded-full group-hover:bg-white/60"
+          />
+          <div className="pointer-events-none absolute top-full mt-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="whitespace-nowrap rounded-md border border-white/10 bg-black/60 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-white/70 backdrop-blur-md">
+              {cp.label}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 function Starfield() {
   const ref = useRef<any>(null);
@@ -269,19 +340,47 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_100%)] opacity-70" />
       </div>
 
-      <nav className="pointer-events-none fixed inset-x-0 top-0 z-50 flex h-[80px] items-center justify-center bg-gradient-to-b from-black/80 to-transparent">
-        <div className="pointer-events-auto flex w-full max-w-[1400px] items-center justify-between px-6 md:px-12">
+      <nav className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[72px]">
+        {/* Background blur layer */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-[2px]" />
+
+        {/* Progress line along bottom edge of nav */}
+        <motion.div
+          className="absolute bottom-0 left-0 h-[1px] bg-white/20 origin-left"
+          style={{ scaleX: scrollYProgress, width: '100%' }}
+        />
+
+        {/* Nav content */}
+        <div className="pointer-events-auto relative flex h-full w-full items-center justify-between px-6 md:px-12 max-w-[1400px] mx-auto">
+          {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
-            className="flex items-center gap-3"
+            className="flex-shrink-0"
           >
             <span className="text-[11px] font-semibold uppercase tracking-widest text-white">
-              IIL <span className="px-2 font-light text-white/30">|</span> Inbox
-              Intelligence Layer
+              IIL <span className="px-2 font-light text-white/30">|</span> Inbox Intelligence Layer
             </span>
           </motion.div>
+
+          {/* Checkpoint dots — center, hidden on mobile */}
+          <NavCheckpoints />
+
+          {/* CTA */}
+          <motion.a
+            href="#waitlist"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="flex-shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 transition-all duration-200 hover:border-white/20 hover:text-white"
+          >
+            Join Waitlist →
+          </motion.a>
         </div>
       </nav>
 
@@ -289,7 +388,7 @@ export default function LandingPage() {
         style={{ y }}
         className="relative z-10 flex w-full flex-1 flex-col items-center"
       >
-        <section className="flex min-h-[100vh] w-full flex-col items-center justify-center px-6 pb-10 pt-20 text-center">
+        <section id="hero" className="flex min-h-[100vh] w-full flex-col items-center justify-center px-6 pb-10 pt-20 text-center">
           <motion.div
             style={{ opacity, scale }}
             className="mx-auto mt-10 flex max-w-5xl flex-col items-center gap-6 pb-12"
@@ -390,7 +489,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        <section className="w-full px-6 pb-20 md:px-12">
+        <section id="problem" className="w-full px-6 pb-20 md:px-12">
           <FadeInText className="mx-auto flex max-w-6xl flex-col items-center text-center">
             <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">
@@ -427,7 +526,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {narrativeSections.map((section, index) => (
+        <div id="execution" className="w-full">
+          {narrativeSections.map((section, index) => (
           <section
             key={section.label}
             className={`flex w-full flex-col items-center justify-center gap-12 border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32 ${section.layout === 'reverse'
@@ -486,8 +586,9 @@ export default function LandingPage() {
             </div>
           </section>
         ))}
+        </div>
 
-        <section className="flex w-full flex-col items-center justify-center border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32">
+        <section id="features" className="flex w-full flex-col items-center justify-center border-t border-white/[0.05] px-6 py-24 md:px-12 md:py-32">
           <FadeInText className="mb-16 max-w-3xl text-center md:mb-24">
             <h3 className="mb-6 text-3xl font-light tracking-tight text-white md:text-5xl">
               What stays running after the message arrives.
@@ -516,7 +617,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="relative z-20 flex w-full flex-col items-center justify-center border-t border-white/[0.05] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.02)_0%,transparent_80%)] px-6 pb-8 pt-32 text-center">
+        <section id="waitlist" className="relative z-20 flex w-full flex-col items-center justify-center border-t border-white/[0.05] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.02)_0%,transparent_80%)] px-6 pb-8 pt-32 text-center">
           <FadeInText className="mx-auto flex w-full max-w-2xl flex-col items-center">
             <h2 className="mb-8 bg-gradient-to-b from-white via-white/80 to-white/30 bg-clip-text text-5xl font-light leading-[1.05] tracking-tighter text-transparent md:text-[70px]">
               Ready to stop carrying every thread in your head?
