@@ -78,12 +78,18 @@ const extractErrorMessage = (
         .filter(Boolean)
         .join(' ');
 
-export const getWaitlistStats = async () => {
+export const getWaitlistStats = async (): Promise<WaitlistStatsResponse> => {
   ensureSupabaseConfig();
 
+  // Use POST with a special action to get stats via the edge function.
+  // The edge function uses the service_role key which bypasses RLS,
+  // whereas the anon key cannot SELECT from the waitlist table directly.
   const response = await fetch(getFunctionUrl('waitlist-signup'), {
-    method: 'GET',
-    headers: getSupabaseHeaders(),
+    method: 'POST',
+    headers: getSupabaseHeaders({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ action: 'stats' }),
   });
 
   const payload = await parseFunctionResponse(response);

@@ -9,6 +9,15 @@
   font-family: 'Inter', sans-serif;
 }
 
+html {
+  transition: filter 0.5s ease;
+}
+
+html.light {
+  filter: invert(1) hue-rotate(180deg);
+  color-scheme: light;
+}
+
 html,
 body {
   background-color: #000;
@@ -44,3 +53,108 @@ body {
   width: 0px;
   background: transparent;
 }
+
+/* --- LIGHT MODE REFINEMENTS --- */
+/*
+  Alpha blending acts asymmetrically on bright environments vs dark environments.
+  These overrides strengthen pre-inversion alphas in specific utilities so that 
+  they invert into an effectively rich, comfortable dark gray instead of a washed-out light gray.
+*/
+
+html.light .text-white\/10 { color: rgba(255, 255, 255, 0.45) !important; }
+html.light .text-white\/20 { color: rgba(255, 255, 255, 0.55) !important; }
+html.light .text-white\/30 { color: rgba(255, 255, 255, 0.65) !important; }
+html.light .text-white\/40 { color: rgba(255, 255, 255, 0.75) !important; }
+html.light .text-white\/50 { color: rgba(255, 255, 255, 0.8) !important; }
+html.light .text-white\/60 { color: rgba(255, 255, 255, 0.85) !important; }
+html.light .text-white\/70 { color: rgba(255, 255, 255, 0.9) !important; }
+html.light .text-white\/80 { color: rgba(255, 255, 255, 0.95) !important; }
+
+/* 2. Fix readable gradients (prevent washed-out light spots) */
+html.light .bg-clip-text.text-transparent {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-to: rgba(255, 255, 255, 0.8) !important;
+  --tw-gradient-via: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Flatten the massive main header gradient in light mode because inverted deep fades look muddy */
+html.light h1 span.bg-clip-text {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  -webkit-background-clip: text !important;
+  text-shadow: none !important;
+}
+
+/* 3. Increase border and background definitions for structural depth */
+html.light .bg-white\/\[0\.01\] { background-color: rgba(255, 255, 255, 0.03) !important; }
+html.light .bg-white\/\[0\.02\] { background-color: rgba(255, 255, 255, 0.05) !important; }
+html.light .bg-white\/5 { background-color: rgba(255, 255, 255, 0.08) !important; }
+html.light .border-white\/5 { border-color: rgba(255, 255, 255, 0.15) !important; }
+html.light .border-white\/\[0\.05\] { border-color: rgba(255, 255, 255, 0.15) !important; }
+html.light .border-white\/10 { border-color: rgba(255, 255, 255, 0.25) !important; }
+
+/* 4. Canvas Enhancements: Boost pre-inversion brightness so particles render darker in light mode */
+html.light canvas {
+  filter: brightness(1.6) contrast(1.5) saturate(1.2);
+}
+
+/* 5. Direct Asset Swapping */
+html.light .dark-asset {
+  display: none !important;
+}
+
+html.light .light-asset {
+  display: block !important;
+  filter: invert(1) hue-rotate(180deg) !important;
+  /* Hardware acceleration to prevent faceted rendering (octagons) in inverted layers */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ensure glass elements stay translucent in Light Mode by forcing hardware composition */
+.navbar-glass-container,
+.theme-toggle-glass,
+.input-glass-panel {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Clean up navbar flare in light mode (prevents white fog at the top) */
+html.light .nav-flare {
+  display: none !important;
+}
+
+
+/* 6. Bubbly Nav Active Pill in Light Mode */
+html.light .nav-active-pill {
+  /* When inverted: becomes a subtle grey gradient: rgba(0,0,0,0.12) -> rgba(0,0,0,0.02) */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)) !important;
+  /* When inverted: definitive black border */
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  /* When inverted: black drop shadow + brilliant white top rim reflection */
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 7. Card Hover States in Light Mode (Calculated to "darken" for better contrast on white) */
+html.light .hover\:bg-white\/\[0\.04\]:hover { 
+  background-color: rgba(255, 255, 255, 0.1) !important; 
+}
+
+/* 
+   In light mode, we want a subtle shadow-glow instead of a light-bloom.
+   We use white source which inverts to a solid black-alpha depth.
+*/
+html.light .group:hover .bg-gradient-to-br.from-white\/\[0\.05\] {
+  background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent) !important;
+}
+
+html.light .group:hover .hover\:border-white\/\[0\.1\] {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 8. Smooth Image Masking (Fixes Octagon/Box Artifacts) */
+.parallax-image-container {
+  mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+}
+

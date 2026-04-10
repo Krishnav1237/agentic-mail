@@ -40,6 +40,7 @@ const narrativeSections = [
     title: 'Messages carry work. The system makes it legible.',
     desc: 'Email rarely arrives as a clean task. IIL interprets the thread, identifies the obligation, and turns it into something that can be acted on.',
     src: '/assets/syllabus.png',
+    lightSrc: '/assets/syllabus-light.png',
     glowColor: 'bg-blue-500/20',
     reverse: false,
     layout: 'default' as const,
@@ -49,15 +50,17 @@ const narrativeSections = [
     title: 'Replies are part of execution, not an afterthought.',
     desc: 'When communication is required, IIL prepares the response using thread history, current context, and the state of the work already in motion.',
     src: '/assets/drafts.png',
+    lightSrc: '/assets/drafts-light.png',
     glowColor: 'bg-purple-500/20',
     reverse: true,
     layout: 'reverse' as const,
   },
   {
     label: 'Commitment Continuity',
-    title: 'The thread can end. The responsibility should not.',
+    title: 'The thread can end, not the grind.',
     desc: 'IIL tracks what is still open, what is waiting on others, and what needs another touchpoint, even after the message has been read and archived.',
     src: '/assets/inbox.png',
+    lightSrc: '/assets/inbox-light.png',
     glowColor: 'bg-rose-500/20',
     reverse: false,
     layout: 'default' as const,
@@ -67,6 +70,7 @@ const narrativeSections = [
     title: 'Timing-sensitive messages stay actionable.',
     desc: 'Introductions, meeting requests, offers, and other high-value emails stay attached to the response, timing, and follow-through they require.',
     src: '/assets/network.png',
+    lightSrc: '/assets/network-light.png',
     glowColor: 'bg-emerald-500/20',
     reverse: true,
     layout: 'reverse' as const,
@@ -130,7 +134,12 @@ const pageRailClassName =
 const waitlistCountFormatter = new Intl.NumberFormat('en-US');
 
 const scrollToSection = (sectionId: string) => {
-  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  const element = document.getElementById(sectionId);
+  if (element) {
+    const navOffset = 100; // Account for the navbar visual footprint
+    const y = element.getBoundingClientRect().top + window.scrollY - navOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
 };
 
 function PageRail({
@@ -184,24 +193,33 @@ function CenterNav({ activeSection }: { activeSection: string }) {
   return (
     <div className="flex w-full justify-center">
       <div className="relative flex max-w-full flex-wrap items-center justify-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-white/[0.03] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:gap-1.5">
-        {checkpoints.map((cp) => (
-          <a
-            key={cp.id}
-            href={`#${cp.id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSection(cp.id);
-            }}
-            aria-current={activeSection === cp.id ? 'page' : undefined}
-            className={`relative inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-3 text-[10px] font-semibold uppercase tracking-[0.18em] transition-all duration-300 md:h-11 md:px-4 ${
-              activeSection === cp.id
-                ? 'border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] text-white shadow-[0_12px_28px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.16)]'
+        {checkpoints.map((cp) => {
+          const isActive = activeSection === cp.id;
+          return (
+            <a
+              key={cp.id}
+              href={`#${cp.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection(cp.id);
+              }}
+              aria-current={isActive ? 'page' : undefined}
+              className={`relative inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-3 text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 md:h-11 md:px-4 ${isActive
+                ? 'border-transparent text-white'
                 : 'border-transparent text-white/68 hover:border-white/10 hover:bg-white/[0.06] hover:text-white/92'
-            }`}
-          >
-            {cp.label}
-          </a>
-        ))}
+                }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeNavBubble"
+                  className="nav-active-pill absolute -inset-px -z-10 rounded-full border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] shadow-[0_12px_28px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.16)]"
+                  transition={{ type: 'spring', bounce: 0.25, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{cp.label}</span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
@@ -324,12 +342,14 @@ const FadeInText = ({
 
 const ParallaxImage = ({
   src,
+  lightSrc,
   glowColor,
   delay = 0,
   reverse = false,
   alt = 'Core visual',
 }: {
   src: string;
+  lightSrc?: string;
   glowColor: string;
   delay?: number;
   reverse?: boolean;
@@ -341,7 +361,7 @@ const ParallaxImage = ({
       whileInView={{ opacity: 1, scale: 1, y: 0 }}
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay }}
-      className="relative w-full max-w-[480px] aspect-square flex items-center justify-center group"
+      className="parallax-image-container relative flex aspect-square w-full max-w-[480px] items-center justify-center group"
     >
       <div
         className={`absolute inset-0 ${glowColor} blur-[120px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-1000 scale-75 mix-blend-screen bg-blend-screen pointer-events-none`}
@@ -349,13 +369,25 @@ const ParallaxImage = ({
       <motion.img
         src={src}
         alt={alt}
-        className="w-full h-full object-contain relative z-10 mix-blend-screen [mask-image:radial-gradient(circle_at_center,black_40%,transparent_80%)]"
+        className="dark-asset relative z-10 h-full w-full object-contain mix-blend-screen"
         animate={{
           y: reverse ? [-20, 20, -20] : [20, -20, 20],
           rotate: reverse ? [-0.5, 0.5, -0.5] : [0.5, -0.5, 0.5],
         }}
         transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
+      {lightSrc && (
+        <motion.img
+          src={lightSrc}
+          alt={alt}
+          className="light-asset relative z-10 hidden h-full w-full object-contain mix-blend-screen transform-gpu"
+          animate={{
+            y: reverse ? [-20, 20, -20] : [20, -20, 20],
+            rotate: reverse ? [-0.5, 0.5, -0.5] : [0.5, -0.5, 0.5],
+          }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
     </motion.div>
   );
 };
@@ -436,10 +468,10 @@ export default function LandingPage() {
 
   const liveWaitlistLabel =
     waitlistTotal !== null
-      ? `${waitlistCountFormatter.format(waitlistTotal)} joined`
+      ? `${waitlistCountFormatter.format(waitlistTotal)} waiting`
       : waitlistStatsState === 'loading'
-        ? 'Now accepting early signups'
-        : 'Private beta live';
+        ? 'Loading...'
+        : '0 waiting';
 
   return (
     <div className="relative bg-black text-white selection:bg-white/20">
@@ -451,7 +483,7 @@ export default function LandingPage() {
       </div>
 
       <nav className="pointer-events-none fixed inset-x-0 top-0 z-50">
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/90 to-transparent" />
+        <div className="nav-flare absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/90 to-transparent" />
 
         <PageRail className="pt-4">
           <motion.div
@@ -462,11 +494,11 @@ export default function LandingPage() {
           >
             <div className="min-w-0 text-center md:absolute md:left-0 md:top-1/2 md:-translate-y-1/2 md:text-left">
               <div className="inline-flex items-center whitespace-nowrap">
-                <span className="text-[14px] font-bold uppercase tracking-[0.3em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] md:text-[15px]">
+                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] md:text-[12px]">
                   IIL
                 </span>
-                <span className="mx-3 h-4 w-px bg-white/22" />
-                <span className="text-[10px] font-medium tracking-[0.16em] text-white/80 md:text-[11px] md:tracking-[0.18em]">
+                <span className="mx-3 text-[11px] font-bold text-white/22 md:text-[12px]">|</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] md:text-[12px]">
                   Inbox Intelligence Layer
                 </span>
               </div>
@@ -494,9 +526,12 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 2, ease: 'easeOut' }}
-                className="relative mb-4 inline-flex items-center gap-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+                className="relative mb-4 inline-flex items-center gap-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-5 py-2 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.75)]" />
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00ff22] opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00ff22] shadow-[0_0_12px_#00ff22]"></span>
+                </span>
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">
                   Private beta waitlist
                 </span>
@@ -516,39 +551,19 @@ export default function LandingPage() {
                 }}
                 className="max-w-[10.5ch] pb-2 text-center text-[58px] font-light leading-[0.92] tracking-[-0.05em] [text-wrap:balance] md:text-[104px] lg:text-[144px]"
               >
-                <span className="block bg-gradient-to-b from-white via-white/88 to-white/42 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-b from-white via-white/[0.60] to-white/10 bg-clip-text text-transparent">
                   Your inbox
                 </span>
-                <span className="block bg-gradient-to-b from-white via-white to-white/78 bg-clip-text text-transparent [text-shadow:0_0_24px_rgba(255,255,255,0.08)]">
+                <span className="block bg-gradient-to-b from-white/10 via-white/[0.60] to-white bg-clip-text text-transparent [text-shadow:0_0_24px_rgba(255,255,255,0.08)]">
                   runs itself!
                 </span>
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 1.4,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: 0.16,
-                }}
-                className="text-center text-[11px] font-medium uppercase tracking-[0.16em] text-white/42 md:text-[12px]"
+                style={{ opacity: 1, transform: 'none' }}
+                className="mt-2 max-w-2xl mx-auto text-center text-base font-light leading-relaxed text-white/40 md:text-xl"
               >
-                Built for founders, operators, recruiters, and client-facing teams.
-              </motion.p>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 1.4,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: 0.24,
-                }}
-                className="max-w-[40rem] text-center text-[15px] font-light leading-7 text-white/72 [text-shadow:0_0_18px_rgba(255,255,255,0.03)] [text-wrap:balance] md:text-[21px] md:leading-[1.75]"
-              >
-                IIL turns incoming communication into execution that stays
-                active until the loop is closed.
+                IIL turns incoming communication into execution that stays active until <br className="hidden md:block" /> the loop is closed.
               </motion.p>
 
               <motion.div
@@ -567,22 +582,22 @@ export default function LandingPage() {
                       key="form"
                       onSubmit={handleWaitlist}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="flex flex-col items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:flex-row"
+                      className="mx-auto flex w-fit flex-col items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:flex-row"
                     >
                       <input
                         type="email"
                         required
-                        placeholder="enter your personal email"
+                        placeholder="Enter your personal email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/30"
+                        className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
                       />
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="flex h-[44px] w-full items-center justify-center gap-2 rounded-full bg-white px-8 text-[11px] font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02] active:scale-95 sm:w-auto"
+                        className="flex h-[44px] w-full flex-none items-center justify-center gap-2 rounded-full bg-white px-12 text-[11px] font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02] active:scale-95 sm:w-auto"
                       >
-                        {submitting ? 'Submitting...' : 'Join Waitlist'}
+                        {submitting ? 'Submitting...' : 'Get Priority Access'}
                       </button>
                     </motion.form>
                   ) : (
@@ -602,12 +617,6 @@ export default function LandingPage() {
                     {waitlistError}
                   </p>
                 )}
-
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] font-medium uppercase tracking-[0.16em] text-white/42">
-                  {waitlistBenefits.map((benefit) => (
-                    <span key={benefit}>{benefit}</span>
-                  ))}
-                </div>
               </motion.div>
             </motion.div>
           </PageRail>
@@ -615,11 +624,11 @@ export default function LandingPage() {
 
         <section
           id="problem"
-          className="w-full scroll-mt-28 pb-20 md:scroll-mt-32"
+          className="flex min-h-[calc(100svh-100px)] w-full flex-col justify-center pb-12 md:pb-24"
         >
           <PageRail>
             <FadeInText className="flex flex-col items-center text-center">
-              <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/64">
                   Execution Layer
                 </span>
@@ -627,7 +636,7 @@ export default function LandingPage() {
               <h2 className="mt-6 max-w-[54rem] text-3xl font-light tracking-tight text-white md:text-5xl">
                 Where email becomes work.
               </h2>
-              <p className="mt-4 max-w-[44rem] text-base font-light leading-relaxed text-white/58 md:text-lg">
+              <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
                 The system reads the thread, extracts what is required, and
                 keeps the obligation moving after the message has been read.
               </p>
@@ -638,15 +647,16 @@ export default function LandingPage() {
                 <FadeInText
                   key={card.label}
                   delay={index * 0.08}
-                  className="rounded-[24px] border border-white/[0.05] bg-white/[0.02] p-8 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                  className="group relative overflow-hidden rounded-[24px] border border-white/[0.05] bg-white/[0.02] p-8 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-500 hover:border-white/[0.1] hover:bg-white/[0.04]"
                 >
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/56">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative z-10 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                     {card.label}
                   </div>
-                  <h3 className="mt-5 text-2xl font-light leading-tight text-white">
+                  <h3 className="relative z-10 mt-5 text-2xl font-light leading-tight text-white">
                     {card.title}
                   </h3>
-                  <p className="mt-4 text-sm font-light leading-7 text-white/58">
+                  <p className="relative z-10 mt-4 text-sm font-light leading-7 text-white/40">
                     {card.desc}
                   </p>
                 </FadeInText>
@@ -655,11 +665,11 @@ export default function LandingPage() {
           </PageRail>
         </section>
 
-        <div id="execution" className="w-full scroll-mt-28 md:scroll-mt-32">
+        <div id="execution" className="w-full">
           {narrativeSections.map((section, index) => (
             <section
               key={section.label}
-              className="w-full border-t border-white/[0.05] py-24 md:py-32"
+              className="flex min-h-[calc(100svh-100px)] w-full flex-col justify-center"
             >
               <PageRail
                 className={`flex flex-col items-center justify-center gap-12 ${section.layout === 'reverse'
@@ -676,7 +686,7 @@ export default function LandingPage() {
                   >
                     <motion.div
                       variants={fadeUpChild}
-                      className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.02] px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                      className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]"
                     >
                       <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/64">
                         {section.label}
@@ -690,7 +700,8 @@ export default function LandingPage() {
                     </motion.h2>
                     <motion.p
                       variants={fadeUpChild}
-                      className="max-w-[38rem] text-base font-light leading-relaxed text-white/58 md:text-xl"
+                      style={{ opacity: 1, transform: 'none' }}
+                      className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl"
                     >
                       {section.desc}
                     </motion.p>
@@ -709,6 +720,7 @@ export default function LandingPage() {
                   >
                     <ParallaxImage
                       src={section.src}
+                      lightSrc={section.lightSrc}
                       glowColor={section.glowColor}
                       reverse={section.reverse}
                       delay={index * 0.2}
@@ -723,15 +735,15 @@ export default function LandingPage() {
 
         <section
           id="features"
-          className="flex w-full scroll-mt-28 flex-col items-center justify-center border-t border-white/[0.05] py-24 md:scroll-mt-32 md:py-32"
+          className="flex min-h-[calc(100svh-100px)] w-full flex-col items-center justify-center"
         >
           <PageRail>
-            <FadeInText className="mb-16 w-full border-b border-white/[0.05] pb-12 md:mb-20 md:pb-16">
-              <div className="grid gap-8 text-left md:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] md:items-end md:gap-16">
+            <FadeInText className="mb-10 w-full md:mb-14">
+              <div className="mx-auto flex flex-col items-center gap-6 text-center">
                 <h3 className="max-w-[44rem] text-3xl font-light tracking-tight text-white md:text-5xl">
                   What stays running after the message arrives.
                 </h3>
-                <p className="max-w-[38rem] text-base font-light leading-relaxed text-white/58 md:text-lg">
+                <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
                   Extraction, response preparation, deadline tracking,
                   continuity, approvals, and follow-through across email-driven
                   work.
@@ -743,13 +755,13 @@ export default function LandingPage() {
                 <FadeInText
                   key={item.title}
                   delay={index * 0.05}
-                  className="group relative overflow-hidden rounded-[24px] border border-white/[0.05] bg-white/[0.01] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-md transition-all duration-500 hover:border-white/[0.1] hover:bg-white/[0.03]"
+                  className="group relative overflow-hidden rounded-[24px] border border-white/[0.05] bg-white/[0.02] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-500 hover:border-white/[0.1] hover:bg-white/[0.04]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
                   <h4 className="relative z-10 mb-3 text-sm font-semibold text-white/96">
                     {item.title}
                   </h4>
-                  <p className="relative z-10 text-[13px] font-light leading-relaxed text-white/58">
+                  <p className="relative z-10 text-[13px] font-light leading-relaxed text-white/40">
                     {item.desc}
                   </p>
                 </FadeInText>
@@ -760,14 +772,14 @@ export default function LandingPage() {
 
         <section
           id="waitlist"
-          className="relative z-20 w-full scroll-mt-28 border-t border-white/[0.05] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.02)_0%,transparent_80%)] pb-8 pt-32 text-center md:scroll-mt-32"
+          className="relative z-20 w-full pb-8 pt-32 text-center"
         >
           <PageRail className="flex flex-col items-center">
             <FadeInText className="flex w-full max-w-2xl flex-col items-center">
-              <h2 className="mb-8 bg-gradient-to-b from-white via-white/88 to-white/46 bg-clip-text text-5xl font-light leading-[1.05] tracking-tighter text-transparent md:text-[70px]">
+              <h2 className="mb-8 bg-gradient-to-b from-white via-white/[0.7] to-white/[0.3] bg-clip-text text-5xl font-light leading-[1.05] tracking-tighter text-transparent md:text-[70px]">
                 Ready to stop carrying every thread in your head?
               </h2>
-              <p className="mb-12 text-base font-light text-white/58 md:text-lg">
+              <p className="mt-2 mb-12 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
                 Join the waitlist for priority onboarding, early feedback access,
                 and first release invites.
               </p>
@@ -778,22 +790,22 @@ export default function LandingPage() {
                     key="form-bottom"
                     onSubmit={handleWaitlist}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex w-full flex-col items-center gap-3 rounded-full border border-white/10 bg-white/[0.01] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_20px_40px_rgba(0,0,0,0.5)] backdrop-blur-3xl transition-colors focus-within:border-white/20 sm:flex-row"
+                    className="flex w-full flex-col items-center gap-3 rounded-full border border-white/10 bg-white/[0.02] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-colors focus-within:border-white/20 focus-within:bg-white/[0.04] sm:flex-row"
                   >
                     <input
                       type="email"
                       required
-                      placeholder="enter your personal email"
+                      placeholder="Enter your personal email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      className="h-12 w-full border-none bg-transparent px-6 text-[15px] text-white outline-none placeholder:text-white/20"
+                      className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
                     />
                     <button
                       type="submit"
                       disabled={submitting}
                       className="flex h-12 w-full flex-shrink-0 items-center justify-center gap-2 rounded-full bg-white px-10 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition-all hover:scale-[1.02] active:scale-95 sm:w-auto"
                     >
-                      {submitting ? 'Submitting...' : 'Join Waitlist'}
+                      {submitting ? 'Submitting...' : 'Get Priority Access'}
                     </button>
                   </motion.form>
                 ) : (
@@ -815,7 +827,7 @@ export default function LandingPage() {
               </p>
             )}
 
-            <div className="mt-16 flex items-center gap-6 text-[9px] font-bold uppercase tracking-[0.2em] text-white/20 md:gap-12">
+            <div className="mt-16 flex items-center gap-6 text-[9px] font-bold uppercase tracking-[0.2em] text-white/40 md:gap-12">
               <span>IIL (c) 2026</span>
             </div>
           </PageRail>

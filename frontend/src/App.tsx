@@ -25,11 +25,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { ThemeToggle } from './components/ThemeToggle';
+
 export default function App() {
   useAdminShortcut();
 
   return (
-    <Routes>
+    <>
+      <ThemeToggle />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route
@@ -49,5 +53,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

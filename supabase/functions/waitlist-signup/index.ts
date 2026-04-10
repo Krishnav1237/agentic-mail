@@ -177,7 +177,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = (await req.json()) as { email?: string };
+    const body = (await req.json()) as { email?: string; action?: string };
+
+    // Handle stats request via POST to bypass GET method restrictions
+    if (body.action === 'stats') {
+      const response: WaitlistStatsResponse = {
+        success: true,
+        total: await getWaitlistTotal(supabase),
+      };
+
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const rawEmail = body.email?.trim() ?? '';
     if (!emailRegex.test(rawEmail)) {
       return new Response(JSON.stringify({ error: 'Invalid email address' }), {
