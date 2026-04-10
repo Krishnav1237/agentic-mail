@@ -2,6 +2,12 @@ export type WaitlistJoinResponse = {
   success: true;
   status: 'created' | 'duplicate';
   message: string;
+  total?: number;
+};
+
+export type WaitlistStatsResponse = {
+  success: true;
+  total: number;
 };
 
 type SupabaseErrorResponse = {
@@ -28,14 +34,71 @@ const getSupabaseHeaders = (headers?: HeadersInit) => {
   return nextHeaders;
 };
 
-export const joinWaitlist = async (email: string) => {
+const getFunctionUrl = (functionName: string) =>
+  `${SUPABASE_URL}/functions/v1/${functionName}`;
+
+const ensureSupabaseConfig = () => {
   if (!SUPABASE_URL || !configuredSupabaseAnonKey) {
     throw new Error(
       'Waitlist signup requires VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
     );
   }
+};
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/waitlist-signup`, {
+const parseFunctionResponse = async (
+  response: Response
+): Promise<
+  | WaitlistJoinResponse
+  | WaitlistStatsResponse
+  | SupabaseErrorResponse
+  | { error?: string }
+  | string
+> => {
+  const contentType = response.headers.get('content-type') ?? '';
+  return contentType.includes('application/json')
+    ? ((await response.json()) as
+        | WaitlistJoinResponse
+        | WaitlistStatsResponse
+        | SupabaseErrorResponse
+        | { error?: string })
+    : await response.text();
+};
+
+const extractErrorMessage = (
+  payload:
+    | WaitlistJoinResponse
+    | WaitlistStatsResponse
+    | SupabaseErrorResponse
+    | { error?: string }
+    | string
+) =>
+  typeof payload === 'string'
+    ? payload
+    : [payload.message, payload.details, payload.hint, payload.error]
+        .filter(Boolean)
+        .join(' ');
+
+export const getWaitlistStats = async () => {
+  ensureSupabaseConfig();
+
+  const response = await fetch(getFunctionUrl('waitlist-signup'), {
+    method: 'GET',
+    headers: getSupabaseHeaders(),
+  });
+
+  const payload = await parseFunctionResponse(response);
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(payload) || 'Supabase waitlist stats failed');
+  }
+
+  return payload as WaitlistStatsResponse;
+};
+
+export const joinWaitlist = async (email: string) => {
+  ensureSupabaseConfig();
+
+  const response = await fetch(getFunctionUrl('waitlist-signup'), {
     method: 'POST',
     headers: getSupabaseHeaders({
       'Content-Type': 'application/json',
@@ -43,23 +106,12 @@ export const joinWaitlist = async (email: string) => {
     body: JSON.stringify({ email: normalizeWaitlistEmail(email) }),
   });
 
-  const contentType = response.headers.get('content-type') ?? '';
-  const payload = contentType.includes('application/json')
-    ? ((await response.json()) as
-        | WaitlistJoinResponse
-        | SupabaseErrorResponse
-        | { error?: string })
-    : await response.text();
+  const payload = await parseFunctionResponse(response);
 
   if (!response.ok) {
-    const detail =
-      typeof payload === 'string'
-        ? payload
-        : [payload.message, payload.details, payload.hint, payload.error]
-            .filter(Boolean)
-            .join(' ');
-
-    throw new Error(detail || 'Supabase waitlist request failed');
+    throw new Error(
+      extractErrorMessage(payload) || 'Supabase waitlist request failed'
+    );
   }
 
   return payload as WaitlistJoinResponse;
