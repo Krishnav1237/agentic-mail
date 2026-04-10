@@ -4,13 +4,19 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 type WaitlistJoinResponse = {
   success: true;
   status: 'created' | 'duplicate';
   message: string;
+  total?: number;
+};
+
+type WaitlistStatsResponse = {
+  success: true;
+  total: number;
 };
 
 const createdResponse: WaitlistJoinResponse = {
@@ -28,6 +34,36 @@ const duplicateResponse: WaitlistJoinResponse = {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+const createSupabaseAdminClient = () => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Supabase function secrets are not configured');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
+
+const getWaitlistTotal = async (
+  supabase: ReturnType<typeof createSupabaseAdminClient>
+) => {
+  const { count, error } = await supabase
+    .from('waitlist')
+    .select('id', { count: 'exact', head: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
+};
 
 const buildWaitlistConfirmationHtml = () => `<!DOCTYPE html>
 <html>
@@ -119,7 +155,7 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET' && req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -127,11 +163,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabase = createSupabaseAdminClient();
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Supabase function secrets are not configured');
+    if (req.method === 'GET') {
+      const response: WaitlistStatsResponse = {
+        success: true,
+        total: await getWaitlistTotal(supabase),
+      };
+
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const body = (await req.json()) as { email?: string };
@@ -144,12 +187,6 @@ Deno.serve(async (req) => {
     }
 
     const email = normalizeEmail(rawEmail);
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
 
     const { data: existing, error: existingError } = await supabase
       .from('waitlist')
@@ -162,7 +199,12 @@ Deno.serve(async (req) => {
     }
 
     if (existing && existing.length > 0) {
-      return new Response(JSON.stringify(duplicateResponse), {
+      const response: WaitlistJoinResponse = {
+        ...duplicateResponse,
+        total: await getWaitlistTotal(supabase),
+      };
+
+      return new Response(JSON.stringify(response), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -174,7 +216,12 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       if (insertError.code === '23505') {
-        return new Response(JSON.stringify(duplicateResponse), {
+        const response: WaitlistJoinResponse = {
+          ...duplicateResponse,
+          total: await getWaitlistTotal(supabase),
+        };
+
+        return new Response(JSON.stringify(response), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -189,7 +236,12 @@ Deno.serve(async (req) => {
       console.error('Failed to send waitlist confirmation email:', error);
     }
 
-    return new Response(JSON.stringify(createdResponse), {
+    const response: WaitlistJoinResponse = {
+      ...createdResponse,
+      total: await getWaitlistTotal(supabase),
+    };
+
+    return new Response(JSON.stringify(response), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
