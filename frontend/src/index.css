@@ -38,6 +38,44 @@ body {
   text-shadow: 0 0 80px rgba(255, 255, 255, 0.4);
 }
 
+.nav-link {
+  transform-origin: center;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 220ms ease,
+    background-color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.nav-link-label {
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 220ms ease,
+    text-shadow 220ms ease;
+}
+
+.nav-link[data-active='false']:hover,
+.nav-link[data-active='false']:focus-visible {
+  transform: scale(1.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.nav-link[data-active='false']:hover .nav-link-label,
+.nav-link[data-active='false']:focus-visible .nav-link-label {
+  transform: scale(1.05);
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+}
+
+.nav-link[data-active='false']:active {
+  transform: scale(1.02);
+}
+
 .glass-panel {
   background: rgba(10, 10, 10, 0.4);
   backdrop-filter: blur(40px);

@@ -216,15 +216,19 @@ function CenterNav({ activeSection }: { activeSection: string }) {
           const isActive = activeSection === cp.id;
           const isFirstOrLast = idx === 0 || idx === checkpoints.length - 1;
           return (
-            <a
+            <motion.a
               key={cp.id}
               href={`#${cp.id}`}
               onClick={(e) => {
                 e.preventDefault();
                 scrollToSection(cp.id);
               }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative inline-flex h-8 shrink-0 items-center justify-center rounded-full border text-[8px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300 sm:h-9 sm:text-[9px] sm:tracking-[0.15em] md:h-11 md:text-[10px] md:tracking-[0.18em] ${isFirstOrLast ? 'px-4 md:px-8' : 'px-3 md:px-5'
+              data-active={isActive ? 'true' : 'false'}
+              className={`nav-link relative inline-flex h-8 shrink-0 items-center justify-center rounded-full border text-[8px] font-semibold uppercase tracking-[0.12em] transition-all duration-300 sm:h-9 sm:text-[9px] sm:tracking-[0.15em] md:h-11 md:text-[10px] md:tracking-[0.18em] ${isFirstOrLast ? 'px-4 md:px-8' : 'px-3 md:px-5'
                 } ${isActive
                   ? 'border-transparent text-white'
                   : 'border-transparent text-white/68 hover:border-white/10 hover:bg-white/[0.06] hover:text-white/92'
@@ -237,8 +241,8 @@ function CenterNav({ activeSection }: { activeSection: string }) {
                   transition={{ type: 'spring', bounce: 0.25, duration: 0.6 }}
                 />
               )}
-              <span className="relative z-10">{cp.label}</span>
-            </a>
+              <span className="nav-link-label relative z-10">{cp.label}</span>
+            </motion.a>
           );
         })}
       </div>
@@ -577,7 +581,7 @@ export default function LandingPage() {
           className="w-full transition-all duration-300"
           style={{ paddingTop: navHeight + 48 }}
         >
-          <PageRail 
+          <PageRail
             className="flex flex-col items-center justify-center pb-16 text-center transition-all duration-300"
             style={{ minHeight: `calc(100svh - ${navHeight + 48}px)` }}
           >
@@ -696,13 +700,13 @@ export default function LandingPage() {
             <FadeInText className="flex flex-col items-center text-center">
               <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/64">
-                  Execution Layer
+                  The Problem
                 </span>
               </div>
               <h2 className="mt-4 max-w-[54rem] text-2xl font-light tracking-tight text-white sm:mt-6 sm:text-3xl md:text-5xl">
                 Reading email is easy. Keeping up is not.
               </h2>
-              <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
+              <p className="mt-2 max-w-4xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
                 The hard part is remembering what each message needs from you.
                 Deadlines, follow-ups, scheduling, requests, and key details get
                 buried across threads.
@@ -816,18 +820,18 @@ export default function LandingPage() {
                 </p>
               </div>
             </FadeInText>
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:gap-6 lg:grid-cols-4">
+            <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
               {featureCards.map((item, index) => (
                 <FadeInText
                   key={item.title}
                   delay={index * 0.05}
-                  className="group relative overflow-hidden rounded-[24px] border border-white/[0.05] bg-white/[0.02] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-500 hover:border-white/[0.1] hover:bg-white/[0.04]"
+                  className="group relative overflow-hidden rounded-[20px] border border-white/[0.05] bg-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-500 hover:border-white/[0.1] hover:bg-white/[0.04] sm:rounded-[24px] sm:p-8"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-                  <h4 className="relative z-10 mb-3 text-sm font-semibold text-white/96">
+                  <h4 className="relative z-10 mb-2 text-[11px] font-semibold text-white/96 sm:mb-3 sm:text-sm">
                     {item.title}
                   </h4>
-                  <p className="relative z-10 text-[13px] font-light leading-relaxed text-white/40">
+                  <p className="relative z-10 text-[10px] font-light leading-relaxed text-white/40 sm:text-[13px]">
                     {item.desc}
                   </p>
                 </FadeInText>
