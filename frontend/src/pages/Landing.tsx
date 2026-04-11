@@ -530,7 +530,20 @@ export default function LandingPage() {
         ref={navRef}
         className="pointer-events-none fixed inset-x-0 top-0 z-50"
       >
-        <div className="nav-flare absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/90 to-transparent" />
+        {/* Dynamic Nav Shield - Blurs scrolling content below the navbar elements */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-x-0 top-0 -z-10 bg-black/5 backdrop-blur-xl transition-all duration-300"
+          style={{ 
+            height: navHeight + 24,
+            maskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)'
+          }}
+        />
+
+        <div className="nav-flare absolute inset-x-0 top-0 -z-20 h-32 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
         <PageRail className="pt-4">
           <motion.div
