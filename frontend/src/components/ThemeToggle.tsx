@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = '' }: { className?: string }) {
   const [isLight, setIsLight] = useState(false);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-6 right-6 z-[9999] flex h-7 w-12 items-center rounded-full bg-white/[0.02] p-1 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(0,0,0,0.2)] transition-all hover:bg-white/[0.04] hover:border-white/20"
+      className={`relative flex h-7 w-12 items-center rounded-full bg-white/[0.02] p-1 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_20px_rgba(0,0,0,0.2)] transition-all hover:bg-white/[0.04] hover:border-white/20 ${className}`}
       aria-label="Toggle theme"
     >
       <div

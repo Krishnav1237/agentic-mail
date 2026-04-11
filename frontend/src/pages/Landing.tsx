@@ -15,6 +15,7 @@ import {
   type Variants,
 } from 'framer-motion';
 import { getWaitlistStats, joinWaitlist } from '../lib/waitlist';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 const launchProofCards = [
   {
@@ -134,11 +135,29 @@ const pageRailClassName =
 const waitlistCountFormatter = new Intl.NumberFormat('en-US');
 
 const scrollToSection = (sectionId: string) => {
-  const element = document.getElementById(sectionId);
-  if (element) {
-    const navOffset = 100; // Account for the navbar visual footprint
-    const y = element.getBoundingClientRect().top + window.scrollY - navOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+
+  // Dynamically measure the actual navbar height
+  const nav = document.querySelector('nav');
+  const navHeight = nav ? nav.getBoundingClientRect().height : 100;
+
+  const isLargeScreen = window.innerWidth >= 1024;
+
+  if (isLargeScreen) {
+    // On desktop: scroll to the section top, letting CSS justify-center
+    // naturally position the heading in the visual center of the viewport
+    const buffer = 20;
+    const y = section.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  } else {
+    // On mobile/tablet: target the first heading directly since sections
+    // don't have enough height for CSS centering to work properly
+    const firstContent = section.querySelector('h2, h3, .inline-flex');
+    const target = firstContent || section;
+    const buffer = 24;
+    const y = target.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   }
 };
 
@@ -192,9 +211,10 @@ function useActiveSection() {
 function CenterNav({ activeSection }: { activeSection: string }) {
   return (
     <div className="flex w-full justify-center">
-      <div className="relative flex max-w-full flex-wrap items-center justify-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-white/[0.03] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:gap-1.5">
-        {checkpoints.map((cp) => {
+      <div className="relative flex max-w-[280px] flex-wrap items-center justify-center gap-0.5 rounded-full border border-white/10 bg-white/[0.03] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:max-w-none sm:flex-nowrap sm:gap-1 sm:p-1.5 md:gap-1.5 md:px-4">
+        {checkpoints.map((cp, idx) => {
           const isActive = activeSection === cp.id;
+          const isFirstOrLast = idx === 0 || idx === checkpoints.length - 1;
           return (
             <a
               key={cp.id}
@@ -204,15 +224,16 @@ function CenterNav({ activeSection }: { activeSection: string }) {
                 scrollToSection(cp.id);
               }}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-3 text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors duration-300 md:h-11 md:px-4 ${isActive
-                ? 'border-transparent text-white'
-                : 'border-transparent text-white/68 hover:border-white/10 hover:bg-white/[0.06] hover:text-white/92'
+              className={`relative inline-flex h-8 shrink-0 items-center justify-center rounded-full border text-[8px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300 sm:h-9 sm:text-[9px] sm:tracking-[0.15em] md:h-11 md:text-[10px] md:tracking-[0.18em] ${isFirstOrLast ? 'px-4 md:px-8' : 'px-3 md:px-5'
+                } ${isActive
+                  ? 'border-transparent text-white'
+                  : 'border-transparent text-white/68 hover:border-white/10 hover:bg-white/[0.06] hover:text-white/92'
                 }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeNavBubble"
-                  className="nav-active-pill absolute -inset-px -z-10 rounded-full border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] shadow-[0_12px_28px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.16)]"
+                  className="nav-active-pill absolute inset-0 -z-10 rounded-full border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] shadow-[0_12px_28px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.16)]"
                   transition={{ type: 'spring', bounce: 0.25, duration: 0.6 }}
                 />
               )}
@@ -361,7 +382,7 @@ const ParallaxImage = ({
       whileInView={{ opacity: 1, scale: 1, y: 0 }}
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay }}
-      className="parallax-image-container relative flex aspect-square w-full max-w-[480px] items-center justify-center group"
+      className="parallax-image-container relative flex aspect-square w-full max-w-[280px] items-center justify-center group sm:max-w-[360px] md:max-w-[480px]"
     >
       <div
         className={`absolute inset-0 ${glowColor} blur-[120px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-1000 scale-75 mix-blend-screen bg-blend-screen pointer-events-none`}
@@ -399,6 +420,8 @@ export default function LandingPage() {
   const y = useTransform(scrollYProgress, [0, 1], [0, -100]);
   const activeSection = useActiveSection();
 
+  const navRef = useRef<HTMLElement>(null);
+  const [navHeight, setNavHeight] = useState(80);
   const [email, setEmail] = useState('');
   const [waitlistTotal, setWaitlistTotal] = useState<number | null>(null);
   const [waitlistStatsState, setWaitlistStatsState] = useState<
@@ -410,6 +433,23 @@ export default function LandingPage() {
   const [waitlistMessage, setWaitlistMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
+
+  // Dynamic navbar height observer for perfect scroll alignment
+  useEffect(() => {
+    if (!navRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        setNavHeight(height);
+        // Apply height + buffer to the document root for global scroll matching
+        document.documentElement.style.scrollPaddingTop = `${height + 40}px`;
+      }
+    });
+
+    observer.observe(navRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -482,7 +522,10 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_12%,#000_100%)] opacity-44" />
       </div>
 
-      <nav className="pointer-events-none fixed inset-x-0 top-0 z-50">
+      <nav
+        ref={navRef}
+        className="pointer-events-none fixed inset-x-0 top-0 z-50"
+      >
         <div className="nav-flare absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/90 to-transparent" />
 
         <PageRail className="pt-4">
@@ -490,21 +533,37 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
-            className="pointer-events-auto relative flex min-h-[68px] flex-col items-center gap-3 md:justify-center"
+            className="pointer-events-auto relative flex flex-col items-center gap-4 sm:min-h-[68px] lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-0"
           >
-            <div className="min-w-0 text-center md:absolute md:left-0 md:top-1/2 md:-translate-y-1/2 md:text-left">
-              <div className="inline-flex items-center whitespace-nowrap">
-                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] md:text-[12px]">
-                  IIL
-                </span>
-                <span className="mx-3 text-[11px] font-bold text-white/22 md:text-[12px]">|</span>
-                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] md:text-[12px]">
-                  Inbox Intelligence Layer
-                </span>
+            {/* Top Row for Mobile (Brand & Toggle) / Col 1 & 3 for Desktop */}
+            <div className="flex w-full items-center justify-between lg:contents">
+              <div className="flex items-center justify-start lg:w-full">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
+                    IIL
+                  </span>
+                  <span className="text-[10px] font-bold text-white/22 sm:text-[11px] md:text-[12px]">|</span>
+                  <div className="flex flex-col leading-[1.1] text-left">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
+                      Inbox Intelligence
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
+                      Layer
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions - Right on mobile, Col 3 on desktop */}
+              <div className="flex items-center justify-end lg:order-3 lg:w-full">
+                <ThemeToggle className="scale-90 lg:scale-100" />
               </div>
             </div>
 
-            <CenterNav activeSection={activeSection} />
+            {/* Nav - Center for everything */}
+            <div className="order-2 flex w-full justify-center lg:order-2">
+              <CenterNav activeSection={activeSection} />
+            </div>
           </motion.div>
         </PageRail>
       </nav>
@@ -515,9 +574,13 @@ export default function LandingPage() {
       >
         <section
           id="hero"
-          className="w-full scroll-mt-28 pt-24 md:scroll-mt-32 md:pt-20"
+          className="w-full transition-all duration-300"
+          style={{ paddingTop: navHeight + 48 }}
         >
-          <PageRail className="flex min-h-[100svh] flex-col items-center justify-center pb-16 text-center">
+          <PageRail 
+            className="flex flex-col items-center justify-center pb-16 text-center transition-all duration-300"
+            style={{ minHeight: `calc(100svh - ${navHeight + 48}px)` }}
+          >
             <motion.div
               style={{ opacity, scale }}
               className="mx-auto flex max-w-[1120px] flex-col items-center gap-5"
@@ -526,7 +589,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 2, ease: 'easeOut' }}
-                className="relative mb-4 inline-flex items-center gap-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-5 py-2 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)]"
+                className="relative mb-4 inline-flex items-center gap-2 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.06)] sm:gap-3 sm:px-5 sm:py-2"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00ff22] opacity-75"></span>
@@ -549,10 +612,13 @@ export default function LandingPage() {
                   ease: [0.16, 1, 0.3, 1],
                   delay: 0.1,
                 }}
-                className="max-w-[10.5ch] pb-2 text-center text-[58px] font-light leading-[0.92] tracking-[-0.05em] [text-wrap:balance] md:text-[104px] lg:text-[144px]"
+                className="max-w-[10.5ch] pb-2 text-center text-[40px] font-light leading-tight tracking-[-0.02em] [text-wrap:balance] sm:text-[58px] md:text-[104px] md:leading-[1.0] lg:text-[144px]"
               >
                 <span className="block bg-gradient-to-b from-white via-white/[0.60] to-white/10 bg-clip-text text-transparent">
-                  Your inbox
+                  Your{' '}
+                  <span className="gold-text-fix bg-gradient-to-b from-[#FBF5B7] via-[#D4AF37] to-[#996515] bg-clip-text text-transparent">
+                    inbox
+                  </span>
                 </span>
                 <span className="block bg-gradient-to-b from-white/10 via-white/[0.60] to-white bg-clip-text text-transparent [text-shadow:0_0_24px_rgba(255,255,255,0.08)]">
                   runs itself!
@@ -574,7 +640,7 @@ export default function LandingPage() {
                   ease: [0.16, 1, 0.3, 1],
                   delay: 0.32,
                 }}
-                className="mt-10 w-full max-w-2xl"
+                className="mt-6 w-full max-w-2xl sm:mt-10"
               >
                 <AnimatePresence mode="wait">
                   {waitlistStatus === 'idle' ? (
@@ -582,7 +648,7 @@ export default function LandingPage() {
                       key="form"
                       onSubmit={handleWaitlist}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="mx-auto flex w-fit flex-col items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:flex-row"
+                      className="mx-auto flex w-full flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:w-fit sm:flex-row sm:rounded-full"
                     >
                       <input
                         type="email"
@@ -595,7 +661,7 @@ export default function LandingPage() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="flex h-[44px] w-full flex-none items-center justify-center gap-2 rounded-full bg-white px-12 text-[11px] font-bold uppercase tracking-[0.15em] text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02] active:scale-95 sm:w-auto"
+                        className="flex h-[44px] w-full flex-none items-center justify-center gap-2 rounded-full bg-white px-6 text-[10px] font-bold uppercase tracking-[0.12em] text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02] active:scale-95 sm:w-auto sm:px-12 sm:text-[11px] sm:tracking-[0.15em]"
                       >
                         {submitting ? 'Submitting...' : 'Get Priority Access'}
                       </button>
@@ -633,7 +699,7 @@ export default function LandingPage() {
                   Execution Layer
                 </span>
               </div>
-              <h2 className="mt-6 max-w-[54rem] text-3xl font-light tracking-tight text-white md:text-5xl">
+              <h2 className="mt-4 max-w-[54rem] text-2xl font-light tracking-tight text-white sm:mt-6 sm:text-3xl md:text-5xl">
                 Where email becomes work.
               </h2>
               <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
@@ -653,7 +719,7 @@ export default function LandingPage() {
                   <div className="relative z-10 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                     {card.label}
                   </div>
-                  <h3 className="relative z-10 mt-5 text-2xl font-light leading-tight text-white">
+                  <h3 className="relative z-10 mt-4 text-xl font-light leading-tight text-white sm:mt-5 sm:text-2xl">
                     {card.title}
                   </h3>
                   <p className="relative z-10 mt-4 text-sm font-light leading-7 text-white/40">
@@ -672,7 +738,7 @@ export default function LandingPage() {
               className="flex min-h-[calc(100svh-100px)] w-full flex-col justify-center"
             >
               <PageRail
-                className={`flex flex-col items-center justify-center gap-12 ${section.layout === 'reverse'
+                className={`flex flex-col items-center justify-center gap-8 sm:gap-12 ${section.layout === 'reverse'
                   ? 'md:flex-row-reverse'
                   : 'md:flex-row'
                   } md:gap-24`}
@@ -694,7 +760,7 @@ export default function LandingPage() {
                     </motion.div>
                     <motion.h2
                       variants={fadeUpChild}
-                      className="mb-8 bg-gradient-to-b from-white via-white/92 to-white/70 bg-clip-text text-[40px] font-light leading-[1.05] tracking-tight text-transparent md:text-[60px] lg:text-[70px]"
+                      className="mb-6 pb-4 bg-gradient-to-b from-white via-white/92 to-white/70 bg-clip-text text-[28px] font-light leading-[1.05] tracking-tight text-transparent sm:mb-8 sm:text-[40px] md:text-[60px] lg:text-[70px]"
                     >
                       {section.title}
                     </motion.h2>
@@ -740,7 +806,7 @@ export default function LandingPage() {
           <PageRail>
             <FadeInText className="mb-10 w-full md:mb-14">
               <div className="mx-auto flex flex-col items-center gap-6 text-center">
-                <h3 className="max-w-[44rem] text-3xl font-light tracking-tight text-white md:text-5xl">
+                <h3 className="max-w-[44rem] text-2xl font-light tracking-tight text-white sm:text-3xl md:text-5xl">
                   What stays running after the message arrives.
                 </h3>
                 <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
@@ -750,7 +816,7 @@ export default function LandingPage() {
                 </p>
               </div>
             </FadeInText>
-            <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:gap-6 lg:grid-cols-4">
               {featureCards.map((item, index) => (
                 <FadeInText
                   key={item.title}
@@ -776,7 +842,7 @@ export default function LandingPage() {
         >
           <PageRail className="flex flex-col items-center">
             <FadeInText className="flex w-full max-w-2xl flex-col items-center">
-              <h2 className="mb-8 bg-gradient-to-b from-white via-white/[0.7] to-white/[0.3] bg-clip-text text-5xl font-light leading-[1.05] tracking-tighter text-transparent md:text-[70px]">
+              <h2 className="mb-6 bg-gradient-to-b from-white via-white/[0.7] to-white/[0.3] bg-clip-text text-3xl font-light leading-snug tracking-tight text-transparent sm:mb-8 sm:text-4xl md:text-[70px] md:leading-[1.15]">
                 Ready to stop carrying every thread in your head?
               </h2>
               <p className="mt-2 mb-12 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
@@ -790,7 +856,7 @@ export default function LandingPage() {
                     key="form-bottom"
                     onSubmit={handleWaitlist}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex w-full flex-col items-center gap-3 rounded-full border border-white/10 bg-white/[0.02] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-colors focus-within:border-white/20 focus-within:bg-white/[0.04] sm:flex-row"
+                    className="flex w-full flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-colors focus-within:border-white/20 focus-within:bg-white/[0.04] sm:flex-row sm:gap-3 sm:rounded-full"
                   >
                     <input
                       type="email"
@@ -803,7 +869,7 @@ export default function LandingPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex h-12 w-full flex-shrink-0 items-center justify-center gap-2 rounded-full bg-white px-10 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition-all hover:scale-[1.02] active:scale-95 sm:w-auto"
+                      className="flex h-12 w-full flex-shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[9px] font-bold uppercase tracking-[0.15em] text-black transition-all hover:scale-[1.02] active:scale-95 sm:w-auto sm:px-10 sm:text-[10px] sm:tracking-[0.2em]"
                     >
                       {submitting ? 'Submitting...' : 'Get Priority Access'}
                     </button>

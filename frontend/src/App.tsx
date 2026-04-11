@@ -32,7 +32,6 @@ export default function App() {
 
   return (
     <>
-      <ThemeToggle />
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
