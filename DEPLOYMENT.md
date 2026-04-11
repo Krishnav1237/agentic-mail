@@ -60,6 +60,9 @@ supabase functions deploy waitlist-signup --no-verify-jwt
 Notes:
 
 - `--no-verify-jwt` is intentional because the landing page is public.
+- Git pushes and Vercel deploys do not redeploy Supabase Edge Functions. If you
+  change `supabase/functions/waitlist-signup/index.ts`, redeploy that function
+  separately or the frontend and function contract can drift.
 - Do not move `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or the Resend key
   into the frontend.
 

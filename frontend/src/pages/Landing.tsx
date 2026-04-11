@@ -19,27 +19,27 @@ import { ThemeToggle } from '../components/ThemeToggle';
 
 const launchProofCards = [
   {
-    label: 'Intent recognized',
-    title: 'The hidden work inside the message becomes explicit.',
-    desc: 'Requests, deadlines, approvals, and next actions are pulled out of the thread.',
+    label: 'Hidden deadlines',
+    title: 'Important dates get buried in busy threads.',
+    desc: 'Meeting times, due dates, and promised follow-ups are easy to miss inside long conversations.',
   },
   {
-    label: 'Work prepared',
-    title: 'The next move is assembled with context.',
-    desc: 'Replies, timing, and follow-ups are prepared from what has already happened.',
+    label: 'Scattered requests',
+    title: 'One inbox can create a lot of small work.',
+    desc: 'Replies, approvals, scheduling, and shared details end up spread across messages and memory.',
   },
   {
-    label: 'Continuity maintained',
-    title: 'The obligation remains live until it is resolved.',
-    desc: 'Open loops stay visible across threads and time instead of disappearing back into the inbox.',
+    label: 'Lost follow-through',
+    title: 'Reading the email does not finish the work.',
+    desc: 'Open loops disappear after the thread is read, then return later as stress or missed action.',
   },
 ] as const;
 
 const narrativeSections = [
   {
-    label: 'Commitment Extraction',
-    title: 'Messages carry work. The system makes it legible.',
-    desc: 'Email rarely arrives as a clean task. IIL interprets the thread, identifies the obligation, and turns it into something that can be acted on.',
+    label: 'Dates and commitments',
+    title: 'It finds what matters, and when it matters.',
+    desc: 'Due dates, meeting times, and promised actions are pulled out of the thread before they get missed.',
     src: '/assets/syllabus.png',
     lightSrc: '/assets/syllabus-light.png',
     glowColor: 'bg-blue-500/20',
@@ -47,9 +47,9 @@ const narrativeSections = [
     layout: 'default' as const,
   },
   {
-    label: 'Response Preparation',
-    title: 'Replies are part of execution, not an afterthought.',
-    desc: 'When communication is required, IIL prepares the response using thread history, current context, and the state of the work already in motion.',
+    label: 'Clear next steps',
+    title: 'It turns messages into actions you can handle.',
+    desc: 'Requests, approvals, and follow-ups become structured next steps instead of staying buried in email.',
     src: '/assets/drafts.png',
     lightSrc: '/assets/drafts-light.png',
     glowColor: 'bg-purple-500/20',
@@ -57,9 +57,9 @@ const narrativeSections = [
     layout: 'reverse' as const,
   },
   {
-    label: 'Commitment Continuity',
-    title: 'The thread can end, not the grind.',
-    desc: 'IIL tracks what is still open, what is waiting on others, and what needs another touchpoint, even after the message has been read and archived.',
+    label: 'Open work stays visible',
+    title: 'It keeps unfinished work in view.',
+    desc: 'You can see what is pending, what needs a reply, and what is still waiting on someone else.',
     src: '/assets/inbox.png',
     lightSrc: '/assets/inbox-light.png',
     glowColor: 'bg-rose-500/20',
@@ -67,9 +67,9 @@ const narrativeSections = [
     layout: 'default' as const,
   },
   {
-    label: 'Opportunity Execution',
-    title: 'Timing-sensitive messages stay actionable.',
-    desc: 'Introductions, meeting requests, offers, and other high-value emails stay attached to the response, timing, and follow-through they require.',
+    label: 'Less inbox overhead',
+    title: 'It helps you move faster with less effort.',
+    desc: 'You spend less time rereading threads and less energy trying to remember what still needs attention.',
     src: '/assets/network.png',
     lightSrc: '/assets/network-light.png',
     glowColor: 'bg-emerald-500/20',
@@ -80,36 +80,36 @@ const narrativeSections = [
 
 const featureCards = [
   {
-    title: 'Intent Extraction',
-    desc: 'The system reads the message for what it requires.',
+    title: 'Commitments found',
+    desc: 'Pulls out what each message is asking for.',
   },
   {
-    title: 'Response Drafting',
-    desc: 'Replies are prepared with full thread context.',
+    title: 'Deadlines surfaced',
+    desc: 'Highlights dates, due times, and scheduling details.',
   },
   {
-    title: 'Deadline Tracking',
-    desc: 'Time-sensitive obligations stay visible.',
+    title: 'Replies prepared',
+    desc: 'Drafts responses with the right context.',
   },
   {
-    title: 'Follow-Up Continuity',
-    desc: 'Open loops remain active until they close.',
+    title: 'Follow-ups tracked',
+    desc: 'Keeps open loops from getting lost.',
   },
   {
-    title: 'Approval Controls',
-    desc: 'High-impact actions always require your confirmation.',
+    title: 'Requests organized',
+    desc: 'Turns scattered asks into clear next steps.',
   },
   {
-    title: 'Execution State',
-    desc: 'The system keeps track of what is pending, waiting, active, and done.',
+    title: 'Status made visible',
+    desc: 'Shows what is pending, waiting, active, or done.',
   },
   {
-    title: 'Execution Memory',
-    desc: 'Context carries forward across threads.',
+    title: 'Less to remember',
+    desc: 'Reduces the mental load of staying on top of email.',
   },
   {
-    title: 'Privacy First',
-    desc: 'Encrypted tokens. You control what the agent can execute.',
+    title: 'You stay in control',
+    desc: 'Important actions still require your approval.',
   },
 ] as const;
 
@@ -511,7 +511,7 @@ export default function LandingPage() {
       ? `${waitlistCountFormatter.format(waitlistTotal)} waiting`
       : waitlistStatsState === 'loading'
         ? 'Loading...'
-        : '0 waiting';
+        : 'Waitlist open';
 
   return (
     <div className="relative bg-black text-white selection:bg-white/20">
@@ -629,7 +629,7 @@ export default function LandingPage() {
                 style={{ opacity: 1, transform: 'none' }}
                 className="mt-2 max-w-2xl mx-auto text-center text-base font-light leading-relaxed text-white/40 md:text-xl"
               >
-                IIL turns incoming communication into execution that stays active until <br className="hidden md:block" /> the loop is closed.
+                IIL turns emails into clear tasks, replies, and follow-ups.
               </motion.p>
 
               <motion.div
@@ -700,11 +700,12 @@ export default function LandingPage() {
                 </span>
               </div>
               <h2 className="mt-4 max-w-[54rem] text-2xl font-light tracking-tight text-white sm:mt-6 sm:text-3xl md:text-5xl">
-                Where email becomes work.
+                Reading email is easy. Keeping up is not.
               </h2>
               <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
-                The system reads the thread, extracts what is required, and
-                keeps the obligation moving after the message has been read.
+                The hard part is remembering what each message needs from you.
+                Deadlines, follow-ups, scheduling, requests, and key details get
+                buried across threads.
               </p>
             </FadeInText>
 
@@ -807,12 +808,11 @@ export default function LandingPage() {
             <FadeInText className="mb-10 w-full md:mb-14">
               <div className="mx-auto flex flex-col items-center gap-6 text-center">
                 <h3 className="max-w-[44rem] text-2xl font-light tracking-tight text-white sm:text-3xl md:text-5xl">
-                  What stays running after the message arrives.
+                  What it handles for you.
                 </h3>
                 <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
-                  Extraction, response preparation, deadline tracking,
-                  continuity, approvals, and follow-through across email-driven
-                  work.
+                  It finds the work inside email, keeps it visible, and helps
+                  you follow through without relying on memory.
                 </p>
               </div>
             </FadeInText>

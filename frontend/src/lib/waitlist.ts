@@ -78,20 +78,10 @@ const extractErrorMessage = (
         .filter(Boolean)
         .join(' ');
 
-export const getWaitlistStats = async (): Promise<WaitlistStatsResponse> => {
-  ensureSupabaseConfig();
-
-  // Use POST with a special action to get stats via the edge function.
-  // The edge function uses the service_role key which bypasses RLS,
-  // whereas the anon key cannot SELECT from the waitlist table directly.
-  const response = await fetch(getFunctionUrl('waitlist-signup'), {
-    method: 'POST',
-    headers: getSupabaseHeaders({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({ action: 'stats' }),
-  });
-
+const requestWaitlistStats = async (
+  init: RequestInit
+): Promise<WaitlistStatsResponse> => {
+  const response = await fetch(getFunctionUrl('waitlist-signup'), init);
   const payload = await parseFunctionResponse(response);
 
   if (!response.ok) {
@@ -99,6 +89,27 @@ export const getWaitlistStats = async (): Promise<WaitlistStatsResponse> => {
   }
 
   return payload as WaitlistStatsResponse;
+};
+
+export const getWaitlistStats = async (): Promise<WaitlistStatsResponse> => {
+  ensureSupabaseConfig();
+
+  try {
+    // Prefer GET because many deployments still have the older edge-function
+    // contract, and pushing this repo does not redeploy Supabase functions.
+    return await requestWaitlistStats({
+      method: 'GET',
+      headers: getSupabaseHeaders(),
+    });
+  } catch {
+    return requestWaitlistStats({
+      method: 'POST',
+      headers: getSupabaseHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ action: 'stats' }),
+    });
+  }
 };
 
 export const joinWaitlist = async (email: string) => {
