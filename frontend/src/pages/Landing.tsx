@@ -16,6 +16,7 @@ import {
 } from 'framer-motion';
 import { getWaitlistStats, joinWaitlist } from '../lib/waitlist';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { BrandLogo } from '../components/BrandLogo';
 
 const launchProofCards = [
   {
@@ -488,7 +489,12 @@ export default function LandingPage() {
     setWaitlistError('');
 
     try {
-      const response = await joinWaitlist(email);
+      // Ensure the email has @gmail.com appended if it doesn't already
+      const fullEmail = email.toLowerCase().includes('@') 
+        ? email 
+        : `${email}@gmail.com`;
+
+      const response = await joinWaitlist(fullEmail);
       setWaitlistStatus(response.status);
       setWaitlistMessage(response.message);
       if (typeof response.total === 'number') {
@@ -555,20 +561,7 @@ export default function LandingPage() {
             {/* Top Row for Mobile (Brand & Toggle) / Col 1 & 3 for Desktop */}
             <div className="flex w-full items-center justify-between lg:contents">
               <div className="flex items-center justify-start lg:w-full">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
-                    IIL
-                  </span>
-                  <span className="text-[10px] font-bold text-white/22 sm:text-[11px] md:text-[12px]">|</span>
-                  <div className="flex flex-col leading-[1.1] text-left">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
-                      Inbox Intelligence
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_18px_rgba(255,255,255,0.08)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]">
-                      Layer
-                    </span>
-                  </div>
-                </div>
+                <BrandLogo />
               </div>
 
               {/* Actions - Right on mobile, Col 3 on desktop */}
@@ -667,14 +660,19 @@ export default function LandingPage() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       className="mx-auto flex w-full flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-all duration-500 focus-within:border-white/30 focus-within:bg-white/[0.04] sm:w-fit sm:flex-row sm:rounded-full"
                     >
-                      <input
-                        type="email"
-                        required
-                        placeholder="Enter your personal email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
-                      />
+                      <div className="relative flex w-full flex-1 items-center">
+                        <input
+                          type="text"
+                          required
+                          placeholder="Gmail username"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
+                        />
+                        <span className="pointer-events-none pr-6 text-sm font-medium text-white/20">
+                          @gmail.com
+                        </span>
+                      </div>
                       <button
                         type="submit"
                         disabled={submitting}
@@ -875,14 +873,19 @@ export default function LandingPage() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="flex w-full flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_40px_rgba(255,255,255,0.02)] transition-colors focus-within:border-white/20 focus-within:bg-white/[0.04] sm:flex-row sm:gap-3 sm:rounded-full"
                   >
-                    <input
-                      type="email"
-                      required
-                      placeholder="Enter your personal email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
-                    />
+                    <div className="relative flex w-full flex-1 items-center">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Gmail username"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="w-full flex-1 border-none bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/50"
+                      />
+                      <span className="pointer-events-none pr-6 text-sm font-medium text-white/20">
+                        @gmail.com
+                      </span>
+                    </div>
                     <button
                       type="submit"
                       disabled={submitting}
