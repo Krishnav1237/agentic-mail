@@ -1,14 +1,10 @@
-import { createHmac } from 'crypto';
 import { query, withTransaction } from '../db/index.js';
-
-export const usageMetrics = [
-  'emails_processed',
-  'actions_suggested',
-  'actions_executed',
-  'followups_sent',
-] as const;
-
-export type UsageMetric = (typeof usageMetrics)[number];
+import {
+  quotaSeverity,
+  usageMetrics,
+  verifyBillingWebhookSignature,
+  type UsageMetric,
+} from './billingUtils.js';
 
 type EntitlementRow = {
   user_id: string;
@@ -32,13 +28,6 @@ type PlanRow = {
 };
 
 const THRESHOLDS = [0.7, 0.85, 1] as const;
-
-export const quotaSeverity = (percentage: number) => {
-  if (percentage >= 1) return 'hard_stop' as const;
-  if (percentage >= 0.85) return 'high' as const;
-  if (percentage >= 0.7) return 'warning' as const;
-  return 'none' as const;
-};
 
 const nowIso = () => new Date().toISOString();
 
@@ -633,16 +622,7 @@ export const createOrUpdateInvoice = async (input: {
   );
 };
 
-export const verifyBillingWebhookSignature = (input: {
-  payload: string;
-  signature: string;
-  secret: string;
-}) => {
-  const digest = createHmac('sha256', input.secret)
-    .update(input.payload)
-    .digest('hex');
-  return digest === input.signature;
-};
+export { quotaSeverity, usageMetrics, verifyBillingWebhookSignature };
 
 export const trackProductEvent = async (input: {
   userId?: string | null;

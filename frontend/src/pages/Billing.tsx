@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CreditCard, Gauge, ShieldCheck, TrendingUp } from 'lucide-react';
 import ConnectPrompt from '../components/ConnectPrompt';
 import PageHeader from '../components/PageHeader';
@@ -36,7 +36,7 @@ export default function BillingPage() {
   const [warnings, setWarnings] = useState<BillingWarning[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const [planData, usageData, warningData] = await Promise.all([
@@ -53,7 +53,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setStatus]);
 
   useEffect(() => {
     if (!hasToken) {
@@ -61,7 +61,7 @@ export default function BillingPage() {
       return;
     }
     void refresh();
-  }, [hasToken]);
+  }, [hasToken, refresh]);
 
   const summary = useMemo(() => {
     if (!usage.length) return { maxUsedPercent: 0, hardStops: 0 };

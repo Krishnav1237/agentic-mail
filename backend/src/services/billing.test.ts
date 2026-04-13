@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createHmac } from 'crypto';
-import { quotaSeverity, usageMetrics, verifyBillingWebhookSignature } from './billing.js';
+import {
+  quotaSeverity,
+  usageMetrics,
+  verifyBillingWebhookSignature,
+} from './billingUtils.js';
 
 describe('billing helpers', () => {
   it('maps quota severity thresholds correctly', () => {
