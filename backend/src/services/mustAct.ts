@@ -29,6 +29,13 @@ const confidence = (priority: number) => {
   return 0.6;
 };
 
+const calculateDueDateBoost = (dueAt: string | null) => {
+  if (!dueAt) return 0;
+  const msUntilDue = new Date(dueAt).getTime() - Date.now();
+  const daysUntilDue = Math.max(msUntilDue / (1000 * 60 * 60 * 24), 0);
+  return Math.max(0, 4 - daysUntilDue);
+};
+
 const reasonForTask = (input: {
   dueAt: string | null;
   category: string | null;
@@ -82,9 +89,7 @@ export const recomputeMustActForUser = async (userId: string) => {
 
   let upserted = 0;
   for (const row of candidates.rows) {
-    const dueBoost = row.due_at
-      ? Math.max(0, 4 - Math.max((new Date(row.due_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24), 0))
-      : 0;
+    const dueBoost = calculateDueDateBoost(row.due_at);
     const categoryBoost = row.category === 'internship' ? 2 : row.category === 'event' ? 1 : 0;
     const senderBoost = row.sender_email?.toLowerCase().includes('recruit') ? 1.5 : 0;
     const score = Number((row.priority_score + dueBoost + categoryBoost + senderBoost).toFixed(4));

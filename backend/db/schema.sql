@@ -312,6 +312,9 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions (
 
 CREATE INDEX IF NOT EXISTS billing_subscriptions_user_status_idx
   ON billing_subscriptions (user_id, status, updated_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS billing_subscriptions_provider_sub_unique_idx
+  ON billing_subscriptions (provider_subscription_id)
+  WHERE provider_subscription_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS billing_invoices (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -332,6 +335,9 @@ CREATE TABLE IF NOT EXISTS billing_invoices (
 
 CREATE INDEX IF NOT EXISTS billing_invoices_user_created_idx
   ON billing_invoices (user_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS billing_invoices_provider_invoice_unique_idx
+  ON billing_invoices (provider_invoice_id)
+  WHERE provider_invoice_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS user_entitlements (
   user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

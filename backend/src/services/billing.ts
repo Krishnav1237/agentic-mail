@@ -536,6 +536,9 @@ export const updateSubscriptionState = async (input: {
 }) => {
   const customer = await ensureBillingCustomer(input.userId);
   const plan = await getPlanBySlug(input.planSlug);
+  const normalizedProviderSubscriptionId =
+    input.providerSubscriptionId?.trim() ||
+    `manual:${input.userId}:${input.planSlug}`;
 
   const result = await query<{ id: string }>(
     `INSERT INTO billing_subscriptions (
@@ -560,7 +563,7 @@ export const updateSubscriptionState = async (input: {
       input.userId,
       customer.id,
       plan?.id ?? null,
-      input.providerSubscriptionId ?? null,
+      normalizedProviderSubscriptionId,
       input.status,
       input.periodStart ?? null,
       input.periodEnd ?? null,
@@ -594,6 +597,12 @@ export const createOrUpdateInvoice = async (input: {
   dueAt?: string | null;
   metadata?: Record<string, unknown>;
 }) => {
+  const normalizedProviderInvoiceId =
+    input.providerInvoiceId?.trim() ||
+    `manual:${input.userId}:${input.status}:${input.amountDueCents}:${
+      input.dueAt ?? 'none'
+    }`;
+
   await query(
     `INSERT INTO billing_invoices (
       user_id, subscription_id, provider, provider_invoice_id,
@@ -611,7 +620,7 @@ export const createOrUpdateInvoice = async (input: {
     [
       input.userId,
       input.subscriptionId ?? null,
-      input.providerInvoiceId ?? null,
+      normalizedProviderInvoiceId,
       input.amountDueCents,
       input.amountPaidCents,
       input.status,
