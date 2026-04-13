@@ -10,6 +10,7 @@ import {
   Mail,
   RefreshCcw,
   Settings,
+  CreditCard,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const navItems = [
   { label: 'Inbox', icon: Inbox, to: '/inbox' },
   { label: 'Agent', icon: Activity, to: '/agent' },
   { label: 'Settings', icon: Settings, to: '/settings' },
+  { label: 'Billing', icon: CreditCard, to: '/billing' },
 ];
 
 const routeContent: Record<string, { title: string; description: string }> = {
@@ -63,6 +65,11 @@ const routeContent: Record<string, { title: string; description: string }> = {
     title: 'Control surface',
     description:
       'Tune goals, execution posture, and personalization without a complicated admin maze.',
+  },
+  '/billing': {
+    title: 'Billing and usage',
+    description:
+      'Track quota usage, billing status, and upgrade before critical workflow actions are blocked.',
   },
 };
 

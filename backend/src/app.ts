@@ -17,6 +17,9 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { actionsRouter } from './routes/actions.js';
 import { agentRouter } from './routes/agent.js';
 import { waitlistRouter } from './routes/waitlist.js';
+import { billingRouter } from './routes/billing.js';
+import { mustActRouter } from './routes/mustAct.js';
+import { followupsRouter } from './routes/followups.js';
 
 export const createApp = () => {
   const app = express();
@@ -141,6 +144,9 @@ export const createApp = () => {
   app.use('/feedback', feedbackRouter);
   app.use('/actions', actionsRouter);
   app.use('/agent', agentRouter);
+  app.use('/billing', billingRouter);
+  app.use('/must-act', mustActRouter);
+  app.use('/followups', followupsRouter);
   app.use('/webhooks', webhooksRouter);
   app.use('/waitlist', waitlistRouter);
 

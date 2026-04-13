@@ -21,6 +21,40 @@ export type DashboardSections = {
   lowPriority: Task[];
 };
 
+export type UsageMetric = {
+  metric: string;
+  used: number;
+  quotaLimit: number | null;
+  percentage: number;
+  remaining: number | null;
+  windowStart: string;
+  windowEnd: string;
+  warn70Sent: boolean;
+  warn85Sent: boolean;
+  warn100Sent: boolean;
+};
+
+export type BillingPlan = {
+  plan_slug: string;
+  plan_name: string;
+  status: string;
+  priceUsdCents: number;
+  interval: string;
+  limits: Record<string, number>;
+  features: Record<string, unknown>;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_until: string | null;
+};
+
+export type BillingWarning = {
+  metric: string;
+  used: number;
+  quotaLimit: number;
+  percentage: number;
+  severity: 'warning' | 'high' | 'hard_stop';
+};
+
 export type Paginated<T> = {
   total: number;
   limit: number;
@@ -195,6 +229,27 @@ export const getActivityFeed = () =>
 
 export const getGoals = () =>
   apiFetch('/agent/goals') as Promise<GoalsResponse>;
+
+export const getBillingPlan = () =>
+  apiFetch('/billing/plan') as Promise<BillingPlan>;
+
+export const getBillingUsage = () =>
+  apiFetch('/billing/usage') as Promise<{ usage: UsageMetric[] }>;
+
+export const getBillingWarnings = () =>
+  apiFetch('/billing/warnings') as Promise<{ warnings: BillingWarning[] }>;
+
+export const createCheckout = (planSlug: 'free' | 'pro' | 'power') =>
+  apiFetch('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ planSlug }),
+  }) as Promise<{ ok: boolean; checkoutUrl: string }>;
+
+export const openBillingPortal = () =>
+  apiFetch('/billing/portal', { method: 'POST' }) as Promise<{
+    ok: boolean;
+    portalUrl: string;
+  }>;
 
 export const updateGoals = (payload: {
   goals: Array<{ goal: string; weight: number }>;

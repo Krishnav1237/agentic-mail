@@ -149,7 +149,7 @@ export const startIngestionWorker = () => {
       }
 
       const { userId } = job.data as { userId: string };
-      return syncUserInbox(userId);
+      return syncUserInbox(userId, String(job.id ?? `${Date.now()}`));
     },
     { connection: queueRedisConnection }
   );

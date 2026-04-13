@@ -3,6 +3,7 @@ import { generateReply } from '../services/ai.js';
 import type { ToolDefinition, ToolName } from '../tools/types.js';
 import { getToolDefinition, executeTool } from '../tools/registry.js';
 import { updateAgentActionStatus } from './actionStore.js';
+import { consumeUsageMetric } from '../services/billing.js';
 
 export type ActionPreview = {
   summary: string;
@@ -317,6 +318,25 @@ const executePreviewAction = async (input: {
     ].includes(input.action.action_type)
   ) {
     throw new Error('Missing message context');
+  }
+
+  const quota = await consumeUsageMetric({
+    userId: input.userId,
+    metric: 'actions_executed',
+    units: 1,
+    idempotencyKey: `preview-approve:${input.action.id}`,
+    source: 'preview_approve',
+    metadata: { actionType: input.action.action_type },
+    enforce: true,
+  });
+
+  if (!quota.allowed) {
+    await updateAgentActionStatus(input.action.id, 'preview', {
+      ...payload,
+      quota_blocked: true,
+      quota_metric: 'actions_executed',
+    });
+    throw new Error('Action quota exhausted for current billing window');
   }
 
   const result = await executeTool(

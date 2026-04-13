@@ -11,6 +11,7 @@ import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
 import { query } from '../db/index.js';
 import { summarizeActions } from '../agent/magicOutput.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
+import { listMustAct, recomputeMustActForUser } from '../services/mustAct.js';
 
 export const tasksRouter = Router();
 
@@ -66,6 +67,24 @@ tasksRouter.get(
       dueTo,
     });
 
+    return res.json(result);
+  })
+);
+
+tasksRouter.get(
+  '/must-act',
+  authMiddleware,
+  validate(listSchema, 'query'),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { limit, offset, status } = req.query as unknown as z.infer<
+      typeof listSchema
+    >;
+
+    await recomputeMustActForUser(userId);
+    const result = await listMustAct({ userId, limit, offset, status });
     return res.json(result);
   })
 );

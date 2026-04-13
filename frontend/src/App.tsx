@@ -8,6 +8,7 @@ import OpportunitiesPage from './pages/Opportunities';
 import InboxPage from './pages/Inbox';
 import AgentPage from './pages/Agent';
 import SettingsPage from './pages/Settings';
+import BillingPage from './pages/Billing';
 import AuthCallbackPage from './pages/AuthCallback';
 import { useApp } from './lib/useApp';
 
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/agent" element={<AgentPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/billing" element={<BillingPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

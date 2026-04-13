@@ -12,6 +12,7 @@ import { generateActionPreview, generateWorkflowPreview } from './preview.js';
 import { detectRiskyOutcome } from './recovery.js';
 import { getExecutionKeyForStep } from './planMerge.js';
 import { recordWorkflowOutcomeMetrics } from '../observability/costTracker.js';
+import { consumeUsageMetric } from '../services/billing.js';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -311,6 +312,15 @@ export const executePlan = async (input: {
           });
           if (actionId) {
             actionsCreated += 1;
+            await consumeUsageMetric({
+              userId: input.userId,
+              metric: 'actions_suggested',
+              units: 1,
+              idempotencyKey: `agent-suggest:${actionId}`,
+              source: 'agent_executor',
+              metadata: { workflowId: workflow.id, actionType: step.action },
+              enforce: false,
+            });
             await updateAgentActionStatus(actionId, 'preview', {
               __workflowPreview: workflowPreview,
             });
@@ -434,6 +444,51 @@ export const executePlan = async (input: {
       }
 
       actionsCreated += 1;
+
+      const executionQuota = await consumeUsageMetric({
+        userId: input.userId,
+        metric: 'actions_executed',
+        units: 1,
+        idempotencyKey: `agent-execute:${actionId}`,
+        source: 'agent_executor',
+        metadata: { workflowId: workflow.id, actionType: step.action },
+        enforce: true,
+      });
+
+      if (!executionQuota.allowed) {
+        await updateAgentActionStatus(actionId, 'preview', {
+          quota_blocked: true,
+          quota_metric: 'actions_executed',
+          __workflowPreview: workflowPreview,
+        });
+        results.push({
+          step: step.step,
+          action: step.action,
+          workflow: workflow.name,
+          status: 'suggested',
+          reason: 'quota_exhausted',
+        });
+        await logDecisionTrace({
+          userId: input.userId,
+          planId: input.planId,
+          workflowId: workflow.id,
+          data: {
+            input: { context: input.contextSummary, stepInput: step.input },
+            reasoning: {
+              reason: step.reason,
+              adjusted_confidence: adjustedConfidence,
+            },
+            decision: { action: step.action, workflow: workflow.name },
+            action: {
+              execution: 'suggest',
+              requiresApproval: true,
+              quotaBlocked: true,
+            },
+            result: { status: 'quota_exhausted' },
+          },
+        });
+        continue;
+      }
 
       const payload = stripContextFields(step.input);
       let attempt = 0;

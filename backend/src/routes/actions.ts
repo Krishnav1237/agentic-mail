@@ -5,11 +5,23 @@ import { validate } from '../middleware/validate.js';
 import { executeTool } from '../tools/registry.js';
 import { query } from '../db/index.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
+import { consumeUsageMetric } from '../services/billing.js';
 
 export const actionsRouter = Router();
 
 type DraftReplyResult = {
   draftId?: string;
+};
+
+const consumeExecutionQuota = async (userId: string, idempotencyKey: string) => {
+  return consumeUsageMetric({
+    userId,
+    metric: 'actions_executed',
+    units: 1,
+    idempotencyKey,
+    source: 'direct_actions',
+    enforce: true,
+  });
 };
 
 const getContextFromTask = async (taskId: string, userId: string) => {
@@ -44,6 +56,18 @@ actionsRouter.post(
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { taskId } = req.body as z.infer<typeof calendarSchema>;
+    const quota = await consumeExecutionQuota(
+      userId,
+      `direct:calendar:${taskId}:${Date.now()}`
+    );
+    if (!quota.allowed) {
+      return res.status(402).json({
+        error: 'Action quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: 'actions_executed',
+        upgradeRequired: true,
+      });
+    }
 
     const ctx = await getContextFromTask(taskId, userId);
     if (!ctx) return res.status(404).json({ error: 'Task not found' });
@@ -75,6 +99,18 @@ actionsRouter.post(
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { emailId } = req.body as z.infer<typeof importantSchema>;
+    const quota = await consumeExecutionQuota(
+      userId,
+      `direct:important:${emailId}:${Date.now()}`
+    );
+    if (!quota.allowed) {
+      return res.status(402).json({
+        error: 'Action quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: 'actions_executed',
+        upgradeRequired: true,
+      });
+    }
 
     const ctx = await getContextFromMessage(emailId, userId);
     if (!ctx) return res.status(404).json({ error: 'Email not found' });
@@ -107,6 +143,18 @@ actionsRouter.post(
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { emailId, send } = req.body as z.infer<typeof replySchema>;
+    const quota = await consumeExecutionQuota(
+      userId,
+      `direct:reply:draft:${emailId}:${Date.now()}`
+    );
+    if (!quota.allowed) {
+      return res.status(402).json({
+        error: 'Action quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: 'actions_executed',
+        upgradeRequired: true,
+      });
+    }
 
     const ctx = await getContextFromMessage(emailId, userId);
     if (!ctx) return res.status(404).json({ error: 'Email not found' });
@@ -122,6 +170,18 @@ actionsRouter.post(
     )) as DraftReplyResult;
 
     if (send && draft.draftId) {
+      const sendQuota = await consumeExecutionQuota(
+        userId,
+        `direct:reply:send:${emailId}:${Date.now()}`
+      );
+      if (!sendQuota.allowed) {
+        return res.status(402).json({
+          error: 'Send action quota exhausted for current billing window',
+          code: 'quota_exhausted',
+          metric: 'actions_executed',
+          upgradeRequired: true,
+        });
+      }
       await executeTool(
         'send_reply',
         {
@@ -151,6 +211,18 @@ actionsRouter.post(
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { taskId, until } = req.body as z.infer<typeof snoozeSchema>;
+    const quota = await consumeExecutionQuota(
+      userId,
+      `direct:snooze:${taskId}:${Date.now()}`
+    );
+    if (!quota.allowed) {
+      return res.status(402).json({
+        error: 'Action quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: 'actions_executed',
+        upgradeRequired: true,
+      });
+    }
 
     const ctx = await getContextFromTask(taskId, userId);
     if (!ctx) return res.status(404).json({ error: 'Task not found' });

@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate.js';
 import { ingestionQueue } from '../queues/index.js';
 import { query } from '../db/index.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
+import { checkQuota } from '../services/billing.js';
 
 export const emailsRouter = Router();
 
@@ -24,6 +25,18 @@ emailsRouter.post(
   asyncRoute(async (req: AuthRequest, res) => {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const quota = await checkQuota(userId, 'emails_processed', 1);
+    if (!quota.allowed) {
+      return res.status(402).json({
+        error: 'Email processing quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: 'emails_processed',
+        used: quota.used,
+        limit: quota.limit,
+        upgradeRequired: true,
+      });
+    }
 
     await ingestionQueue.add(
       'sync-user',

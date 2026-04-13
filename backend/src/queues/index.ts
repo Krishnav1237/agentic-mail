@@ -7,3 +7,6 @@ export const ingestionQueue = new Queue('email-ingestion', {
 export const agentQueue = new Queue('agent-core', {
   connection: queueRedisConnection,
 });
+export const productQueue = new Queue('product-ops', {
+  connection: queueRedisConnection,
+});
