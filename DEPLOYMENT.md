@@ -27,44 +27,15 @@ Notes:
 - `frontend/vercel.json` handles client-side routes such as `/auth/callback`, `/dashboard`, and `/tasks`.
 - If you only want the landing page live first, Vercel can deploy that immediately. The waitlist form will work once `VITE_API_BASE` points to the Railway backend.
 
-### Frontend-Only Waitlist Mode
+### Waitlist API Mode
 
-If you want the landing page and waitlist live before deploying the backend,
-the frontend can invoke a Supabase Edge Function instead of calling `/waitlist`
-on the API.
+The landing page waitlist is served by the backend API:
 
-Set these in Vercel:
+- `GET /waitlist/stats`
+- `POST /waitlist`
 
-- `VITE_SUPABASE_URL=https://your-project.supabase.co`
-- `VITE_SUPABASE_ANON_KEY=your_supabase_anon_key`
-
-In this mode:
-
-- the landing page waitlist calls `supabase/functions/waitlist-signup`
-- the rest of the authenticated app still needs the backend later
-- the `waitlist` table should be created from `supabase/sql/waitlist.sql`
-- Resend runs inside the Edge Function, not in the browser
-
-Supabase requirements:
-
-1. Run the SQL in `supabase/sql/waitlist.sql` in your Supabase project.
-2. Set Edge Function secrets:
-   - `RESEND_API_KEY`
-   - `RESEND_FROM_EMAIL` (optional, defaults to `onboarding@resend.dev`)
-3. Deploy the function:
-
-```bash
-supabase functions deploy waitlist-signup --no-verify-jwt
-```
-
-Notes:
-
-- `--no-verify-jwt` is intentional because the landing page is public.
-- Git pushes and Vercel deploys do not redeploy Supabase Edge Functions. If you
-  change `supabase/functions/waitlist-signup/index.ts`, redeploy that function
-  separately or the frontend and function contract can drift.
-- Do not move `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or the Resend key
-  into the frontend.
+Set `VITE_API_BASE` to the deployed backend URL so the landing page and app use
+the same trust and rate-limit controls.
 
 ## Backend API (Railway)
 

@@ -17,7 +17,6 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { actionsRouter } from './routes/actions.js';
 import { agentRouter } from './routes/agent.js';
 import { waitlistRouter } from './routes/waitlist.js';
-import { adminRouter } from './routes/admin.js';
 
 export const createApp = () => {
   const app = express();
@@ -104,7 +103,6 @@ export const createApp = () => {
   app.use('/agent', agentRouter);
   app.use('/webhooks', webhooksRouter);
   app.use('/waitlist', waitlistRouter);
-  app.use('/admin', adminRouter);
 
   app.use(
     (

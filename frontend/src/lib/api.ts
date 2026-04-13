@@ -103,12 +103,8 @@ export type SessionResponse = {
   authMode?: 'cookie' | 'bearer';
 };
 
-const getToken = () => localStorage.getItem('auth_token');
-
 const apiFetch = async (path: string, init: RequestInit = {}) => {
-  const token = getToken();
   const headers = new Headers(init.headers ?? {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
 
   const response = await fetch(`${API_BASE}${path}`, {

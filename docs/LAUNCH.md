@@ -115,6 +115,6 @@ Suggested message:
 
 - Landing page metadata matches the general productivity positioning
 - Shared links render a title, description, and image correctly
-- Waitlist submit works end-to-end with Supabase Edge Functions
+- Waitlist submit works end-to-end with backend `/waitlist` API endpoints
 - Duplicate signups return the duplicate message without resending email
 - Resend sender moves off the default once a verified domain is ready

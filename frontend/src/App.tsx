@@ -10,7 +10,6 @@ import AgentPage from './pages/Agent';
 import SettingsPage from './pages/Settings';
 import AuthCallbackPage from './pages/AuthCallback';
 import { useApp } from './lib/useApp';
-import { useAdminShortcut } from './lib/useAdminShortcut';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { hasToken, authLoading } = useApp();
@@ -25,11 +24,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-import { ThemeToggle } from './components/ThemeToggle';
-
 export default function App() {
-  useAdminShortcut();
-
   return (
     <>
       <Routes>

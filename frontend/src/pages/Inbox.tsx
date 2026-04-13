@@ -72,7 +72,7 @@ export default function InboxPage() {
     () => ({
       processed: emails.filter((email) => email.status === 'processed').length,
       pending: emails.filter((email) => email.status === 'pending').length,
-      highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 2).length,
+      highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 0.8).length,
     }),
     [emails]
   );

@@ -4,21 +4,13 @@ import { useApp } from '../lib/useApp';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
-  const { refreshSession, setStatus, setToken } = useApp();
+  const { refreshSession, setStatus } = useApp();
 
   useEffect(() => {
     const run = async () => {
-      const hashParams = new URLSearchParams(
-        window.location.hash.replace('#', '')
-      );
       const queryParams = new URLSearchParams(window.location.search);
-      const token = hashParams.get('token') || queryParams.get('token');
       const provider = queryParams.get('provider');
       const status = queryParams.get('status');
-
-      if (token) {
-        setToken(token);
-      }
 
       try {
         const authenticated = await refreshSession();
@@ -46,7 +38,7 @@ export default function AuthCallbackPage() {
     };
 
     void run();
-  }, [navigate, refreshSession, setStatus, setToken]);
+  }, [navigate, refreshSession, setStatus]);
 
   return (
     <div className="glass-card rounded-xl p-10 text-center text-neutral-400">

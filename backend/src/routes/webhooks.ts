@@ -36,10 +36,8 @@ webhooksRouter.post(
 
       const row = result.rows[0];
       if (!row) continue;
-      if (
-        notification.clientState &&
-        notification.clientState !== row.client_state
-      )
+      if (!notification.clientState) continue;
+      if (notification.clientState !== row.client_state)
         continue;
 
       await ingestionQueue.add(

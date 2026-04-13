@@ -7,9 +7,6 @@ import {
 import { AppContext } from './appContextStore';
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setTokenState] = useState<string | null>(() =>
-    localStorage.getItem('auth_token')
-  );
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'cookie' | 'bearer' | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
@@ -18,15 +15,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
-  const setToken = useCallback((next: string | null) => {
-    if (next) {
-      localStorage.setItem('auth_token', next);
-    } else {
-      localStorage.removeItem('auth_token');
-    }
-    setTokenState(next);
-  }, []);
-
   const refreshSession = useCallback(async () => {
     setAuthLoading(true);
     try {
@@ -34,22 +22,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthenticated(session.authenticated);
       setUserEmail(session.user?.email ?? null);
       setAuthMode(session.authMode ?? null);
-
-      if (session.authenticated && session.authMode === 'cookie' && token) {
-        localStorage.removeItem('auth_token');
-        setTokenState(null);
-      }
       return session.authenticated;
     } catch (error) {
       console.error(error);
-      setAuthenticated(Boolean(token));
+      setAuthenticated(false);
       setUserEmail(null);
-      setAuthMode(token ? 'bearer' : null);
-      return Boolean(token);
+      setAuthMode(null);
+      return false;
     } finally {
       setAuthLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     void refreshSession();
@@ -78,23 +61,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error(error);
     } finally {
-      setToken(null);
       setAuthenticated(false);
       setUserEmail(null);
       setAuthMode(null);
       setStatus('Signed out.');
     }
-  }, [setToken]);
+  }, []);
 
   const value = useMemo(
     () => ({
       hasToken: authenticated,
-      token,
       userEmail,
       authMode,
       authLoading,
       lastSyncedAt,
-      setToken,
       refreshSession,
       signOut,
       status,
@@ -104,12 +84,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }),
     [
       authenticated,
-      token,
       userEmail,
       authMode,
       authLoading,
       lastSyncedAt,
-      setToken,
       refreshSession,
       signOut,
       status,
