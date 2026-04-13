@@ -72,6 +72,7 @@ export const env = {
   authJwtIssuer: optional('AUTH_JWT_ISSUER', 'inbox-intel'),
   authJwtAudience: optional('AUTH_JWT_AUDIENCE', 'inbox-intel-web'),
   tokenEncKey: required('TOKEN_ENC_KEY'),
+  authCsrfCookieName: optional('AUTH_CSRF_COOKIE_NAME', 'iil_csrf'),
 
   // TODO: Microsoft OAuth integration — currently optional, will be required
   // when Outlook support is added as a future project update.
@@ -93,7 +94,7 @@ export const env = {
   googleRedirectUri: optional('GOOGLE_REDIRECT_URI', ''),
   googleScopes: optional(
     'GOOGLE_SCOPES',
-    'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar'
+    'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/calendar.events'
   ),
 
   resendApiKey: optional('RESEND_API_KEY', ''),
@@ -110,4 +111,7 @@ export const env = {
 
   syncBatchSize: Number(optional('SYNC_BATCH_SIZE', '50')),
   cacheTtlSeconds: Number(optional('CACHE_TTL_SECONDS', '60')),
+  dataRetentionDefaultDays: Number(optional('DATA_RETENTION_DEFAULT_DAYS', '180')),
+  dataRetentionMinDays: Number(optional('DATA_RETENTION_MIN_DAYS', '7')),
+  dataRetentionMaxDays: Number(optional('DATA_RETENTION_MAX_DAYS', '365')),
 };

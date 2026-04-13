@@ -5,6 +5,9 @@ All endpoints are JSON over HTTPS. Protected endpoints require either:
 - an HttpOnly session cookie, or
 - `Authorization: Bearer <jwt>`
 
+When using cookie auth, mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`)
+must include `X-CSRF-Token` matching the CSRF cookie value.
+
 Base URL examples:
 
 - local backend: `http://localhost:4000`
@@ -118,6 +121,24 @@ Response:
 
 ```json
 { "ok": true }
+```
+
+### `DELETE /auth/account`
+
+Deletes the authenticated account and cascades mailbox-derived data deletion.
+
+Body:
+
+```json
+{
+  "confirmEmail": "student@example.com"
+}
+```
+
+Response:
+
+```json
+{ "ok": true, "deleted": true }
 ```
 
 ### `GET /auth/verify`
@@ -292,6 +313,30 @@ Response:
 
 ```json
 { "ok": true }
+```
+
+### `GET /preferences/privacy`
+
+Returns privacy retention settings.
+
+Example response:
+
+```json
+{
+  "retentionDays": 180
+}
+```
+
+### `PUT /preferences/privacy`
+
+Updates user retention window for mailbox-derived data.
+
+Body:
+
+```json
+{
+  "retentionDays": 90
+}
 ```
 
 ## Legacy Feedback

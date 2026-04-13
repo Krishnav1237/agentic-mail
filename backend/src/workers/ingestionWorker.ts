@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { env } from '../config/env.js';
 import { getAuthContext } from '../services/tokens.js';
 import { createSubscription } from '../services/graph.js';
+import { runRetentionCleanup } from '../services/privacy.js';
 
 const SUBSCRIPTION_EXPIRATION_1H_MS = 60 * 60 * 1000;
 const SUBSCRIPTION_RENEWAL_THRESHOLD_MINUTES = 20;
@@ -141,6 +142,10 @@ export const startIngestionWorker = () => {
 
       if (job.name === 'renew-graph-subscriptions') {
         return renewGraphSubscriptions();
+      }
+
+      if (job.name === 'purge-retention') {
+        return runRetentionCleanup();
       }
 
       const { userId } = job.data as { userId: string };

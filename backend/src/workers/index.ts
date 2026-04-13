@@ -34,6 +34,14 @@ const bootstrap = async () => {
       jobId: 'renew-graph-subscriptions',
     }
   );
+  await ingestionQueue.add(
+    'purge-retention',
+    {},
+    {
+      repeat: { every: 12 * 60 * 60 * 1000 },
+      jobId: 'purge-retention',
+    }
+  );
   await agentQueue.add(
     'run-active',
     {},

@@ -85,6 +85,7 @@ Set the following environment variables:
 - `TOKEN_ENC_KEY`
 - `SECURITY_CONTACT`
 - `SECURITY_POLICY_URL`
+- `AUTH_CSRF_COOKIE_NAME`
 - `MS_CLIENT_ID`
 - `MS_CLIENT_SECRET`
 - `MS_REDIRECT_URI`
@@ -94,6 +95,9 @@ Set the following environment variables:
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REDIRECT_URI`
 - `GOOGLE_SCOPES`
+- `DATA_RETENTION_DEFAULT_DAYS`
+- `DATA_RETENTION_MIN_DAYS`
+- `DATA_RETENTION_MAX_DAYS`
 - `AI_PROVIDER`, `AI_MODEL`, and API keys
 
 Run migrations for the agent system if you are upgrading:
@@ -106,6 +110,7 @@ psql "$DATABASE_URL" -f backend/db/migrations/005_personality_mode.sql
 psql "$DATABASE_URL" -f backend/db/migrations/006_google_integration.sql
 psql "$DATABASE_URL" -f backend/db/migrations/007_productization_indexes.sql
 psql "$DATABASE_URL" -f backend/db/migrations/008_autonomous_operator_hardening.sql
+psql "$DATABASE_URL" -f backend/db/migrations/009_privacy_retention_controls.sql
 ```
 
 ## Microsoft Graph Webhooks

@@ -103,9 +103,27 @@ export type SessionResponse = {
   authMode?: 'cookie' | 'bearer';
 };
 
+const CSRF_COOKIE_NAME =
+  import.meta.env.VITE_AUTH_CSRF_COOKIE_NAME?.trim() || 'iil_csrf';
+
+const readCookie = (name: string) => {
+  if (typeof document === 'undefined') return null;
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(encodedName));
+  if (!match) return null;
+  return decodeURIComponent(match.slice(encodedName.length));
+};
+
 const apiFetch = async (path: string, init: RequestInit = {}) => {
   const headers = new Headers(init.headers ?? {});
   headers.set('Content-Type', 'application/json');
+  const csrfToken = readCookie(CSRF_COOKIE_NAME);
+  if (csrfToken) {
+    headers.set('X-CSRF-Token', csrfToken);
+  }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,

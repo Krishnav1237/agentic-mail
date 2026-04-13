@@ -179,6 +179,7 @@ Backend:
 - `AUTH_JWT_ISSUER`
 - `AUTH_JWT_AUDIENCE`
 - `AUTH_COOKIE_NAME`
+- `AUTH_CSRF_COOKIE_NAME`
 - `AUTH_COOKIE_SAME_SITE`
 - `AUTH_COOKIE_SECURE`
 - `TOKEN_ENC_KEY`
@@ -189,6 +190,9 @@ Backend:
 - `AGENT_LOOP_MAX_MS`
 - `CACHE_TTL_SECONDS`
 - `SYNC_BATCH_SIZE`
+- `DATA_RETENTION_DEFAULT_DAYS`
+- `DATA_RETENTION_MIN_DAYS`
+- `DATA_RETENTION_MAX_DAYS`
 
 Microsoft integration:
 
@@ -220,6 +224,7 @@ AI provider keys:
 Frontend:
 
 - `VITE_API_BASE`
+- `VITE_AUTH_CSRF_COOKIE_NAME`
 
 Use `backend/.env.example` and `frontend/.env.example` as templates.
 
@@ -252,8 +257,8 @@ Recommended Google scopes:
 - `profile`
 - `https://www.googleapis.com/auth/gmail.readonly`
 - `https://www.googleapis.com/auth/gmail.modify`
-- `https://www.googleapis.com/auth/gmail.send`
-- `https://www.googleapis.com/auth/calendar`
+- `https://www.googleapis.com/auth/gmail.compose`
+- `https://www.googleapis.com/auth/calendar.events`
 
 ### Outlook
 

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   google_refresh_token text,
   google_token_expires_at timestamptz,
   primary_provider text NOT NULL DEFAULT 'microsoft',
+  data_retention_days integer NOT NULL DEFAULT 180,
   last_sync_at timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()

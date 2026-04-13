@@ -58,6 +58,46 @@ export const createApp = () => {
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   app.use(pinoHttp({ logger }));
+  app.use((req, res, next) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      return next();
+    }
+
+    const sessionToken = req.cookies?.[env.authCookieName];
+    if (typeof sessionToken !== 'string' || sessionToken.trim().length === 0) {
+      return next();
+    }
+
+    const origin = req.header('origin');
+    if (origin && !isAllowedOrigin(origin)) {
+      return res.status(403).json({ error: 'Invalid origin' });
+    }
+    const referer = req.header('referer');
+    if (!origin && referer) {
+      try {
+        const refererOrigin = new URL(referer).origin;
+        if (!isAllowedOrigin(refererOrigin)) {
+          return res.status(403).json({ error: 'Invalid referer origin' });
+        }
+      } catch {
+        return res.status(403).json({ error: 'Invalid referer' });
+      }
+    }
+
+    const csrfCookie = req.cookies?.[env.authCsrfCookieName];
+    const csrfHeader = req.header('x-csrf-token');
+    if (
+      typeof csrfCookie !== 'string' ||
+      csrfCookie.trim().length === 0 ||
+      typeof csrfHeader !== 'string' ||
+      csrfHeader.trim().length === 0 ||
+      csrfCookie !== csrfHeader
+    ) {
+      return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+
+    return next();
+  });
 
   app.use(
     rateLimit({
