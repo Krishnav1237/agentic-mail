@@ -20,6 +20,8 @@ const parseNumber = (value: string | null, fallback: number) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
+const HIGH_SIGNAL_THRESHOLD = 0.8;
+
 export default function InboxPage() {
   const { hasToken, setStatus } = useApp();
   const [params, setParams] = useSearchParams();
@@ -72,7 +74,9 @@ export default function InboxPage() {
     () => ({
       processed: emails.filter((email) => email.status === 'processed').length,
       pending: emails.filter((email) => email.status === 'pending').length,
-      highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 0.8).length,
+      highSignal: emails.filter(
+        (email) => (email.ai_score ?? 0) >= HIGH_SIGNAL_THRESHOLD
+      ).length,
     }),
     [emails]
   );

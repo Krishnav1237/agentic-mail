@@ -1,13 +1,16 @@
 import { Worker } from 'bullmq';
 import { queueRedisConnection } from '../config/redis.js';
 import { syncUserInbox } from '../services/ingestion.js';
-import { query } from '../db/index.js';
+import { query, withTransaction } from '../db/index.js';
 import { ingestionQueue } from '../queues/index.js';
 import { logger } from '../config/logger.js';
 import { randomUUID } from 'crypto';
 import { env } from '../config/env.js';
 import { getAuthContext } from '../services/tokens.js';
 import { createSubscription } from '../services/graph.js';
+
+const SUBSCRIPTION_EXPIRATION_1H_MS = 60 * 60 * 1000;
+const SUBSCRIPTION_RENEWAL_THRESHOLD_MINUTES = 20;
 
 const CONNECTED_USERS_CLAUSE = `(
   (primary_provider = 'google' AND google_access_token IS NOT NULL)
@@ -62,7 +65,7 @@ const renewGraphSubscriptions = async () => {
   }>(
     `SELECT user_id, subscription_id, resource
      FROM graph_subscriptions
-     WHERE expiration_date_time <= now() + interval '20 minutes'`
+     WHERE expiration_date_time <= now() + interval '${SUBSCRIPTION_RENEWAL_THRESHOLD_MINUTES} minutes'`
   );
 
   let renewed = 0;
@@ -71,7 +74,7 @@ const renewGraphSubscriptions = async () => {
       const auth = await getAuthContext(row.user_id, 'microsoft');
       const clientState = randomUUID();
       const expirationDateTime = new Date(
-        Date.now() + 60 * 60 * 1000
+        Date.now() + SUBSCRIPTION_EXPIRATION_1H_MS
       ).toISOString();
 
       const subscription = await createSubscription(auth.accessToken, {
@@ -82,22 +85,32 @@ const renewGraphSubscriptions = async () => {
         clientState,
       });
 
-      await query(
-        `INSERT INTO graph_subscriptions (user_id, subscription_id, resource, expiration_date_time, client_state)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          row.user_id,
-          subscription.id,
-          subscription.resource,
-          subscription.expirationDateTime,
-          clientState,
-        ]
-      );
+      await withTransaction(async (client) => {
+        await client.query(
+          `INSERT INTO graph_subscriptions (user_id, subscription_id, resource, expiration_date_time, client_state)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (user_id, subscription_id)
+           DO UPDATE SET
+             resource = EXCLUDED.resource,
+             expiration_date_time = EXCLUDED.expiration_date_time,
+             client_state = EXCLUDED.client_state`,
+          [
+            row.user_id,
+            subscription.id,
+            subscription.resource,
+            subscription.expirationDateTime,
+            clientState,
+          ]
+        );
 
-      await query(
-        'DELETE FROM graph_subscriptions WHERE user_id = $1 AND subscription_id = $2',
-        [row.user_id, row.subscription_id]
-      );
+        await client.query(
+          `DELETE FROM graph_subscriptions
+           WHERE user_id = $1
+             AND resource = $2
+             AND subscription_id <> $3`,
+          [row.user_id, row.resource, subscription.id]
+        );
+      });
       renewed += 1;
     } catch (error) {
       logger.error(
