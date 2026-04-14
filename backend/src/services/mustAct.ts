@@ -17,93 +17,99 @@ export type MustActItem = {
   created_at: string;
 };
 
-const riskTier = (score: number) => {
-  if (score >= 8.5) return 'high';
-  if (score >= 6) return 'medium';
-  return 'low';
-};
-
-const confidence = (priority: number) => {
-  if (priority >= 4) return 0.9;
-  if (priority >= 2.5) return 0.75;
-  return 0.6;
-};
-
-const calculateDueDateBoost = (dueAt: string | null) => {
-  if (!dueAt) return 0;
-  const msUntilDue = new Date(dueAt).getTime() - Date.now();
-  const daysUntilDue = Math.max(msUntilDue / (1000 * 60 * 60 * 24), 0);
-  return Math.max(0, 4 - daysUntilDue);
-};
-
-const reasonForTask = (input: {
-  dueAt: string | null;
-  category: string | null;
-  senderEmail: string | null;
-}) => {
-  const pieces: string[] = [];
-  if (input.dueAt) pieces.push('deadline approaching');
-  if (input.category === 'internship') pieces.push('internship pipeline relevance');
-  if (input.senderEmail?.includes('recruit')) pieces.push('high-value recruiter sender');
-  return pieces.length ? pieces.join(' + ') : 'high-confidence actionable item';
-};
-
-const suggestedBundle = (category: string | null) => {
-  if (category === 'internship') {
-    return ['draft_reply', 'schedule_followup', 'create_calendar_event'];
-  }
-  if (category === 'event') {
-    return ['create_calendar_event', 'create_task', 'label_email'];
-  }
-  return ['create_task', 'draft_reply'];
-};
-
 export const recomputeMustActForUser = async (userId: string) => {
-  const candidates = await query<{
-    task_id: string;
-    title: string;
-    due_at: string | null;
-    category: string | null;
-    priority_score: number;
-    email_id: string;
-    subject: string | null;
-    sender_name: string | null;
-    sender_email: string | null;
-  }>(
-    `SELECT t.id as task_id, t.title, t.due_at, t.category,
-            t.priority_score::float as priority_score,
-            e.id as email_id, e.subject, e.sender_name, e.sender_email
-     FROM extracted_tasks t
-     JOIN emails e ON e.id = t.email_id
-     WHERE t.user_id = $1
-       AND t.status = 'open'
-       AND (
-        t.priority_score >= 2
-        OR t.due_at <= now() + interval '7 days'
-        OR t.category IN ('internship', 'event')
-       )
-     ORDER BY t.priority_score DESC, t.due_at ASC NULLS LAST
-     LIMIT 200`,
-    [userId]
-  );
-
-  let upserted = 0;
-  for (const row of candidates.rows) {
-    const dueBoost = calculateDueDateBoost(row.due_at);
-    const categoryBoost = row.category === 'internship' ? 2 : row.category === 'event' ? 1 : 0;
-    const senderBoost = row.sender_email?.toLowerCase().includes('recruit') ? 1.5 : 0;
-    const score = Number((row.priority_score + dueBoost + categoryBoost + senderBoost).toFixed(4));
-
-    await query(
-      `INSERT INTO must_act_items (
+  const result = await query<{ upserted: number }>(
+    `WITH candidates AS (
+      SELECT
+        t.id AS task_id,
+        t.title,
+        t.due_at,
+        t.category,
+        t.priority_score::float AS priority_score,
+        e.id AS email_id,
+        e.subject,
+        e.sender_name,
+        e.sender_email,
+        CASE
+          WHEN t.due_at IS NULL THEN 0
+          ELSE GREATEST(
+            0,
+            4 - GREATEST(EXTRACT(EPOCH FROM (t.due_at - now())) / 86400.0, 0)
+          )
+        END AS due_boost,
+        CASE WHEN t.category = 'internship' THEN 2
+             WHEN t.category = 'event' THEN 1
+             ELSE 0 END AS category_boost,
+        CASE WHEN lower(coalesce(e.sender_email, '')) LIKE '%recruit%' THEN 1.5 ELSE 0 END AS sender_boost
+      FROM extracted_tasks t
+      JOIN emails e ON e.id = t.email_id
+      WHERE t.user_id = $1
+        AND t.status = 'open'
+        AND (
+          t.priority_score >= 2
+          OR t.due_at <= now() + interval '7 days'
+          OR t.category IN ('internship', 'event')
+        )
+      ORDER BY t.priority_score DESC, t.due_at ASC NULLS LAST
+      LIMIT 200
+    ),
+    scored AS (
+      SELECT
+        *,
+        round((priority_score + due_boost + category_boost + sender_boost)::numeric, 4) AS score,
+        CASE WHEN (priority_score + due_boost + category_boost + sender_boost) >= 8.5 THEN 'high'
+             WHEN (priority_score + due_boost + category_boost + sender_boost) >= 6 THEN 'medium'
+             ELSE 'low' END AS risk_tier,
+        CASE WHEN priority_score >= 4 THEN 0.9
+             WHEN priority_score >= 2.5 THEN 0.75
+             ELSE 0.6 END AS confidence,
+        CASE
+          WHEN due_at IS NOT NULL AND category = 'internship' AND lower(coalesce(sender_email, '')) LIKE '%recruit%'
+            THEN 'deadline approaching + internship pipeline relevance + high-value recruiter sender'
+          WHEN due_at IS NOT NULL AND category = 'internship'
+            THEN 'deadline approaching + internship pipeline relevance'
+          WHEN due_at IS NOT NULL AND lower(coalesce(sender_email, '')) LIKE '%recruit%'
+            THEN 'deadline approaching + high-value recruiter sender'
+          WHEN category = 'internship' AND lower(coalesce(sender_email, '')) LIKE '%recruit%'
+            THEN 'internship pipeline relevance + high-value recruiter sender'
+          WHEN due_at IS NOT NULL THEN 'deadline approaching'
+          WHEN category = 'internship' THEN 'internship pipeline relevance'
+          WHEN lower(coalesce(sender_email, '')) LIKE '%recruit%' THEN 'high-value recruiter sender'
+          ELSE 'high-confidence actionable item'
+        END AS why_reason,
+        CASE
+          WHEN category = 'internship' THEN '["draft_reply","schedule_followup","create_calendar_event"]'::jsonb
+          WHEN category = 'event' THEN '["create_calendar_event","create_task","label_email"]'::jsonb
+          ELSE '["create_task","draft_reply"]'::jsonb
+        END AS suggested_bundle
+      FROM candidates
+    ),
+    upserted_rows AS (
+      INSERT INTO must_act_items (
         user_id, email_id, task_id, source_type, title, subject, sender_name, sender_email,
         why_reason, risk_tier, confidence, score, deadline_at,
         suggested_bundle, status, expires_at, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, 'task', $4, $5, $6, $7,
-        $8, $9, $10, $11, $12,
-        $13, 'open', now() + interval '30 days', now(), now()
       )
+      SELECT
+        $1,
+        email_id,
+        task_id,
+        'task',
+        title,
+        subject,
+        sender_name,
+        sender_email,
+        why_reason,
+        risk_tier,
+        confidence,
+        score,
+        due_at,
+        suggested_bundle,
+        'open',
+        now() + interval '30 days',
+        now(),
+        now()
+      FROM scored
       ON CONFLICT (user_id, task_id)
       DO UPDATE SET
         title = EXCLUDED.title,
@@ -116,29 +122,12 @@ export const recomputeMustActForUser = async (userId: string) => {
         score = EXCLUDED.score,
         deadline_at = EXCLUDED.deadline_at,
         suggested_bundle = EXCLUDED.suggested_bundle,
-        updated_at = now()`,
-      [
-        userId,
-        row.email_id,
-        row.task_id,
-        row.title,
-        row.subject,
-        row.sender_name,
-        row.sender_email,
-        reasonForTask({
-          dueAt: row.due_at,
-          category: row.category,
-          senderEmail: row.sender_email,
-        }),
-        riskTier(score),
-        confidence(row.priority_score),
-        score,
-        row.due_at,
-        JSON.stringify(suggestedBundle(row.category)),
-      ]
-    );
-    upserted += 1;
-  }
+        updated_at = now()
+      RETURNING id
+    )
+    SELECT COUNT(*)::int AS upserted FROM upserted_rows`,
+    [userId]
+  );
 
   await query(
     `UPDATE must_act_items
@@ -152,7 +141,7 @@ export const recomputeMustActForUser = async (userId: string) => {
     [userId]
   );
 
-  return { upserted };
+  return { upserted: result.rows[0]?.upserted ?? 0 };
 };
 
 export const listMustAct = async (input: {

@@ -1,4 +1,4 @@
-import { query } from '../db/index.js';
+import { query, withTransaction } from '../db/index.js';
 import { consumeUsageMetric } from './billing.js';
 
 export type FollowupPolicy = {
@@ -154,56 +154,171 @@ export const listFollowupTimeline = async (input: {
   };
 };
 
-export const runDueFollowups = async () => {
-  const due = await query<{
-    id: string;
-    user_id: string;
-    status: string;
-    action: string;
+const normalizeDomainList = (domains: string[]) =>
+  domains
+    .map((domain) => domain.trim().toLowerCase())
+    .filter((domain) => domain.length > 0);
+
+export const refreshFollowupSchedulesForUser = async (userId: string) => {
+  const policy = await getFollowupPolicy(userId);
+  const blockedDomains = normalizeDomainList(policy.blockedSenderDomains);
+  const allowedDomains = normalizeDomainList(policy.allowedSenderDomains);
+
+  const threads = await query<{
+    email_id: string;
+    thread_id: string;
+    sender_email: string | null;
+    received_at: string | null;
   }>(
-    `SELECT id, user_id, status, action
-     FROM followup_schedules
-     WHERE status = 'pending'
-       AND scheduled_for <= now()
-     ORDER BY scheduled_for ASC
-     LIMIT 200`
+    `SELECT DISTINCT ON (thread_id)
+        id AS email_id,
+        thread_id,
+        sender_email,
+        received_at
+     FROM emails
+     WHERE user_id = $1
+       AND thread_id IS NOT NULL
+     ORDER BY thread_id, received_at DESC NULLS LAST`,
+    [userId]
   );
 
-  let sent = 0;
-  let suggested = 0;
+  let upsertedThreads = 0;
+  let createdSchedules = 0;
+  const now = Date.now();
+  const cooldownMs = Math.max(1, policy.cooldownHours) * 60 * 60 * 1000;
 
-  for (const item of due.rows) {
-    const policy = await getFollowupPolicy(item.user_id);
-    let nextStatus: 'sent' | 'suggested' = policy.autoSendEnabled
-      ? 'sent'
-      : 'suggested';
-    if (nextStatus === 'sent') {
-      const quota = await consumeUsageMetric({
-        userId: item.user_id,
-        metric: 'followups_sent',
-        units: 1,
-        idempotencyKey: `followup-send:${item.id}`,
-        source: 'followup_scheduler',
-        metadata: { action: item.action },
-        enforce: true,
-      });
-      if (!quota.allowed) {
-        nextStatus = 'suggested';
-      }
-    }
-    await query(
-      `UPDATE followup_schedules
-       SET status = $2,
-           sent_at = CASE WHEN $2 = 'sent' THEN now() ELSE sent_at END,
-           updated_at = now()
-       WHERE id = $1`,
-      [item.id, nextStatus]
+  for (const row of threads.rows) {
+    const senderDomain = row.sender_email?.split('@')[1]?.toLowerCase() ?? '';
+    if (blockedDomains.includes(senderDomain)) continue;
+    if (allowedDomains.length && !allowedDomains.includes(senderDomain)) continue;
+
+    const baseMs = row.received_at ? new Date(row.received_at).getTime() : now;
+    const delayDays = senderDomain.includes('recruit')
+      ? policy.recruiterDelayDays
+      : policy.defaultDelayDays;
+    const scheduledMs = Math.max(baseMs + delayDays * 24 * 60 * 60 * 1000, now + cooldownMs);
+    const scheduledFor = new Date(scheduledMs).toISOString();
+    const dayKey = scheduledFor.slice(0, 10);
+    const idempotencyKey = `${row.thread_id}:draft_followup:${dayKey}`;
+
+    const thread = await query<{ id: string }>(
+      `INSERT INTO followup_threads (
+        user_id, thread_id, email_id, thread_type, state, last_contact_at, last_inbound_at,
+        next_action_at, metadata, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, 'open', $5, $5, $6, $7, now(), now())
+      ON CONFLICT (user_id, thread_id)
+      DO UPDATE SET
+        email_id = EXCLUDED.email_id,
+        thread_type = EXCLUDED.thread_type,
+        last_contact_at = EXCLUDED.last_contact_at,
+        last_inbound_at = EXCLUDED.last_inbound_at,
+        next_action_at = EXCLUDED.next_action_at,
+        metadata = followup_threads.metadata || EXCLUDED.metadata,
+        updated_at = now()
+      RETURNING id`,
+      [
+        userId,
+        row.thread_id,
+        row.email_id,
+        senderDomain.includes('recruit') ? 'recruiter' : 'general',
+        row.received_at,
+        scheduledFor,
+        JSON.stringify({ mode: policy.mode }),
+      ]
     );
-    if (nextStatus === 'sent') sent += 1;
-    if (nextStatus === 'suggested') suggested += 1;
+    upsertedThreads += 1;
+
+    const existing = await query<{ id: string }>(
+      `SELECT id
+       FROM followup_schedules
+       WHERE user_id = $1
+         AND thread_state_id = $2
+         AND status IN ('pending', 'suggested', 'sent')
+       LIMIT 1`,
+      [userId, thread.rows[0].id]
+    );
+    if (existing.rowCount) continue;
+
+    const created = await query<{ id: string }>(
+      `INSERT INTO followup_schedules (
+        user_id, thread_state_id, email_id, action, status, scheduled_for, idempotency_key, metadata, created_at, updated_at
+      ) VALUES ($1, $2, $3, 'draft_followup', 'pending', $4, $5, $6, now(), now())
+      ON CONFLICT (user_id, idempotency_key) DO NOTHING
+      RETURNING id`,
+      [
+        userId,
+        thread.rows[0].id,
+        row.email_id,
+        scheduledFor,
+        idempotencyKey,
+        JSON.stringify({ generatedBy: 'refreshFollowupSchedulesForUser' }),
+      ]
+    );
+    if (created.rowCount) createdSchedules += 1;
   }
 
-  return { processed: due.rowCount ?? 0, sent, suggested };
+  return { upsertedThreads, createdSchedules };
+};
+
+export const runDueFollowups = async () => {
+  let sent = 0;
+  let suggested = 0;
+  let processed = 0;
+
+  while (true) {
+    const batch = await withTransaction(async (client) => {
+      const due = await client.query<{
+        id: string;
+        user_id: string;
+        status: string;
+        action: string;
+      }>(
+        `SELECT id, user_id, status, action
+         FROM followup_schedules
+         WHERE status = 'pending'
+           AND scheduled_for <= now()
+         ORDER BY scheduled_for ASC
+         FOR UPDATE SKIP LOCKED
+         LIMIT 100`
+      );
+      if (!due.rowCount) return [];
+
+      for (const item of due.rows) {
+        const policy = await getFollowupPolicy(item.user_id);
+        let nextStatus: 'sent' | 'suggested' = policy.autoSendEnabled ? 'sent' : 'suggested';
+        if (nextStatus === 'sent') {
+          const quota = await consumeUsageMetric({
+            userId: item.user_id,
+            metric: 'followups_sent',
+            units: 1,
+            idempotencyKey: `followup-send:${item.id}`,
+            source: 'followup_scheduler',
+            metadata: { action: item.action },
+            enforce: true,
+          });
+          if (!quota.allowed) {
+            nextStatus = 'suggested';
+          }
+        }
+        await client.query(
+          `UPDATE followup_schedules
+           SET status = $2,
+               sent_at = CASE WHEN $2 = 'sent' THEN now() ELSE sent_at END,
+               updated_at = now()
+           WHERE id = $1`,
+          [item.id, nextStatus]
+        );
+        if (nextStatus === 'sent') sent += 1;
+        if (nextStatus === 'suggested') suggested += 1;
+      }
+      return due.rows;
+    });
+
+    if (!batch.length) break;
+    processed += batch.length;
+  }
+
+  return { processed, sent, suggested };
 };
 
 export const cancelFollowupSchedule = async (input: {
@@ -258,6 +373,8 @@ export const approveFollowupSchedule = async (input: {
       ok: false as const,
       reason: 'quota_exhausted' as const,
       metric: 'followups_sent' as const,
+      used: quota.used ?? 0,
+      limit: quota.limit ?? 0,
     };
   }
 

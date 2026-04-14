@@ -36,14 +36,21 @@ const enqueueAgentUsers = async (mode: 'active' | 'backfill' | 'all') => {
            )`
         : `WHERE ${CONNECTED_USERS_CLAUSE}`;
 
-  const result = await query<{ id: string }>(`SELECT id FROM users ${where}`);
-  if (result.rowCount) {
+  let queued = 0;
+  let offset = 0;
+  const pageSize = 250;
+  while (true) {
+    const result = await query<{ id: string }>(
+      `SELECT id FROM users ${where} ORDER BY id ASC LIMIT $1 OFFSET $2`,
+      [pageSize, offset]
+    );
+    if (!result.rowCount) break;
     await agentQueue.addBulk(
       result.rows.map((row) => ({
         name: 'run-user',
         data: { userId: row.id },
         opts: {
-          jobId: `agent-core-user:${row.id}`,
+          jobId: `run-user:${row.id}`,
           attempts: 3,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,
@@ -51,8 +58,10 @@ const enqueueAgentUsers = async (mode: 'active' | 'backfill' | 'all') => {
         },
       }))
     );
+    queued += result.rowCount;
+    offset += result.rowCount;
   }
-  return { queued: result.rowCount };
+  return { queued };
 };
 
 export const startAiWorker = () => {
@@ -71,7 +80,11 @@ export const startAiWorker = () => {
       const { userId } = job.data as { userId: string };
       return runCoreLoop(userId);
     },
-    { connection: queueRedisConnection }
+    {
+      connection: queueRedisConnection,
+      concurrency: 4,
+      limiter: { max: 60, duration: 1000 },
+    }
   );
 
   worker.on('failed', (job, err) => {

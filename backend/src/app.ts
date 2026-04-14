@@ -20,6 +20,7 @@ import { waitlistRouter } from './routes/waitlist.js';
 import { billingRouter } from './routes/billing.js';
 import { mustActRouter } from './routes/mustAct.js';
 import { followupsRouter } from './routes/followups.js';
+import { isDomainError } from './errors/domain.js';
 
 export const createApp = () => {
   const app = express();
@@ -58,6 +59,7 @@ export const createApp = () => {
       credentials: true,
     })
   );
+  app.use('/webhooks/billing', express.raw({ type: 'application/json', limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   app.use(pinoHttp({ logger }));
@@ -157,8 +159,22 @@ export const createApp = () => {
       res: express.Response,
       _next: express.NextFunction
     ) => {
+      if (isDomainError(err)) {
+        return res.status(err.status).json({
+          error: {
+            code: err.code,
+            message: err.message,
+            ...(err.details ? { details: err.details } : {}),
+          },
+        });
+      }
       logger.error(err, 'Unhandled error');
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({
+        error: {
+          code: 'internal_server_error',
+          message: 'Internal server error',
+        },
+      });
     }
   );
 

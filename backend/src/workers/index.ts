@@ -21,12 +21,12 @@ const bootstrap = async () => {
   await ingestionQueue.add(
     'sync-active',
     {},
-    { repeat: { every: 5 * 60 * 1000 }, jobId: 'sync-active' }
+    { repeat: { every: 10 * 60 * 1000 }, jobId: 'sync-active' }
   );
   await ingestionQueue.add(
     'sync-backfill',
     {},
-    { repeat: { every: 60 * 60 * 1000 }, jobId: 'sync-backfill' }
+    { repeat: { every: 2 * 60 * 60 * 1000 }, jobId: 'sync-backfill' }
   );
   await ingestionQueue.add(
     'renew-graph-subscriptions',
@@ -47,12 +47,12 @@ const bootstrap = async () => {
   await agentQueue.add(
     'run-active',
     {},
-    { repeat: { every: 5 * 60 * 1000 }, jobId: 'agent-core-active' }
+    { repeat: { every: 10 * 60 * 1000 }, jobId: 'agent-core-active' }
   );
   await agentQueue.add(
     'run-backfill',
     {},
-    { repeat: { every: 30 * 60 * 1000 }, jobId: 'agent-core-backfill' }
+    { repeat: { every: 90 * 60 * 1000 }, jobId: 'agent-core-backfill' }
   );
   await productQueue.add(
     'must-act-active',

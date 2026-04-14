@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolContext, ToolDefinition } from './types.js';
 import { getAuthContext } from '../services/tokens.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 import { modifyGmailMessage } from '../services/gmail.js';
 
 const schema = z.object({});
@@ -36,6 +36,7 @@ export const markImportantTool: ToolDefinition<Input, Output> = {
           body: JSON.stringify({ importance: 'high' }),
         }
       );
+      await assertOk(response, 'Graph mark important');
       await safeJson<any>(response);
     }
     return { messageId: ctx.messageId };

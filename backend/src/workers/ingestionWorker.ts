@@ -36,13 +36,21 @@ const enqueueSyncUsers = async (mode: 'active' | 'backfill' | 'all') => {
            )`
         : `WHERE ${CONNECTED_USERS_CLAUSE}`;
 
-  const result = await query<{ id: string }>(`SELECT id FROM users ${where}`);
-  if (result.rowCount) {
+  let queued = 0;
+  let offset = 0;
+  const pageSize = 250;
+  while (true) {
+    const result = await query<{ id: string }>(
+      `SELECT id FROM users ${where} ORDER BY id ASC LIMIT $1 OFFSET $2`,
+      [pageSize, offset]
+    );
+    if (!result.rowCount) break;
     await ingestionQueue.addBulk(
       result.rows.map((row) => ({
         name: 'sync-user',
         data: { userId: row.id },
         opts: {
+          jobId: `sync-user:${row.id}`,
           attempts: 3,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,
@@ -50,8 +58,10 @@ const enqueueSyncUsers = async (mode: 'active' | 'backfill' | 'all') => {
         },
       }))
     );
+    queued += result.rowCount;
+    offset += result.rowCount;
   }
-  return { queued: result.rowCount };
+  return { queued };
 };
 
 const renewGraphSubscriptions = async () => {
@@ -151,7 +161,11 @@ export const startIngestionWorker = () => {
       const { userId } = job.data as { userId: string };
       return syncUserInbox(userId, String(job.id ?? `${Date.now()}`));
     },
-    { connection: queueRedisConnection }
+    {
+      connection: queueRedisConnection,
+      concurrency: 6,
+      limiter: { max: 120, duration: 1000 },
+    }
   );
 
   worker.on('failed', (job, err) => {

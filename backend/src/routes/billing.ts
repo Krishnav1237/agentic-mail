@@ -5,7 +5,6 @@ import { validate } from '../middleware/validate.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
 import { env } from '../config/env.js';
 import {
-  applyPlanToEntitlement,
   createCheckoutUrl,
   createPortalUrl,
   getBillingStatus,
@@ -14,7 +13,6 @@ import {
   getCurrentQuotaWindows,
   getQuotaWarnings,
   trackProductEvent,
-  updateSubscriptionState,
 } from '../services/billing.js';
 
 export const billingRouter = Router();
@@ -141,18 +139,19 @@ billingRouter.post(
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { planSlug } = req.body as z.infer<typeof downgradeSchema>;
-    await applyPlanToEntitlement({
-      userId,
-      planSlug,
-      status: 'active',
-    });
     await trackProductEvent({
       userId,
       eventName: 'billing_downgrade_requested',
       properties: { planSlug },
     });
 
-    return res.json({ ok: true });
+    return res.status(409).json({
+      error: {
+        code: 'provider_confirmation_required',
+        message:
+          'Subscription changes are applied only after provider-confirmed billing webhooks.',
+      },
+    });
   })
 );
 
@@ -163,15 +162,14 @@ billingRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    await updateSubscriptionState({
-      userId,
-      planSlug: 'free',
-      status: 'cancelled',
-      cancelledAt: new Date().toISOString(),
+    await trackProductEvent({ userId, eventName: 'billing_cancel_requested' });
+    return res.status(409).json({
+      error: {
+        code: 'provider_confirmation_required',
+        message:
+          'Subscription changes are applied only after provider-confirmed billing webhooks.',
+      },
     });
-
-    await trackProductEvent({ userId, eventName: 'billing_cancelled' });
-    return res.json({ ok: true });
   })
 );
 
@@ -182,15 +180,13 @@ billingRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    await updateSubscriptionState({
-      userId,
-      planSlug: 'pro',
-      status: 'active',
-      periodStart: new Date().toISOString(),
-      periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    await trackProductEvent({ userId, eventName: 'billing_resume_requested' });
+    return res.status(409).json({
+      error: {
+        code: 'provider_confirmation_required',
+        message:
+          'Subscription changes are applied only after provider-confirmed billing webhooks.',
+      },
     });
-
-    await trackProductEvent({ userId, eventName: 'billing_resumed' });
-    return res.json({ ok: true });
   })
 );

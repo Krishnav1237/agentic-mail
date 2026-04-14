@@ -15,6 +15,37 @@ Base URL examples:
 
 ## Conventions
 
+### Error format
+
+Errors are returned as:
+
+```json
+{
+  "error": {
+    "code": "string_code",
+    "message": "Human readable message",
+    "details": {}
+  }
+}
+```
+
+Quota errors always use `402` with:
+
+```json
+{
+  "error": {
+    "code": "quota_exhausted",
+    "message": "Quota exhausted for current billing window",
+    "details": {
+      "metric": "actions_executed",
+      "used": 42,
+      "limit": 42,
+      "upgradeRequired": true
+    }
+  }
+}
+```
+
 ### Pagination
 
 List endpoints use:
@@ -368,7 +399,8 @@ Body:
 
 ```json
 {
-  "taskId": "uuid"
+  "taskId": "uuid",
+  "idempotencyKey": "uuid"
 }
 ```
 
@@ -378,7 +410,8 @@ Body:
 
 ```json
 {
-  "emailId": "provider-message-id"
+  "emailId": "provider-message-id",
+  "idempotencyKey": "uuid"
 }
 ```
 
@@ -389,7 +422,8 @@ Body:
 ```json
 {
   "emailId": "provider-message-id",
-  "send": false
+  "send": false,
+  "idempotencyKey": "uuid"
 }
 ```
 
@@ -400,9 +434,22 @@ Body:
 ```json
 {
   "taskId": "uuid",
-  "until": "2026-03-25T09:00:00.000Z"
+  "until": "2026-03-25T09:00:00.000Z",
+  "idempotencyKey": "uuid"
 }
 ```
+
+## Billing
+
+### `POST /billing/subscription/downgrade`
+### `POST /billing/subscription/cancel`
+### `POST /billing/subscription/resume`
+
+These endpoints no longer mutate entitlements directly. They return `409` with
+`provider_confirmation_required`. Entitlement/subscription state changes are
+applied only by verified billing webhook events.
+
+## Webhooks
 
 ## Agent
 
@@ -610,6 +657,19 @@ Behavior:
 
 - validates subscription mapping
 - queues mailbox sync for the affected user
+
+### `POST /webhooks/billing`
+
+Billing webhook security requirements:
+
+- `x-billing-signature` (HMAC SHA-256)
+- `x-billing-timestamp`
+- `x-billing-event-id`
+
+Signature is computed from `timestamp + "." + rawBody`.
+
+Replays are rejected by persisted `event_id` uniqueness. Old timestamps
+(> 5 minutes skew) are rejected.
 
 ## Health and Security
 

@@ -1,5 +1,5 @@
 import { env } from '../config/env.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 
 export type GoogleTokenResponse = {
   access_token: string;
@@ -71,6 +71,7 @@ export const exchangeGoogleCode = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Google OAuth token exchange');
   return safeJson<GoogleTokenResponse>(response);
 };
 
@@ -95,6 +96,7 @@ export const refreshGoogleAccessToken = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Google OAuth token refresh');
   return safeJson<GoogleTokenResponse>(response);
 };
 
@@ -108,6 +110,7 @@ export const getGoogleProfile = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Google profile fetch');
   return safeJson<GoogleProfile>(response);
 };
 
@@ -134,6 +137,7 @@ export const listGmailMessages = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Gmail list messages');
   return safeJson<any>(response);
 };
 
@@ -153,6 +157,7 @@ export const getGmailMessage = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Gmail get message');
   return safeJson<any>(response);
 };
 
@@ -212,6 +217,7 @@ export const createGmailDraft = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Gmail create draft');
   return safeJson<any>(response);
 };
 
@@ -229,6 +235,7 @@ export const sendGmailDraft = async (accessToken: string, draftId: string) => {
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Gmail send draft');
   return safeJson<any>(response);
 };
 
@@ -243,7 +250,7 @@ export const deleteGmailDraft = async (
       headers: { Authorization: `Bearer ${accessToken}` },
     },
     env.aiTimeoutMs
-  );
+  ).then((response) => assertOk(response, 'Gmail delete draft'));
 };
 
 export const modifyGmailMessage = async (
@@ -270,6 +277,7 @@ export const modifyGmailMessage = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Gmail modify message');
   return safeJson<any>(response);
 };
 
@@ -294,6 +302,7 @@ export const trashGmailMessage = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Gmail trash message');
   return safeJson<any>(response);
 };
 
@@ -309,6 +318,7 @@ export const untrashGmailMessage = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Gmail untrash message');
   return safeJson<any>(response);
 };
 
@@ -329,6 +339,7 @@ export const listGoogleEvents = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Google calendar list events');
   return safeJson<any>(response);
 };
 
@@ -358,6 +369,7 @@ export const createGoogleCalendarEvent = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Google calendar create event');
   return safeJson<any>(response);
 };
 
@@ -372,5 +384,5 @@ export const deleteGoogleCalendarEvent = async (
       headers: { Authorization: `Bearer ${accessToken}` },
     },
     env.aiTimeoutMs
-  );
+  ).then((response) => assertOk(response, 'Google calendar delete event'));
 };

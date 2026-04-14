@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export const usageMetrics = [
   'emails_processed',
@@ -16,13 +16,38 @@ export const quotaSeverity = (percentage: number) => {
   return 'none' as const;
 };
 
+export const createBillingWebhookSignature = (input: {
+  timestamp: string;
+  rawBody: string;
+  secret: string;
+}) =>
+  createHmac('sha256', input.secret)
+    .update(`${input.timestamp}.${input.rawBody}`)
+    .digest('hex');
+
 export const verifyBillingWebhookSignature = (input: {
-  payload: string;
+  timestamp: string;
+  rawBody: string;
   signature: string;
   secret: string;
 }) => {
-  const digest = createHmac('sha256', input.secret)
-    .update(input.payload)
-    .digest('hex');
-  return digest === input.signature;
+  const digest = createBillingWebhookSignature({
+    timestamp: input.timestamp,
+    rawBody: input.rawBody,
+    secret: input.secret,
+  });
+  const expected = Buffer.from(digest, 'utf8');
+  const received = Buffer.from(input.signature.trim(), 'utf8');
+  if (expected.length !== received.length) return false;
+  return timingSafeEqual(expected, received);
+};
+
+export const isBillingWebhookTimestampFresh = (
+  timestamp: string,
+  maxSkewMs = 5 * 60 * 1000
+) => {
+  const parsed = Number(timestamp);
+  if (!Number.isFinite(parsed) || parsed <= 0) return false;
+  const eventMs = parsed > 1_000_000_000_000 ? parsed : parsed * 1000;
+  return Math.abs(Date.now() - eventMs) <= maxSkewMs;
 };

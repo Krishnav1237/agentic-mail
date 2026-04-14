@@ -200,7 +200,13 @@ export const syncUserInbox = async (userId: string, usageKey?: string) => {
     await agentQueue.add(
       'run-user',
       { userId },
-      { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+      {
+        jobId: `run-user:${userId}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+        removeOnComplete: 200,
+        removeOnFail: 500,
+      }
     );
   }
 

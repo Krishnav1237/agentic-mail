@@ -3,6 +3,8 @@ import {
   quotaSeverity,
   usageMetrics,
   verifyBillingWebhookSignature,
+  isBillingWebhookTimestampFresh,
+  createBillingWebhookSignature,
   type UsageMetric,
 } from './billingUtils.js';
 
@@ -632,6 +634,34 @@ export const createOrUpdateInvoice = async (input: {
 };
 
 export { quotaSeverity, usageMetrics, verifyBillingWebhookSignature };
+export { isBillingWebhookTimestampFresh, createBillingWebhookSignature };
+
+export const recordBillingWebhookEvent = async (input: {
+  eventId: string;
+  eventType: string;
+  userId?: string | null;
+  signature: string;
+  timestamp: string;
+  payloadHash?: string;
+}) => {
+  const result = await query<{ event_id: string }>(
+    `INSERT INTO billing_webhook_events (
+      event_id, event_type, user_id, signature, billing_timestamp, payload_hash, received_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, now())
+    ON CONFLICT (event_id) DO NOTHING
+    RETURNING event_id`,
+    [
+      input.eventId,
+      input.eventType,
+      input.userId ?? null,
+      input.signature,
+      input.timestamp,
+      input.payloadHash ?? null,
+    ]
+  );
+
+  return (result.rowCount ?? 0) > 0;
+};
 
 export const trackProductEvent = async (input: {
   userId?: string | null;

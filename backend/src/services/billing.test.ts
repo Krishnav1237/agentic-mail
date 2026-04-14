@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createHmac } from 'crypto';
 import {
+  createBillingWebhookSignature,
+  isBillingWebhookTimestampFresh,
   quotaSeverity,
   usageMetrics,
   verifyBillingWebhookSignature,
@@ -24,13 +26,17 @@ describe('billing helpers', () => {
   });
 
   it('validates billing webhook signature', () => {
-    const payload = JSON.stringify({ type: 'subscription.updated' });
+    const rawBody = JSON.stringify({ type: 'subscription.updated' });
+    const timestamp = String(Math.floor(Date.now() / 1000));
     const secret = 'test-secret';
-    const signature = createHmac('sha256', secret).update(payload).digest('hex');
+    const signature = createHmac('sha256', secret)
+      .update(`${timestamp}.${rawBody}`)
+      .digest('hex');
 
     expect(
       verifyBillingWebhookSignature({
-        payload,
+        rawBody,
+        timestamp,
         signature,
         secret,
       })
@@ -38,10 +44,29 @@ describe('billing helpers', () => {
 
     expect(
       verifyBillingWebhookSignature({
-        payload,
+        rawBody,
+        timestamp,
         signature: 'bad-signature',
         secret,
       })
     ).toBe(false);
+  });
+
+  it('creates deterministic billing webhook signature', () => {
+    const signature = createBillingWebhookSignature({
+      timestamp: '1710000000',
+      rawBody: '{"ok":true}',
+      secret: 'secret',
+    });
+    expect(signature).toBe(
+      createHmac('sha256', 'secret').update('1710000000.{"ok":true}').digest('hex')
+    );
+  });
+
+  it('validates billing webhook timestamp freshness', () => {
+    expect(isBillingWebhookTimestampFresh(String(Math.floor(Date.now() / 1000)))).toBe(
+      true
+    );
+    expect(isBillingWebhookTimestampFresh('100')).toBe(false);
   });
 });

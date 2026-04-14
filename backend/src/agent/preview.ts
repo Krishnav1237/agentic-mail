@@ -4,6 +4,12 @@ import type { ToolDefinition, ToolName } from '../tools/types.js';
 import { getToolDefinition, executeTool } from '../tools/registry.js';
 import { updateAgentActionStatus } from './actionStore.js';
 import { consumeUsageMetric } from '../services/billing.js';
+import {
+  ConflictError,
+  NotFoundError,
+  QuotaExceededError,
+  ValidationError,
+} from '../errors/domain.js';
 
 export type ActionPreview = {
   summary: string;
@@ -297,7 +303,7 @@ const executePreviewAction = async (input: {
   payloadOverride?: Record<string, unknown>;
 }) => {
   if (!previewStatuses.includes(input.action.status)) {
-    throw new Error('Action is not in a preview state');
+    throw new ConflictError('Action is not in a preview state');
   }
 
   const basePayload = stripMeta(input.action.action_payload ?? {});
@@ -317,7 +323,7 @@ const executePreviewAction = async (input: {
       'label_email',
     ].includes(input.action.action_type)
   ) {
-    throw new Error('Missing message context');
+    throw new ValidationError('Missing message context');
   }
 
   const quota = await consumeUsageMetric({
@@ -336,7 +342,12 @@ const executePreviewAction = async (input: {
       quota_blocked: true,
       quota_metric: 'actions_executed',
     });
-    throw new Error('Action quota exhausted for current billing window');
+    throw new QuotaExceededError({
+      metric: 'actions_executed',
+      used: quota.used ?? 0,
+      limit: quota.limit ?? 0,
+      message: 'Action quota exhausted for current billing window',
+    });
   }
 
   const result = await executeTool(
@@ -363,7 +374,7 @@ export const approvePreview = async (input: {
   payloadOverride?: Record<string, unknown>;
 }) => {
   const action = await getActionContext(input.userId, input.actionId);
-  if (!action) throw new Error('Preview action not found');
+  if (!action) throw new NotFoundError('Preview action not found');
   return executePreviewAction({
     userId: input.userId,
     action,
@@ -377,7 +388,7 @@ export const approveWorkflowPreview = async (input: {
 }) => {
   const actions = await getWorkflowActions(input.userId, input.workflowId);
   if (actions.length === 0) {
-    throw new Error('Workflow preview not found');
+    throw new NotFoundError('Workflow preview not found');
   }
 
   const results = [];
@@ -398,7 +409,7 @@ export const modifyPreview = async (input: {
   payloadOverride: Record<string, unknown>;
 }) => {
   const action = await getActionContext(input.userId, input.actionId);
-  if (!action) throw new Error('Preview action not found');
+  if (!action) throw new NotFoundError('Preview action not found');
 
   const basePayload = stripMeta(action.action_payload ?? {});
   const payload = { ...basePayload, ...(input.payloadOverride ?? {}) };
@@ -422,7 +433,7 @@ export const cancelPreview = async (input: {
   reason?: string;
 }) => {
   const action = await getActionContext(input.userId, input.actionId);
-  if (!action) throw new Error('Preview action not found');
+  if (!action) throw new NotFoundError('Preview action not found');
 
   await updateAgentActionStatus(action.id, 'cancelled', {
     reason: input.reason ?? null,

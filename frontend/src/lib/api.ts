@@ -253,6 +253,18 @@ const readCookie = (name: string) => {
   return decodeURIComponent(match.slice(encodedName.length));
 };
 
+const createIdempotencyKey = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  const template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+  return template.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+};
+
 const apiFetch = async (path: string, init: RequestInit = {}) => {
   const headers = new Headers(init.headers ?? {});
   headers.set('Content-Type', 'application/json');
@@ -275,13 +287,24 @@ const apiFetch = async (path: string, init: RequestInit = {}) => {
     } catch {
       parsed = null;
     }
-    throw new ApiError(parsed?.error || raw || 'Request failed', {
+    const normalizedError =
+      parsed?.error && typeof parsed.error === 'object' ? parsed.error : null;
+    throw new ApiError(
+      normalizedError?.message || parsed?.error || raw || 'Request failed',
+      {
       status: response.status,
-      code: parsed?.code,
-      metric: parsed?.metric,
-      upgradeRequired: parsed?.upgradeRequired,
+      code: normalizedError?.code || parsed?.code,
+      metric:
+        normalizedError?.details?.metric ||
+        normalizedError?.metric ||
+        parsed?.metric,
+      upgradeRequired:
+        normalizedError?.details?.upgradeRequired ??
+        normalizedError?.upgradeRequired ??
+        parsed?.upgradeRequired,
       details: parsed,
-    });
+    }
+    );
   }
 
   return response.json();
@@ -500,26 +523,32 @@ export const undoAgentAction = (actionId: string) =>
     body: JSON.stringify({ actionId }),
   }) as Promise<{ ok: boolean; result: Record<string, unknown> }>;
 
-export const addToCalendar = (taskId: string) =>
+export const addToCalendar = (taskId: string, idempotencyKey = createIdempotencyKey()) =>
   apiFetch('/actions/calendar', {
     method: 'POST',
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ taskId, idempotencyKey }),
   });
 
-export const markImportant = (emailId: string) =>
+export const markImportant = (
+  emailId: string,
+  idempotencyKey = createIdempotencyKey()
+) =>
   apiFetch('/actions/important', {
     method: 'POST',
-    body: JSON.stringify({ emailId }),
+    body: JSON.stringify({ emailId, idempotencyKey }),
   });
 
-export const generateReply = (emailId: string) =>
+export const generateReply = (
+  emailId: string,
+  idempotencyKey = createIdempotencyKey()
+) =>
   apiFetch('/actions/reply', {
     method: 'POST',
-    body: JSON.stringify({ emailId }),
+    body: JSON.stringify({ emailId, idempotencyKey }),
   });
 
-export const snoozeTask = (taskId: string) =>
+export const snoozeTask = (taskId: string, idempotencyKey = createIdempotencyKey()) =>
   apiFetch('/actions/snooze', {
     method: 'POST',
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ taskId, idempotencyKey }),
   });

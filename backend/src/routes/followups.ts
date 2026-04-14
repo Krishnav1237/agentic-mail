@@ -11,6 +11,12 @@ import {
   updateFollowupPolicy,
   type FollowupPolicy,
 } from '../services/followups.js';
+import {
+  ConflictError,
+  NotFoundError,
+  QuotaExceededError,
+  ValidationError,
+} from '../errors/domain.js';
 
 export const followupsRouter = Router();
 
@@ -55,10 +61,10 @@ followupsRouter.post(
 
     const id = scheduleIdSchema.safeParse(req.params.id);
     if (!id.success) {
-      return res.status(400).json({ error: 'Invalid follow-up schedule ID' });
+      throw new ValidationError('Invalid follow-up schedule ID');
     }
     const ok = await cancelFollowupSchedule({ userId, scheduleId: id.data });
-    if (!ok) return res.status(404).json({ error: 'Follow-up schedule not found' });
+    if (!ok) throw new NotFoundError('Follow-up schedule not found');
     return res.json({ ok: true, status: 'cancelled' });
   })
 );
@@ -72,23 +78,23 @@ followupsRouter.post(
 
     const id = scheduleIdSchema.safeParse(req.params.id);
     if (!id.success) {
-      return res.status(400).json({ error: 'Invalid follow-up schedule ID' });
+      throw new ValidationError('Invalid follow-up schedule ID');
     }
     const result = await approveFollowupSchedule({ userId, scheduleId: id.data });
 
     if (!result.ok && result.reason === 'not_found') {
-      return res.status(404).json({ error: 'Follow-up schedule not found' });
+      throw new NotFoundError('Follow-up schedule not found');
     }
     if (!result.ok && result.reason === 'quota_exhausted') {
-      return res.status(402).json({
-        error: 'Follow-up quota exhausted for current billing window',
-        code: 'quota_exhausted',
+      throw new QuotaExceededError({
         metric: result.metric,
-        upgradeRequired: true,
+        used: result.used ?? 0,
+        limit: result.limit ?? 0,
+        message: 'Follow-up quota exhausted for current billing window',
       });
     }
     if (!result.ok) {
-      return res.status(409).json({ error: `Cannot approve follow-up: ${result.reason}` });
+      throw new ConflictError(`Cannot approve follow-up: ${result.reason}`);
     }
 
     return res.json({ ok: true, status: 'sent' });

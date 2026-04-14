@@ -53,6 +53,19 @@ if (authCookieSameSite === 'none' && !authCookieSecure) {
   );
 }
 
+const billingCheckoutBaseUrl = optional('BILLING_CHECKOUT_BASE_URL', '');
+const billingPortalBaseUrl = optional('BILLING_PORTAL_BASE_URL', '');
+const billingWebhookSecret = optional('BILLING_WEBHOOK_SECRET', '');
+const billingEnabled = Boolean(
+  billingCheckoutBaseUrl || billingPortalBaseUrl || billingWebhookSecret
+);
+
+if (billingEnabled && !billingWebhookSecret) {
+  throw new Error(
+    'BILLING_WEBHOOK_SECRET is required when billing is enabled.'
+  );
+}
+
 export const env = {
   nodeEnv,
   port: Number(optional('PORT', '4000')),
@@ -114,7 +127,8 @@ export const env = {
   dataRetentionDefaultDays: Number(optional('DATA_RETENTION_DEFAULT_DAYS', '180')),
   dataRetentionMinDays: Number(optional('DATA_RETENTION_MIN_DAYS', '7')),
   dataRetentionMaxDays: Number(optional('DATA_RETENTION_MAX_DAYS', '365')),
-  billingCheckoutBaseUrl: optional('BILLING_CHECKOUT_BASE_URL', ''),
-  billingPortalBaseUrl: optional('BILLING_PORTAL_BASE_URL', ''),
-  billingWebhookSecret: optional('BILLING_WEBHOOK_SECRET', ''),
+  billingCheckoutBaseUrl,
+  billingPortalBaseUrl,
+  billingWebhookSecret,
+  billingEnabled,
 };

@@ -6,6 +6,7 @@ import { ingestionQueue } from '../queues/index.js';
 import { query } from '../db/index.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
 import { checkQuota } from '../services/billing.js';
+import { QuotaExceededError } from '../errors/domain.js';
 
 export const emailsRouter = Router();
 
@@ -28,20 +29,24 @@ emailsRouter.post(
 
     const quota = await checkQuota(userId, 'emails_processed', 1);
     if (!quota.allowed) {
-      return res.status(402).json({
-        error: 'Email processing quota exhausted for current billing window',
-        code: 'quota_exhausted',
+      throw new QuotaExceededError({
         metric: 'emails_processed',
         used: quota.used,
-        limit: quota.limit,
-        upgradeRequired: true,
+        limit: quota.limit ?? 0,
+        message: 'Email processing quota exhausted for current billing window',
       });
     }
 
     await ingestionQueue.add(
       'sync-user',
       { userId },
-      { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+      {
+        jobId: `sync-user:${userId}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+        removeOnComplete: 200,
+        removeOnFail: 500,
+      }
     );
     return res.json({ status: 'queued' });
   })
