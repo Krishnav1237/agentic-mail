@@ -10,11 +10,13 @@ import {
   addToCalendar,
   generateReply,
   getTasks,
+  isQuotaExceededError,
   markImportant,
   snoozeTask,
   type Task,
 } from '../lib/api';
 import { useApp } from '../lib/useApp';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 import { formatDate } from '../lib/presentation';
 
 const parseNumber = (value: string | null, fallback: number) => {
@@ -35,6 +37,7 @@ const groupByDate = (items: Task[]) => {
 
 export default function DeadlinesPage() {
   const { hasToken, setStatus } = useApp();
+  const { dispatch } = useWorkflowStore();
   const [params, setParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
@@ -76,7 +79,14 @@ export default function DeadlinesPage() {
       setStatus(`${label} done.`);
     } catch (error) {
       console.error(error);
-      setStatus(`${label} failed.`);
+      if (isQuotaExceededError(error)) {
+        dispatch({
+          type: 'SHOW_UPGRADE_MODAL',
+          payload: { actionLabel: label, metric: error.metric },
+        });
+      } else {
+        setStatus(`${label} failed.`);
+      }
     }
   };
 

@@ -205,3 +205,71 @@ export const runDueFollowups = async () => {
 
   return { processed: due.rowCount ?? 0, sent, suggested };
 };
+
+export const cancelFollowupSchedule = async (input: {
+  userId: string;
+  scheduleId: string;
+}) => {
+  const result = await query<{ id: string }>(
+    `UPDATE followup_schedules
+     SET status = 'cancelled',
+         cancelled_at = now(),
+         updated_at = now()
+     WHERE id = $1
+       AND user_id = $2
+       AND status IN ('pending', 'suggested')
+     RETURNING id`,
+    [input.scheduleId, input.userId]
+  );
+  return Boolean(result.rowCount);
+};
+
+export const approveFollowupSchedule = async (input: {
+  userId: string;
+  scheduleId: string;
+}) => {
+  const schedule = await query<{ id: string; action: string; status: string }>(
+    `SELECT id, action, status
+     FROM followup_schedules
+     WHERE id = $1
+       AND user_id = $2`,
+    [input.scheduleId, input.userId]
+  );
+
+  const row = schedule.rows[0];
+  if (!row) return { ok: false as const, reason: 'not_found' as const };
+  if (row.status === 'sent')
+    return { ok: false as const, reason: 'already_sent' as const };
+  if (row.status === 'cancelled')
+    return { ok: false as const, reason: 'cancelled' as const };
+
+  const quota = await consumeUsageMetric({
+    userId: input.userId,
+    metric: 'followups_sent',
+    units: 1,
+    idempotencyKey: `followup-approve:${input.scheduleId}`,
+    source: 'followup_manual_approval',
+    metadata: { action: row.action },
+    enforce: true,
+  });
+
+  if (!quota.allowed) {
+    return {
+      ok: false as const,
+      reason: 'quota_exhausted' as const,
+      metric: 'followups_sent' as const,
+    };
+  }
+
+  await query(
+    `UPDATE followup_schedules
+     SET status = 'sent',
+         sent_at = now(),
+         updated_at = now()
+     WHERE id = $1
+       AND user_id = $2`,
+    [input.scheduleId, input.userId]
+  );
+
+  return { ok: true as const };
+};

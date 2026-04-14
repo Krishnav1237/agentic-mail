@@ -227,3 +227,20 @@ export const updateMustAct = async (input: {
 
   return Boolean(result.rowCount);
 };
+
+export const reopenMustAct = async (input: { userId: string; mustActId: string }) => {
+  const result = await query<{ id: string }>(
+    `UPDATE must_act_items
+     SET status = 'open',
+         deferred_until = NULL,
+         acted_at = NULL,
+         action_result = NULL,
+         updated_at = now()
+     WHERE id = $1
+       AND user_id = $2
+     RETURNING id`,
+    [input.mustActId, input.userId]
+  );
+
+  return Boolean(result.rowCount);
+};

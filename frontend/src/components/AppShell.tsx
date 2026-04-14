@@ -5,6 +5,7 @@ import {
   Home,
   Inbox,
   ListChecks,
+  AlertTriangle,
   LockKeyhole,
   LogOut,
   Mail,
@@ -13,14 +14,18 @@ import {
   CreditCard,
   ShieldCheck,
   Sparkles,
+  MessageSquareReply,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { API_BASE } from '../lib/apiBase';
 import { useApp } from '../lib/useApp';
+import UpgradeGateModal from './billing/UpgradeGateModal';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 
 const navItems = [
   { label: 'Dashboard', icon: Home, to: '/dashboard' },
+  { label: 'Must-Act', icon: AlertTriangle, to: '/must-act' },
   { label: 'Tasks', icon: ListChecks, to: '/tasks' },
   { label: 'Deadlines', icon: CalendarClock, to: '/deadlines' },
   { label: 'Opportunities', icon: Sparkles, to: '/opportunities' },
@@ -28,6 +33,7 @@ const navItems = [
   { label: 'Agent', icon: Activity, to: '/agent' },
   { label: 'Settings', icon: Settings, to: '/settings' },
   { label: 'Billing', icon: CreditCard, to: '/billing' },
+  { label: 'Follow-ups', icon: MessageSquareReply, to: '/followups' },
 ];
 
 const routeContent: Record<string, { title: string; description: string }> = {
@@ -40,6 +46,11 @@ const routeContent: Record<string, { title: string; description: string }> = {
     title: 'Task operations',
     description:
       'Search, sort, and action the structured task graph generated from your inbox.',
+  },
+  '/must-act': {
+    title: 'Must-Act decision queue',
+    description:
+      'Prioritized decisions with reasoning, risk, and confidence so you can approve fast with control.',
   },
   '/deadlines': {
     title: 'Deadline planning',
@@ -71,6 +82,11 @@ const routeContent: Record<string, { title: string; description: string }> = {
     description:
       'Track quota usage, billing status, and upgrade before critical workflow actions are blocked.',
   },
+  '/followups': {
+    title: 'Follow-up control',
+    description:
+      'Review pending follow-ups, adjust policy, and approve or cancel scheduled outreach with confidence.',
+  },
 };
 
 export default function AppShell() {
@@ -86,6 +102,7 @@ export default function AppShell() {
     lastSyncedAt,
     authLoading,
   } = useApp();
+  const { state, dispatch } = useWorkflowStore();
   const meta = routeContent[location.pathname] ?? routeContent['/dashboard'];
 
   return (
@@ -276,6 +293,13 @@ export default function AppShell() {
           </main>
         </div>
       </div>
+      <UpgradeGateModal
+        open={state.ui.upgradeModal.open}
+        actionLabel={state.ui.upgradeModal.actionLabel}
+        metric={state.ui.upgradeModal.metric}
+        currentPlan={state.plan}
+        onClose={() => dispatch({ type: 'HIDE_UPGRADE_MODAL' })}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import './index.css';
 import { AppProvider } from './lib/appContext';
+import { WorkflowStoreProvider } from './lib/workflowStore';
 import ErrorBoundary from './components/ErrorBoundary';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -12,8 +13,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AppProvider>
-          <App />
-          <Analytics />
+          <WorkflowStoreProvider>
+            <App />
+            <Analytics />
+          </WorkflowStoreProvider>
         </AppProvider>
       </BrowserRouter>
     </ErrorBoundary>

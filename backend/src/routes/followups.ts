@@ -4,6 +4,8 @@ import { authMiddleware, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
 import {
+  approveFollowupSchedule,
+  cancelFollowupSchedule,
   getFollowupPolicy,
   listFollowupTimeline,
   updateFollowupPolicy,
@@ -30,6 +32,10 @@ const timelineSchema = z
   })
   .strip();
 
+const scheduleActionSchema = z.object({
+  id: z.string().uuid(),
+});
+
 followupsRouter.get(
   '/policy',
   authMiddleware,
@@ -39,6 +45,51 @@ followupsRouter.get(
 
     const policy = await getFollowupPolicy(userId);
     return res.json(policy);
+  })
+);
+
+followupsRouter.post(
+  '/:id/cancel',
+  authMiddleware,
+  validate(scheduleActionSchema, 'params'),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params as z.infer<typeof scheduleActionSchema>;
+    const ok = await cancelFollowupSchedule({ userId, scheduleId: id });
+    if (!ok) return res.status(404).json({ error: 'Follow-up schedule not found' });
+    return res.json({ ok: true, status: 'cancelled' });
+  })
+);
+
+followupsRouter.post(
+  '/:id/approve',
+  authMiddleware,
+  validate(scheduleActionSchema, 'params'),
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params as z.infer<typeof scheduleActionSchema>;
+    const result = await approveFollowupSchedule({ userId, scheduleId: id });
+
+    if (!result.ok && result.reason === 'not_found') {
+      return res.status(404).json({ error: 'Follow-up schedule not found' });
+    }
+    if (!result.ok && result.reason === 'quota_exhausted') {
+      return res.status(402).json({
+        error: 'Follow-up quota exhausted for current billing window',
+        code: 'quota_exhausted',
+        metric: result.metric,
+        upgradeRequired: true,
+      });
+    }
+    if (!result.ok) {
+      return res.status(409).json({ error: `Cannot approve follow-up: ${result.reason}` });
+    }
+
+    return res.json({ ok: true, status: 'sent' });
   })
 );
 

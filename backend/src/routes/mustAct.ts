@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authMiddleware, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
-import { updateMustAct } from '../services/mustAct.js';
+import { reopenMustAct, updateMustAct } from '../services/mustAct.js';
 
 export const mustActRouter = Router();
 
@@ -66,4 +66,22 @@ mustActRouter.post(
   authMiddleware,
   validate(actionSchema),
   asyncRoute(statusHandler('edited'))
+);
+
+mustActRouter.post(
+  '/:id/reopen',
+  authMiddleware,
+  asyncRoute(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const mustActId = req.params.id;
+    if (!validId(mustActId)) {
+      return res.status(400).json({ error: 'Invalid must-act ID format' });
+    }
+
+    const ok = await reopenMustAct({ userId, mustActId });
+    if (!ok) return res.status(404).json({ error: 'Must-act item not found' });
+    return res.json({ ok: true, status: 'open' });
+  })
 );

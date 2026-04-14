@@ -9,10 +9,12 @@ import Pagination from '../components/Pagination';
 import {
   generateReply,
   getEmails,
+  isQuotaExceededError,
   markImportant,
   type EmailRow as Email,
 } from '../lib/api';
 import { useApp } from '../lib/useApp';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 
 const parseNumber = (value: string | null, fallback: number) => {
   if (!value) return fallback;
@@ -24,6 +26,7 @@ const HIGH_SIGNAL_THRESHOLD = 0.8;
 
 export default function InboxPage() {
   const { hasToken, setStatus } = useApp();
+  const { dispatch } = useWorkflowStore();
   const [params, setParams] = useSearchParams();
   const [emails, setEmails] = useState<Email[]>([]);
   const [total, setTotal] = useState(0);
@@ -66,7 +69,14 @@ export default function InboxPage() {
       setStatus(`${label} done.`);
     } catch (error) {
       console.error(error);
-      setStatus(`${label} failed.`);
+      if (isQuotaExceededError(error)) {
+        dispatch({
+          type: 'SHOW_UPGRADE_MODAL',
+          payload: { actionLabel: label, metric: error.metric },
+        });
+      } else {
+        setStatus(`${label} failed.`);
+      }
     }
   };
 
