@@ -32,9 +32,7 @@ const timelineSchema = z
   })
   .strip();
 
-const scheduleActionSchema = z.object({
-  id: z.string().uuid(),
-});
+const scheduleIdSchema = z.string().uuid();
 
 followupsRouter.get(
   '/policy',
@@ -51,13 +49,15 @@ followupsRouter.get(
 followupsRouter.post(
   '/:id/cancel',
   authMiddleware,
-  validate(scheduleActionSchema, 'params'),
   asyncRoute(async (req: AuthRequest, res) => {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { id } = req.params as z.infer<typeof scheduleActionSchema>;
-    const ok = await cancelFollowupSchedule({ userId, scheduleId: id });
+    const id = scheduleIdSchema.safeParse(req.params.id);
+    if (!id.success) {
+      return res.status(400).json({ error: 'Invalid follow-up schedule ID' });
+    }
+    const ok = await cancelFollowupSchedule({ userId, scheduleId: id.data });
     if (!ok) return res.status(404).json({ error: 'Follow-up schedule not found' });
     return res.json({ ok: true, status: 'cancelled' });
   })
@@ -66,13 +66,15 @@ followupsRouter.post(
 followupsRouter.post(
   '/:id/approve',
   authMiddleware,
-  validate(scheduleActionSchema, 'params'),
   asyncRoute(async (req: AuthRequest, res) => {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { id } = req.params as z.infer<typeof scheduleActionSchema>;
-    const result = await approveFollowupSchedule({ userId, scheduleId: id });
+    const id = scheduleIdSchema.safeParse(req.params.id);
+    if (!id.success) {
+      return res.status(400).json({ error: 'Invalid follow-up schedule ID' });
+    }
+    const result = await approveFollowupSchedule({ userId, scheduleId: id.data });
 
     if (!result.ok && result.reason === 'not_found') {
       return res.status(404).json({ error: 'Follow-up schedule not found' });
