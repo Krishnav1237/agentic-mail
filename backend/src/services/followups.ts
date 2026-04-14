@@ -198,8 +198,8 @@ export const refreshFollowupSchedulesForUser = async (userId: string) => {
       : policy.defaultDelayDays;
     const scheduledMs = Math.max(baseMs + delayDays * 24 * 60 * 60 * 1000, now + cooldownMs);
     const scheduledFor = new Date(scheduledMs).toISOString();
-    const dayKey = scheduledFor.slice(0, 10);
-    const idempotencyKey = `${row.thread_id}:draft_followup:${dayKey}`;
+    const inboundKey = (row.received_at ?? scheduledFor).slice(0, 19);
+    const idempotencyKey = `${row.thread_id}:draft_followup:${row.email_id}:${inboundKey}`;
 
     const thread = await query<{ id: string }>(
       `INSERT INTO followup_threads (
@@ -233,7 +233,7 @@ export const refreshFollowupSchedulesForUser = async (userId: string) => {
        FROM followup_schedules
        WHERE user_id = $1
          AND thread_state_id = $2
-         AND status IN ('pending', 'suggested', 'sent')
+         AND status IN ('pending', 'suggested')
        LIMIT 1`,
       [userId, thread.rows[0].id]
     );

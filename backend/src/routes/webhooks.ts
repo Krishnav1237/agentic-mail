@@ -82,8 +82,8 @@ webhooksRouter.post(
 
     const rawBodyBuffer = Buffer.isBuffer(req.body)
       ? req.body
-      : Buffer.from('');
-    const rawBody = rawBodyBuffer.toString('utf8').trim();
+      : Buffer.from(typeof req.body === 'string' ? req.body : '');
+    const rawBody = rawBodyBuffer.toString('utf8');
     if (!rawBody) {
       throw new ValidationError('Empty billing webhook payload');
     }

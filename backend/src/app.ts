@@ -68,10 +68,11 @@ export const createApp = () => {
       return next();
     }
 
+    const authHeader = req.header('authorization') ?? '';
+    const hasBearerAuth = authHeader.startsWith('Bearer ');
     const sessionToken = req.cookies?.[env.authCookieName];
-    if (typeof sessionToken !== 'string' || sessionToken.trim().length === 0) {
-      return next();
-    }
+    const hasSessionCookie =
+      typeof sessionToken === 'string' && sessionToken.trim().length > 0;
 
     const origin = req.header('origin');
     if (origin && !isAllowedOrigin(origin)) {
@@ -87,6 +88,10 @@ export const createApp = () => {
       } catch {
         return res.status(403).json({ error: 'Invalid referer' });
       }
+    }
+
+    if (!hasSessionCookie || hasBearerAuth) {
+      return next();
     }
 
     const csrfCookie = req.cookies?.[env.authCsrfCookieName];
