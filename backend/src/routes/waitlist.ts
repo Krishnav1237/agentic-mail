@@ -26,6 +26,16 @@ waitlistRouter.use(
 
 const schema = z.object({ email: z.string().email() });
 
+waitlistRouter.get(
+  '/stats',
+  asyncRoute(async (_req, res) => {
+    const count = await db.query<{ total: number }>(
+      'SELECT COUNT(*)::int as total FROM waitlist'
+    );
+    return res.json({ success: true, total: count.rows[0]?.total ?? 0 });
+  })
+);
+
 waitlistRouter.post(
   '/',
   validate(schema),

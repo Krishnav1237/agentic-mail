@@ -1,5 +1,5 @@
 import { env } from '../config/env.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 
 export type LLMResult = {
   content: string;
@@ -50,6 +50,7 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
       env.aiTimeoutMs
     );
 
+    await assertOk(response, 'OpenRouter chat completion');
     const data = await safeJson<any>(response);
     const content = data?.choices?.[0]?.message?.content ?? '';
     return {
@@ -92,6 +93,7 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
       env.aiTimeoutMs
     );
 
+    await assertOk(response, 'Groq chat completion');
     const data = await safeJson<any>(response);
     const content = data?.choices?.[0]?.message?.content ?? '';
     return {
@@ -127,6 +129,7 @@ export const callLLM = async (prompt: string): Promise<LLMResult> => {
       env.aiTimeoutMs
     );
 
+    await assertOk(response, 'Gemini generate content');
     const data = await safeJson<any>(response);
     const content = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const promptTokens = Number(data?.usageMetadata?.promptTokenCount ?? 0);

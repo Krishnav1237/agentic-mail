@@ -2,15 +2,17 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import LandingPage from './pages/Landing';
 import DashboardPage from './pages/Dashboard';
+import MustActPage from './pages/MustAct';
 import TasksPage from './pages/Tasks';
 import DeadlinesPage from './pages/Deadlines';
 import OpportunitiesPage from './pages/Opportunities';
 import InboxPage from './pages/Inbox';
 import AgentPage from './pages/Agent';
 import SettingsPage from './pages/Settings';
+import BillingPage from './pages/Billing';
+import FollowupsPage from './pages/Followups';
 import AuthCallbackPage from './pages/AuthCallback';
 import { useApp } from './lib/useApp';
-import { useAdminShortcut } from './lib/useAdminShortcut';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { hasToken, authLoading } = useApp();
@@ -25,11 +27,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-import { ThemeToggle } from './components/ThemeToggle';
-
 export default function App() {
-  useAdminShortcut();
-
   return (
     <>
       <Routes>
@@ -43,12 +41,15 @@ export default function App() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/must-act" element={<MustActPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/deadlines" element={<DeadlinesPage />} />
         <Route path="/opportunities" element={<OpportunitiesPage />} />
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/agent" element={<AgentPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/billing" element={<BillingPage />} />
+        <Route path="/followups" element={<FollowupsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

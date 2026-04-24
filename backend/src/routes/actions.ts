@@ -5,11 +5,36 @@ import { validate } from '../middleware/validate.js';
 import { executeTool } from '../tools/registry.js';
 import { query } from '../db/index.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
+import { consumeUsageMetric } from '../services/billing.js';
+import { NotFoundError, QuotaExceededError } from '../errors/domain.js';
 
 export const actionsRouter = Router();
 
 type DraftReplyResult = {
   draftId?: string;
+};
+
+const consumeExecutionQuota = async (userId: string, idempotencyKey: string) => {
+  return consumeUsageMetric({
+    userId,
+    metric: 'actions_executed',
+    units: 1,
+    idempotencyKey,
+    source: 'direct_actions',
+    enforce: true,
+  });
+};
+
+const assertQuotaAllowed = (
+  quota: Awaited<ReturnType<typeof consumeExecutionQuota>>
+) => {
+  if (quota.allowed) return;
+  throw new QuotaExceededError({
+    metric: 'actions_executed',
+    used: quota.used ?? 0,
+    limit: quota.limit ?? 0,
+    message: 'Action quota exhausted for current billing window',
+  });
 };
 
 const getContextFromTask = async (taskId: string, userId: string) => {
@@ -33,6 +58,7 @@ const getContextFromMessage = async (messageId: string, userId: string) => {
 
 const calendarSchema = z.object({
   taskId: z.string().uuid(),
+  idempotencyKey: z.string().uuid(),
 });
 
 actionsRouter.post(
@@ -43,10 +69,12 @@ actionsRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { taskId } = req.body as z.infer<typeof calendarSchema>;
+    const { taskId, idempotencyKey } = req.body as z.infer<typeof calendarSchema>;
+    const quota = await consumeExecutionQuota(userId, `direct:calendar:${idempotencyKey}`);
+    assertQuotaAllowed(quota);
 
     const ctx = await getContextFromTask(taskId, userId);
-    if (!ctx) return res.status(404).json({ error: 'Task not found' });
+    if (!ctx) throw new NotFoundError('Task not found');
 
     const result = await executeTool(
       'create_calendar_event',
@@ -64,6 +92,7 @@ actionsRouter.post(
 
 const importantSchema = z.object({
   emailId: z.string().min(1),
+  idempotencyKey: z.string().uuid(),
 });
 
 actionsRouter.post(
@@ -74,10 +103,12 @@ actionsRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { emailId } = req.body as z.infer<typeof importantSchema>;
+    const { emailId, idempotencyKey } = req.body as z.infer<typeof importantSchema>;
+    const quota = await consumeExecutionQuota(userId, `direct:important:${idempotencyKey}`);
+    assertQuotaAllowed(quota);
 
     const ctx = await getContextFromMessage(emailId, userId);
-    if (!ctx) return res.status(404).json({ error: 'Email not found' });
+    if (!ctx) throw new NotFoundError('Email not found');
 
     const result = await executeTool(
       'mark_important',
@@ -96,6 +127,7 @@ actionsRouter.post(
 const replySchema = z.object({
   emailId: z.string().min(1),
   send: z.boolean().optional(),
+  idempotencyKey: z.string().uuid(),
 });
 
 actionsRouter.post(
@@ -106,10 +138,12 @@ actionsRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { emailId, send } = req.body as z.infer<typeof replySchema>;
+    const { emailId, send, idempotencyKey } = req.body as z.infer<typeof replySchema>;
+    const quota = await consumeExecutionQuota(userId, `direct:reply:draft:${idempotencyKey}`);
+    assertQuotaAllowed(quota);
 
     const ctx = await getContextFromMessage(emailId, userId);
-    if (!ctx) return res.status(404).json({ error: 'Email not found' });
+    if (!ctx) throw new NotFoundError('Email not found');
 
     const draft = (await executeTool(
       'draft_reply',
@@ -122,6 +156,11 @@ actionsRouter.post(
     )) as DraftReplyResult;
 
     if (send && draft.draftId) {
+      const sendQuota = await consumeExecutionQuota(
+        userId,
+        `direct:reply:send:${idempotencyKey}`
+      );
+      assertQuotaAllowed(sendQuota);
       await executeTool(
         'send_reply',
         {
@@ -140,6 +179,7 @@ actionsRouter.post(
 const snoozeSchema = z.object({
   taskId: z.string().uuid(),
   until: z.string().optional(),
+  idempotencyKey: z.string().uuid(),
 });
 
 actionsRouter.post(
@@ -150,10 +190,12 @@ actionsRouter.post(
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { taskId, until } = req.body as z.infer<typeof snoozeSchema>;
+    const { taskId, until, idempotencyKey } = req.body as z.infer<typeof snoozeSchema>;
+    const quota = await consumeExecutionQuota(userId, `direct:snooze:${idempotencyKey}`);
+    assertQuotaAllowed(quota);
 
     const ctx = await getContextFromTask(taskId, userId);
-    if (!ctx) return res.status(404).json({ error: 'Task not found' });
+    if (!ctx) throw new NotFoundError('Task not found');
 
     const result = await executeTool(
       'snooze',

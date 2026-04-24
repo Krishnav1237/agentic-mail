@@ -5,14 +5,20 @@ import ConnectPrompt from '../components/ConnectPrompt';
 import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
+import ConfidenceBadge from '../components/trust/ConfidenceBadge';
+import RiskBadge from '../components/trust/RiskBadge';
 import {
   approveAction,
   cancelAction,
   getActivityFeed,
   getAgentActions,
+  isQuotaExceededError,
+  undoAgentAction,
   type AgentActionRow,
 } from '../lib/api';
 import { useApp } from '../lib/useApp';
+import { trackEvent } from '../lib/trackEvent';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 import { formatDateTime, getStatusTone } from '../lib/presentation';
 
 const approvalStatuses = new Set(['preview', 'suggest', 'suggested']);
@@ -26,8 +32,15 @@ const parseNumber = (value: string | null, fallback: number) => {
 const parsePreview = (payload: Record<string, any>) =>
   payload?.__preview ?? null;
 
+const actionRisk = (actionType: string) => {
+  if (actionType === 'send_reply' || actionType === 'delete_email') return 'high';
+  if (actionType === 'archive_email' || actionType === 'move_to_folder') return 'medium';
+  return 'low';
+};
+
 export default function AgentPage() {
   const { hasToken, setStatus } = useApp();
+  const { dispatch } = useWorkflowStore();
   const [params, setParams] = useSearchParams();
   const [actions, setActions] = useState<AgentActionRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -82,7 +95,14 @@ export default function AgentPage() {
       setTotal(updated.total);
     } catch (error) {
       console.error(error);
-      setStatus('Approval failed.');
+      if (isQuotaExceededError(error)) {
+        dispatch({
+          type: 'SHOW_UPGRADE_MODAL',
+          payload: { actionLabel: 'Approve action', metric: error.metric },
+        });
+      } else {
+        setStatus('Approval failed.');
+      }
     }
   };
 
@@ -101,6 +121,25 @@ export default function AgentPage() {
     } catch (error) {
       console.error(error);
       setStatus('Cancel failed.');
+    }
+  };
+
+  const handleUndo = async (actionId: string) => {
+    setStatus('Undoing action...');
+    try {
+      await undoAgentAction(actionId);
+      trackEvent({ action: 'undo_used', metadata: { source: 'agent_page', actionId } });
+      setStatus('Undo complete.');
+      const updated = await getAgentActions({
+        limit,
+        offset,
+        status: statusFilter || undefined,
+      });
+      setActions(updated.actions);
+      setTotal(updated.total);
+    } catch (error) {
+      console.error(error);
+      setStatus('Undo failed.');
     }
   };
 
@@ -273,6 +312,10 @@ export default function AgentPage() {
                           Reason: {action.decision_reason}
                         </p>
                       )}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <RiskBadge risk={actionRisk(action.action_type)} />
+                        <ConfidenceBadge confidence={Number(action.confidence ?? 0.5)} />
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -338,13 +381,21 @@ export default function AgentPage() {
                       {action.decision_reason}
                     </p>
                   )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <RiskBadge risk={actionRisk(action.action_type)} />
+                    <ConfidenceBadge confidence={Number(action.confidence ?? 0.5)} />
+                  </div>
                 </div>
                 <div className="text-right text-sm text-neutral-300">
                   <div>{formatDateTime(action.created_at)}</div>
-                  <div className="mt-1">
-                    {action.confidence !== null
-                      ? `Confidence ${Number(action.confidence).toFixed(2)}`
-                      : 'No score'}
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      className="btn-ghost h-8 px-2 py-1 text-xs"
+                      disabled={action.status !== 'executed'}
+                      onClick={() => void handleUndo(action.id)}
+                    >
+                      Undo
+                    </button>
                   </div>
                 </div>
               </div>

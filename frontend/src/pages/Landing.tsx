@@ -15,6 +15,7 @@ import {
   type Variants,
 } from 'framer-motion';
 import { getWaitlistStats, joinWaitlist } from '../lib/waitlist';
+import { useAdminShortcut } from '../lib/useAdminShortcut';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -419,6 +420,7 @@ const ParallaxImage = ({
 };
 
 export default function LandingPage() {
+  useAdminShortcut();
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.15], [1, 0.95]);

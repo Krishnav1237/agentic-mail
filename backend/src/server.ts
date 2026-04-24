@@ -1,3 +1,6 @@
+// Must be first — patches dns.lookup before any module opens a connection.
+import './config/dns-fix.js';
+
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';

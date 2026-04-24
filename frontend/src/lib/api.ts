@@ -21,6 +21,78 @@ export type DashboardSections = {
   lowPriority: Task[];
 };
 
+export type UsageMetric = {
+  metric: string;
+  used: number;
+  quotaLimit: number | null;
+  percentage: number;
+  remaining: number | null;
+  windowStart: string;
+  windowEnd: string;
+  warn70Sent: boolean;
+  warn85Sent: boolean;
+  warn100Sent: boolean;
+};
+
+export type BillingPlan = {
+  plan_slug: string;
+  plan_name: string;
+  status: string;
+  priceUsdCents: number;
+  interval: string;
+  limits: Record<string, number>;
+  features: Record<string, unknown>;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  grace_until: string | null;
+};
+
+export type BillingWarning = {
+  metric: string;
+  used: number;
+  quotaLimit: number;
+  percentage: number;
+  severity: 'warning' | 'high' | 'hard_stop';
+};
+
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  metric?: string;
+  upgradeRequired?: boolean;
+  details?: unknown;
+
+  constructor(
+    message: string,
+    options: {
+      status: number;
+      code?: string;
+      metric?: string;
+      upgradeRequired?: boolean;
+      details?: unknown;
+    }
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = options.status;
+    this.code = options.code;
+    this.metric = options.metric;
+    this.upgradeRequired = options.upgradeRequired;
+    this.details = options.details;
+  }
+}
+
+export const isQuotaExceededError = (
+  error: unknown
+): error is ApiError & { metric: string } => {
+  return (
+    error instanceof ApiError &&
+    error.status === 402 &&
+    error.code === 'quota_exhausted' &&
+    Boolean(error.metric)
+  );
+};
+
 export type Paginated<T> = {
   total: number;
   limit: number;
@@ -103,13 +175,106 @@ export type SessionResponse = {
   authMode?: 'cookie' | 'bearer';
 };
 
-const getToken = () => localStorage.getItem('auth_token');
+export type MustActItem = {
+  id: string;
+  title: string;
+  subject: string | null;
+  sender_name: string | null;
+  sender_email: string | null;
+  why_reason: string | null;
+  risk_tier: 'low' | 'medium' | 'high' | string;
+  confidence: number;
+  score: number;
+  deadline_at: string | null;
+  suggested_bundle: string[];
+  status: string;
+  deferred_until: string | null;
+  created_at: string;
+};
+
+export type MustActListResponse = {
+  items: MustActItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type SenderPolicyRule = {
+  senderKey: string;
+  mode: 'always' | 'never' | 'suggest_only';
+  actionTypes?: string[];
+  updatedAt?: string;
+};
+
+export type FollowupTimelineItem = {
+  id: string;
+  action: string;
+  status: 'pending' | 'suggested' | 'sent' | 'cancelled' | string;
+  scheduled_for: string;
+  sent_at: string | null;
+  cancelled_at: string | null;
+  metadata: Record<string, unknown>;
+  thread_id: string | null;
+  thread_type: string | null;
+  state: string | null;
+  subject: string | null;
+  sender_email: string | null;
+};
+
+export type FollowupTimelineResponse = {
+  items: FollowupTimelineItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type FollowupPolicy = {
+  mode: 'suggest' | 'draft' | 'auto_send';
+  defaultDelayDays: number;
+  recruiterDelayDays: number;
+  cooldownHours: number;
+  autoSendEnabled: boolean;
+  allowedSenderDomains: string[];
+  blockedSenderDomains: string[];
+  quietHours: Record<string, unknown>;
+};
+
+const CSRF_COOKIE_NAME =
+  import.meta.env.VITE_AUTH_CSRF_COOKIE_NAME?.trim() || 'iil_csrf';
+
+const readCookie = (name: string) => {
+  if (typeof document === 'undefined') return null;
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(encodedName));
+  if (!match) return null;
+  return decodeURIComponent(match.slice(encodedName.length));
+};
+
+const createIdempotencyKey = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+  }
+  throw new Error('Secure UUID generation is unavailable in this browser environment.');
+};
 
 const apiFetch = async (path: string, init: RequestInit = {}) => {
-  const token = getToken();
   const headers = new Headers(init.headers ?? {});
-  if (token) headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
+  const csrfToken = readCookie(CSRF_COOKIE_NAME);
+  if (csrfToken) {
+    headers.set('X-CSRF-Token', csrfToken);
+  }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -118,8 +283,31 @@ const apiFetch = async (path: string, init: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || 'Request failed');
+    const raw = await response.text();
+    let parsed: any = null;
+    try {
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch {
+      parsed = null;
+    }
+    const normalizedError =
+      parsed?.error && typeof parsed.error === 'object' ? parsed.error : null;
+    throw new ApiError(
+      normalizedError?.message || parsed?.error || raw || 'Request failed',
+      {
+      status: response.status,
+      code: normalizedError?.code || parsed?.code,
+      metric:
+        normalizedError?.details?.metric ||
+        normalizedError?.metric ||
+        parsed?.metric,
+      upgradeRequired:
+        normalizedError?.details?.upgradeRequired ??
+        normalizedError?.upgradeRequired ??
+        parsed?.upgradeRequired,
+      details: parsed,
+    }
+    );
   }
 
   return response.json();
@@ -182,6 +370,27 @@ export const getActivityFeed = () =>
 export const getGoals = () =>
   apiFetch('/agent/goals') as Promise<GoalsResponse>;
 
+export const getBillingPlan = () =>
+  apiFetch('/billing/plan') as Promise<BillingPlan>;
+
+export const getBillingUsage = () =>
+  apiFetch('/billing/usage') as Promise<{ usage: UsageMetric[] }>;
+
+export const getBillingWarnings = () =>
+  apiFetch('/billing/warnings') as Promise<{ warnings: BillingWarning[] }>;
+
+export const createCheckout = (planSlug: 'free' | 'pro' | 'power') =>
+  apiFetch('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ planSlug }),
+  }) as Promise<{ ok: boolean; checkoutUrl: string }>;
+
+export const openBillingPortal = () =>
+  apiFetch('/billing/portal', { method: 'POST' }) as Promise<{
+    ok: boolean;
+    portalUrl: string;
+  }>;
+
 export const updateGoals = (payload: {
   goals: Array<{ goal: string; weight: number }>;
   autopilotLevel: 0 | 1 | 2;
@@ -230,26 +439,119 @@ export const recordFeedback = (payload: {
   category?: string;
 }) => apiFetch('/feedback', { method: 'POST', body: JSON.stringify(payload) });
 
-export const addToCalendar = (taskId: string) =>
+export const getMustAct = (params: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+}) =>
+  apiFetch(`/tasks/must-act${buildQuery(params)}`) as Promise<MustActListResponse>;
+
+export const approveMustAct = (
+  id: string,
+  payload?: { notes?: string; payload?: Record<string, unknown> }
+) =>
+  apiFetch(`/must-act/${id}/approve`, {
+    method: 'POST',
+    body: JSON.stringify(payload ?? {}),
+  }) as Promise<{ ok: boolean; status: string }>;
+
+export const rejectMustAct = (
+  id: string,
+  payload?: { notes?: string; payload?: Record<string, unknown> }
+) =>
+  apiFetch(`/must-act/${id}/reject`, {
+    method: 'POST',
+    body: JSON.stringify(payload ?? {}),
+  }) as Promise<{ ok: boolean; status: string }>;
+
+export const deferMustAct = (
+  id: string,
+  payload: { deferredUntil: string; notes?: string; payload?: Record<string, unknown> }
+) =>
+  apiFetch(`/must-act/${id}/defer`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<{ ok: boolean; status: string }>;
+
+export const editMustAct = (
+  id: string,
+  payload: { notes?: string; payload?: Record<string, unknown> }
+) =>
+  apiFetch(`/must-act/${id}/edit`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<{ ok: boolean; status: string }>;
+
+export const reopenMustAct = (id: string) =>
+  apiFetch(`/must-act/${id}/reopen`, {
+    method: 'POST',
+  }) as Promise<{ ok: boolean; status: string }>;
+
+export const getSenderPolicyRules = () =>
+  apiFetch('/preferences/policy-rules') as Promise<{ rules: SenderPolicyRule[] }>;
+
+export const updateSenderPolicyRules = (rules: SenderPolicyRule[]) =>
+  apiFetch('/preferences/policy-rules', {
+    method: 'PUT',
+    body: JSON.stringify({ rules }),
+  }) as Promise<{ ok: boolean; rules: SenderPolicyRule[] }>;
+
+export const getFollowupTimeline = (params: { limit?: number; offset?: number }) =>
+  apiFetch(`/followups/timeline${buildQuery(params)}`) as Promise<FollowupTimelineResponse>;
+
+export const getFollowupPolicy = () =>
+  apiFetch('/followups/policy') as Promise<FollowupPolicy>;
+
+export const updateFollowupPolicySettings = (policy: FollowupPolicy) =>
+  apiFetch('/followups/policy', {
+    method: 'PUT',
+    body: JSON.stringify(policy),
+  }) as Promise<{ ok: boolean }>;
+
+export const approveFollowup = (id: string) =>
+  apiFetch(`/followups/${id}/approve`, { method: 'POST' }) as Promise<{
+    ok: boolean;
+    status: string;
+  }>;
+
+export const cancelFollowup = (id: string) =>
+  apiFetch(`/followups/${id}/cancel`, { method: 'POST' }) as Promise<{
+    ok: boolean;
+    status: string;
+  }>;
+
+export const undoAgentAction = (actionId: string) =>
+  apiFetch('/agent/recovery/undo', {
+    method: 'POST',
+    body: JSON.stringify({ actionId }),
+  }) as Promise<{ ok: boolean; result: Record<string, unknown> }>;
+
+export const addToCalendar = (taskId: string, idempotencyKey = createIdempotencyKey()) =>
   apiFetch('/actions/calendar', {
     method: 'POST',
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ taskId, idempotencyKey }),
   });
 
-export const markImportant = (emailId: string) =>
+export const markImportant = (
+  emailId: string,
+  idempotencyKey = createIdempotencyKey()
+) =>
   apiFetch('/actions/important', {
     method: 'POST',
-    body: JSON.stringify({ emailId }),
+    body: JSON.stringify({ emailId, idempotencyKey }),
   });
 
-export const generateReply = (emailId: string) =>
+export const generateReply = (
+  emailId: string,
+  idempotencyKey = createIdempotencyKey()
+) =>
   apiFetch('/actions/reply', {
     method: 'POST',
-    body: JSON.stringify({ emailId }),
+    body: JSON.stringify({ emailId, idempotencyKey }),
   });
 
-export const snoozeTask = (taskId: string) =>
+export const snoozeTask = (taskId: string, idempotencyKey = createIdempotencyKey()) =>
   apiFetch('/actions/snooze', {
     method: 'POST',
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ taskId, idempotencyKey }),
   });

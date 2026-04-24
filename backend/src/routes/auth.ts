@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { env } from '../config/env.js';
 import {
   authMiddleware,
@@ -26,6 +27,7 @@ import {
 import { query } from '../db/index.js';
 import { asyncRoute } from '../middleware/asyncRoute.js';
 import { getPrimaryFrontendOrigin } from '../config/origins.js';
+import { purgeUserAccount } from '../services/privacy.js';
 
 export const authRouter = Router();
 
@@ -33,6 +35,14 @@ const frontendAppUrl = getPrimaryFrontendOrigin();
 
 const authCookieOptions = {
   httpOnly: true,
+  sameSite: env.authCookieSameSite,
+  secure: env.authCookieSecure,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: '/',
+};
+
+const csrfCookieOptions = {
+  httpOnly: false,
   sameSite: env.authCookieSameSite,
   secure: env.authCookieSecure,
   maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -56,6 +66,7 @@ const issueJwt = (user: { id: string; email: string }) =>
 
 const setAuthCookie = (res: Response, token: string) => {
   res.cookie(env.authCookieName, token, authCookieOptions);
+  res.cookie(env.authCsrfCookieName, randomUUID(), csrfCookieOptions);
 };
 
 const clearAuthCookie = (res: Response) => {
@@ -64,6 +75,12 @@ const clearAuthCookie = (res: Response) => {
     sameSite: authCookieOptions.sameSite,
     secure: authCookieOptions.secure,
     path: authCookieOptions.path,
+  });
+  res.clearCookie(env.authCsrfCookieName, {
+    httpOnly: csrfCookieOptions.httpOnly,
+    sameSite: csrfCookieOptions.sameSite,
+    secure: csrfCookieOptions.secure,
+    path: csrfCookieOptions.path,
   });
 };
 
@@ -89,6 +106,10 @@ authRouter.get('/session', (req, res) => {
     const auth = readAuthFromRequest(req);
     if (!auth) {
       return res.json({ authenticated: false });
+    }
+
+    if (!req.cookies?.[env.authCsrfCookieName]) {
+      res.cookie(env.authCsrfCookieName, randomUUID(), csrfCookieOptions);
     }
 
     return res.json({
@@ -229,3 +250,35 @@ authRouter.get('/verify', authMiddleware, (req: AuthRequest, res) => {
     authMode: req.authSource,
   });
 });
+
+const deleteAccountSchema = z.object({
+  confirmEmail: z.string().email(),
+});
+
+authRouter.delete(
+  '/account',
+  authMiddleware,
+  asyncRoute(async (req: AuthRequest, res) => {
+    const userId = req.user?.userId;
+    const email = req.user?.email;
+    if (!userId || !email) return res.status(401).json({ error: 'Unauthorized' });
+
+    const parsed = deleteAccountSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
+    const confirmEmail = parsed.data.confirmEmail.trim().toLowerCase();
+    if (confirmEmail !== email.trim().toLowerCase()) {
+      return res.status(400).json({ error: 'Email confirmation does not match session user' });
+    }
+
+    const result = await purgeUserAccount(userId, confirmEmail);
+    if (!result.deleted) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+
+    clearAuthCookie(res);
+    return res.json({ ok: true, deleted: true });
+  })
+);

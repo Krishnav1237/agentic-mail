@@ -9,10 +9,12 @@ import Pagination from '../components/Pagination';
 import {
   generateReply,
   getEmails,
+  isQuotaExceededError,
   markImportant,
   type EmailRow as Email,
 } from '../lib/api';
 import { useApp } from '../lib/useApp';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 
 const parseNumber = (value: string | null, fallback: number) => {
   if (!value) return fallback;
@@ -20,8 +22,11 @@ const parseNumber = (value: string | null, fallback: number) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
+const HIGH_SIGNAL_THRESHOLD = 0.8;
+
 export default function InboxPage() {
   const { hasToken, setStatus } = useApp();
+  const { dispatch } = useWorkflowStore();
   const [params, setParams] = useSearchParams();
   const [emails, setEmails] = useState<Email[]>([]);
   const [total, setTotal] = useState(0);
@@ -64,7 +69,14 @@ export default function InboxPage() {
       setStatus(`${label} done.`);
     } catch (error) {
       console.error(error);
-      setStatus(`${label} failed.`);
+      if (isQuotaExceededError(error)) {
+        dispatch({
+          type: 'SHOW_UPGRADE_MODAL',
+          payload: { actionLabel: label, metric: error.metric },
+        });
+      } else {
+        setStatus(`${label} failed.`);
+      }
     }
   };
 
@@ -72,7 +84,9 @@ export default function InboxPage() {
     () => ({
       processed: emails.filter((email) => email.status === 'processed').length,
       pending: emails.filter((email) => email.status === 'pending').length,
-      highSignal: emails.filter((email) => (email.ai_score ?? 0) >= 2).length,
+      highSignal: emails.filter(
+        (email) => (email.ai_score ?? 0) >= HIGH_SIGNAL_THRESHOLD
+      ).length,
     }),
     [emails]
   );

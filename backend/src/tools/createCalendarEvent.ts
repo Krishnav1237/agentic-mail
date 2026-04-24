@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { query } from '../db/index.js';
 import { getAuthContext } from '../services/tokens.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 import { createGoogleCalendarEvent } from '../services/gmail.js';
 import type { ToolContext, ToolDefinition } from './types.js';
 
@@ -85,6 +85,7 @@ export const createCalendarEventTool: ToolDefinition<Input, Output> = {
       }
     );
 
+    await assertOk(response, 'Graph create calendar event');
     const data = await safeJson<any>(response);
     return { eventId: data.id };
   },

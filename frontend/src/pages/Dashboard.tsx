@@ -7,19 +7,28 @@ import {
   Target,
 } from 'lucide-react';
 import ConnectPrompt from '../components/ConnectPrompt';
+import ActionPanel from '../components/actionPanel/ActionPanel';
+import ActionToast from '../components/common/ActionToast';
+import MustActList from '../components/mustAct/MustActList';
 import PageHeader from '../components/PageHeader';
 import Section from '../components/Section';
 import {
   addToCalendar,
   generateReply,
   getDashboard,
+  isQuotaExceededError,
   markImportant,
   recordFeedback,
   snoozeTask,
   type DashboardSections,
+  reopenMustAct,
   type Task,
+  type MustActItem,
+  undoAgentAction,
 } from '../lib/api';
+import { trackEvent } from '../lib/trackEvent';
 import { useApp } from '../lib/useApp';
+import { useWorkflowStore } from '../lib/useWorkflowStore';
 
 const emptySections: DashboardSections = {
   criticalToday: [],
@@ -32,8 +41,12 @@ const limitTasks = (tasks: Task[], count = 5) => tasks.slice(0, count);
 
 export default function DashboardPage() {
   const { hasToken, setStatus, syncInbox, syncing } = useApp();
+  const { dispatch } = useWorkflowStore();
   const [sections, setSections] = useState<DashboardSections>(emptySections);
   const [loading, setLoading] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [selectedMustAct, setSelectedMustAct] = useState<MustActItem | null>(null);
+  const [mustActListNonce, setMustActListNonce] = useState(0);
 
   useEffect(() => {
     if (!hasToken) {
@@ -78,7 +91,14 @@ export default function DashboardPage() {
       setStatus(`${label} done.`);
     } catch (error) {
       console.error(error);
-      setStatus(`${label} failed.`);
+      if (isQuotaExceededError(error)) {
+        dispatch({
+          type: 'SHOW_UPGRADE_MODAL',
+          payload: { actionLabel: label, metric: error.metric },
+        });
+      } else {
+        setStatus(`${label} failed.`);
+      }
     }
   };
 
@@ -196,6 +216,14 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          <MustActList
+            key={mustActListNonce}
+            onOpenItem={(item) => {
+              setSelectedMustAct(item);
+              setPanelOpen(true);
+            }}
+            limit={8}
+          />
           <Section
             title="Critical Today"
             subtitle="Deadlines or tasks that need your attention within the next 24 hours."
@@ -273,6 +301,33 @@ export default function DashboardPage() {
           />
         </>
       )}
+
+      <ActionPanel
+        item={selectedMustAct}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        onMutated={() => setMustActListNonce((n) => n + 1)}
+      />
+
+      <ActionToast
+        onUndo={(id, kind) => {
+          void (async () => {
+            try {
+              if (kind === 'must_act') {
+                await reopenMustAct(id);
+              } else {
+                await undoAgentAction(id);
+              }
+              trackEvent({ action: 'undo_used', metadata: { id, kind, source: 'dashboard' } });
+              setStatus('Undo completed.');
+              setMustActListNonce((n) => n + 1);
+            } catch (error) {
+              console.error(error);
+              setStatus('Undo failed.');
+            }
+          })();
+        }}
+      />
     </div>
   );
 }

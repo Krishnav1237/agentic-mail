@@ -1,5 +1,5 @@
 import { env } from '../config/env.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 
 export type GraphTokenResponse = {
   access_token: string;
@@ -69,6 +69,7 @@ export const exchangeCodeForToken = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Microsoft token exchange');
   return safeJson<GraphTokenResponse>(response);
 };
 
@@ -93,6 +94,7 @@ export const refreshAccessToken = async (
     env.aiTimeoutMs
   );
 
+  await assertOk(response, 'Microsoft token refresh');
   return safeJson<GraphTokenResponse>(response);
 };
 
@@ -106,6 +108,7 @@ export const getProfile = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Microsoft profile fetch');
   return safeJson<GraphProfile>(response);
 };
 
@@ -125,6 +128,7 @@ export const listMessages = async (
       },
       env.aiTimeoutMs
     );
+    await assertOk(response, 'Graph list messages (nextLink)');
     return safeJson<any>(response);
   }
 
@@ -146,6 +150,7 @@ export const listMessages = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph list messages');
   return safeJson<any>(response);
 };
 
@@ -157,6 +162,7 @@ export const getMessage = async (accessToken: string, messageId: string) => {
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph get message');
   return safeJson<any>(response);
 };
 
@@ -181,7 +187,7 @@ export const patchMessage = async (
   if (response.status === 204) {
     return {};
   }
-
+  await assertOk(response, 'Graph patch message');
   return safeJson<any>(response);
 };
 
@@ -202,6 +208,7 @@ export const moveMessage = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph move message');
   return safeJson<any>(response);
 };
 
@@ -213,6 +220,7 @@ export const listMailFolders = async (accessToken: string) => {
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph list folders');
   return safeJson<any>(response);
 };
 
@@ -238,6 +246,7 @@ export const createSubscription = async (
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph create subscription');
   return safeJson<any>(response);
 };
 
@@ -255,5 +264,6 @@ export const listEvents = async (accessToken: string, top = 10) => {
     },
     env.aiTimeoutMs
   );
+  await assertOk(response, 'Graph list events');
   return safeJson<any>(response);
 };

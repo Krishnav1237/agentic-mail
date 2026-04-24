@@ -4,6 +4,7 @@ import { listGmailMessages, getGmailMessage } from './gmail.js';
 import { env } from '../config/env.js';
 import { agentQueue } from '../queues/index.js';
 import { getAuthContext } from './tokens.js';
+import { consumeUsageMetric, getRemainingQuota } from './billing.js';
 
 const formatGmailAfter = (iso: string) => {
   const date = new Date(iso);
@@ -33,7 +34,8 @@ const parseFromHeader = (value: string | null) => {
 const ingestGraphInbox = async (
   userId: string,
   accessToken: string,
-  lastSyncAt: string | null
+  lastSyncAt: string | null,
+  remainingQuota: number | null
 ) => {
   const receivedAfter = lastSyncAt
     ? new Date(lastSyncAt).toISOString()
@@ -52,6 +54,10 @@ const ingestGraphInbox = async (
     nextLink = page['@odata.nextLink'];
 
     for (const message of messages) {
+      if (remainingQuota !== null && processed >= remainingQuota) {
+        nextLink = undefined;
+        break;
+      }
       const inserted = await withTransaction(async (client) => {
         const insert = await client.query(
           `INSERT INTO emails (user_id, message_id, thread_id, subject, sender_email, sender_name, received_at, body_preview, importance, raw_json)
@@ -84,7 +90,8 @@ const ingestGraphInbox = async (
 const ingestGmailInbox = async (
   userId: string,
   accessToken: string,
-  lastSyncAt: string | null
+  lastSyncAt: string | null,
+  remainingQuota: number | null
 ) => {
   const queryParts = ['in:inbox'];
   if (lastSyncAt) {
@@ -105,6 +112,10 @@ const ingestGmailInbox = async (
       page.messages ?? [];
 
     for (const message of messages) {
+      if (remainingQuota !== null && processed >= remainingQuota) {
+        pageToken = undefined;
+        break;
+      }
       const details = await getGmailMessage(accessToken, message.id);
       const headers = details.payload?.headers ?? [];
       const subject = getHeader(headers, 'Subject');
@@ -148,19 +159,26 @@ const ingestGmailInbox = async (
   return processed;
 };
 
-export const syncUserInbox = async (userId: string) => {
+export const syncUserInbox = async (userId: string, usageKey?: string) => {
+  const remainingQuota = await getRemainingQuota(userId, 'emails_processed');
+  if (remainingQuota !== null && remainingQuota <= 0) {
+    return { processed: 0, quotaBlocked: true };
+  }
+
   const auth = await getAuthContext(userId);
   const processed =
     auth.provider === 'google'
       ? await ingestGmailInbox(
           userId,
           auth.accessToken,
-          auth.lastSyncAt ?? null
+          auth.lastSyncAt ?? null,
+          remainingQuota
         )
       : await ingestGraphInbox(
           userId,
           auth.accessToken,
-          auth.lastSyncAt ?? null
+          auth.lastSyncAt ?? null,
+          remainingQuota
         );
 
   await query(
@@ -169,10 +187,26 @@ export const syncUserInbox = async (userId: string) => {
   );
 
   if (processed > 0) {
+    await consumeUsageMetric({
+      userId,
+      metric: 'emails_processed',
+      units: processed,
+      idempotencyKey: `sync:${usageKey ?? `${Date.now()}`}`,
+      source: 'sync_user_inbox',
+      metadata: { provider: auth.provider },
+      enforce: true,
+    });
+
     await agentQueue.add(
       'run-user',
       { userId },
-      { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+      {
+        jobId: `run-user:${userId}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+        removeOnComplete: 200,
+        removeOnFail: 500,
+      }
     );
   }
 

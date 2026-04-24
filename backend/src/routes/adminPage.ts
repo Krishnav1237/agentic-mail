@@ -118,7 +118,7 @@ export const renderAdminPage = () => `<!doctype html>
   </head>
   <body>
     <main>
-      <span class="eyebrow">Hidden Admin Entry</span>
+      <span class="eyebrow">Admin Entry</span>
       <h1>Inbox Intelligence Layer backend admin</h1>
       <p>
         Use this page to validate backend connectivity and kick off OAuth during
@@ -132,8 +132,7 @@ export const renderAdminPage = () => `<!doctype html>
         <a class="secondary" href="/health">Health Check</a>
       </div>
       <div class="meta">
-        If the hidden shortcut is working, typing the configured secret phrase
-        in the frontend should open this page directly.
+        You reached this page via the configured admin shortcut.
       </div>
     </main>
   </body>

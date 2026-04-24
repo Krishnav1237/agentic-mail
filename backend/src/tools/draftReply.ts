@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ToolContext, ToolDefinition } from './types.js';
 import { generateReply } from '../services/ai.js';
 import { getAuthContext } from '../services/tokens.js';
-import { fetchWithTimeout, safeJson } from '../utils/http.js';
+import { assertOk, fetchWithTimeout, safeJson } from '../utils/http.js';
 import { query } from '../db/index.js';
 import { createGmailDraft } from '../services/gmail.js';
 
@@ -78,9 +78,10 @@ export const draftReplyTool: ToolDefinition<Input, Output> = {
       }
     );
 
+    await assertOk(draftResponse, 'Graph create reply draft');
     const draft = await safeJson<any>(draftResponse);
 
-    await fetchWithTimeout(
+    const patchResponse = await fetchWithTimeout(
       `https://graph.microsoft.com/v1.0/me/messages/${draft.id}`,
       {
         method: 'PATCH',
@@ -94,6 +95,7 @@ export const draftReplyTool: ToolDefinition<Input, Output> = {
         }),
       }
     );
+    await assertOk(patchResponse, 'Graph patch reply draft');
 
     return {
       draftId: draft.id,
