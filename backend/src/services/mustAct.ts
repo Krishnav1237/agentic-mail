@@ -110,7 +110,7 @@ export const recomputeMustActForUser = async (userId: string) => {
         now(),
         now()
       FROM scored
-      ON CONFLICT (user_id, task_id)
+      ON CONFLICT (user_id, task_id) WHERE task_id IS NOT NULL
       DO UPDATE SET
         title = EXCLUDED.title,
         subject = EXCLUDED.subject,

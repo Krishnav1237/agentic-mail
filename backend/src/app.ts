@@ -20,6 +20,7 @@ import { waitlistRouter } from './routes/waitlist.js';
 import { billingRouter } from './routes/billing.js';
 import { mustActRouter } from './routes/mustAct.js';
 import { followupsRouter } from './routes/followups.js';
+import { adminRouter } from './routes/admin.js';
 import { isDomainError } from './errors/domain.js';
 
 export const createApp = () => {
@@ -156,6 +157,7 @@ export const createApp = () => {
   app.use('/followups', followupsRouter);
   app.use('/webhooks', webhooksRouter);
   app.use('/waitlist', waitlistRouter);
+  app.use('/admin', adminRouter);
 
   app.use(
     (

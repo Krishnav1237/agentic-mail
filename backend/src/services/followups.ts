@@ -198,7 +198,8 @@ export const refreshFollowupSchedulesForUser = async (userId: string) => {
       : policy.defaultDelayDays;
     const scheduledMs = Math.max(baseMs + delayDays * 24 * 60 * 60 * 1000, now + cooldownMs);
     const scheduledFor = new Date(scheduledMs).toISOString();
-    const inboundKey = (row.received_at ?? scheduledFor).slice(0, 19);
+    const inboundStr = row.received_at ? new Date(row.received_at).toISOString() : scheduledFor;
+    const inboundKey = inboundStr.slice(0, 19);
     const idempotencyKey = `${row.thread_id}:draft_followup:${row.email_id}:${inboundKey}`;
 
     const thread = await query<{ id: string }>(

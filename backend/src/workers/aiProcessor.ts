@@ -50,7 +50,7 @@ const enqueueAgentUsers = async (mode: 'active' | 'backfill' | 'all') => {
         name: 'run-user',
         data: { userId: row.id },
         opts: {
-          jobId: `run-user:${row.id}`,
+          jobId: `run-user-${row.id}`,
           attempts: 3,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,

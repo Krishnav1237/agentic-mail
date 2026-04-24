@@ -548,7 +548,7 @@ export const updateSubscriptionState = async (input: {
       status, current_period_start, current_period_end, cancel_at, cancelled_at,
       grace_until, created_at, updated_at
     ) VALUES ($1, $2, $3, 'stripe', $4, $5, $6, $7, $8, $9, $10, now(), now())
-    ON CONFLICT (provider_subscription_id)
+    ON CONFLICT (provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
     DO UPDATE SET
       user_id = EXCLUDED.user_id,
       billing_customer_id = EXCLUDED.billing_customer_id,
@@ -610,7 +610,7 @@ export const createOrUpdateInvoice = async (input: {
       user_id, subscription_id, provider, provider_invoice_id,
       amount_due_cents, amount_paid_cents, currency, status, paid_at, due_at, metadata, updated_at
     ) VALUES ($1, $2, 'stripe', $3, $4, $5, 'usd', $6, $7, $8, $9, now())
-    ON CONFLICT (provider_invoice_id)
+    ON CONFLICT (provider_invoice_id) WHERE provider_invoice_id IS NOT NULL
     DO UPDATE SET
       amount_due_cents = EXCLUDED.amount_due_cents,
       amount_paid_cents = EXCLUDED.amount_paid_cents,

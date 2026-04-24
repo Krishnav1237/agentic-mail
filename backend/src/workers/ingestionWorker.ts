@@ -50,7 +50,7 @@ const enqueueSyncUsers = async (mode: 'active' | 'backfill' | 'all') => {
         name: 'sync-user',
         data: { userId: row.id },
         opts: {
-          jobId: `sync-user:${row.id}`,
+          jobId: `sync-user-${row.id}`,
           attempts: 3,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,

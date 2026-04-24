@@ -23,7 +23,7 @@ const enqueueMustActRefresh = async () => {
         name: 'must-act-user',
         data: { userId: row.id },
         opts: {
-          jobId: `must-act:${row.id}`,
+          jobId: `must-act-${row.id}`,
           attempts: 2,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,
@@ -47,7 +47,7 @@ const enqueueFollowupRefresh = async () => {
         name: 'followup-refresh-user',
         data: { userId: row.id },
         opts: {
-          jobId: `followup-refresh:${row.id}`,
+          jobId: `followup-refresh-${row.id}`,
           attempts: 2,
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 200,
