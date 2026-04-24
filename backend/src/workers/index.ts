@@ -13,6 +13,16 @@ process.on('uncaughtException', (error) => {
 });
 
 const bootstrap = async () => {
+  // Clear old repeatable jobs to avoid stale workers
+  const oldIngestionRepeatable = await ingestionQueue.getRepeatableJobs();
+  for (const job of oldIngestionRepeatable) {
+    await ingestionQueue.removeRepeatableByKey(job.key);
+  }
+  const oldAgentRepeatable = await agentQueue.getRepeatableJobs();
+  for (const job of oldAgentRepeatable) {
+    await agentQueue.removeRepeatableByKey(job.key);
+  }
+
   startIngestionWorker();
   startAiWorker();
 

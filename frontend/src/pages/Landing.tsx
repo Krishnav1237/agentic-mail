@@ -149,7 +149,8 @@ const scrollToSection = (sectionId: string) => {
     // On desktop: scroll to the section top, letting CSS justify-center
     // naturally position the heading in the visual center of the viewport
     const buffer = 20;
-    const y = section.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
+    const y =
+      section.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   } else {
     // On mobile/tablet: target the first heading directly since sections
@@ -157,7 +158,8 @@ const scrollToSection = (sectionId: string) => {
     const firstContent = section.querySelector('h2, h3, .inline-flex');
     const target = firstContent || section;
     const buffer = 24;
-    const y = target.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
+    const y =
+      target.getBoundingClientRect().top + window.scrollY - navHeight - buffer;
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   }
 };
@@ -169,7 +171,9 @@ function PageRail({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`${pageRailClassName} ${className}`.trim()}>{children}</div>;
+  return (
+    <div className={`${pageRailClassName} ${className}`.trim()}>{children}</div>
+  );
 }
 
 function useActiveSection() {
@@ -229,11 +233,13 @@ function CenterNav({ activeSection }: { activeSection: string }) {
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               aria-current={isActive ? 'page' : undefined}
               data-active={isActive ? 'true' : 'false'}
-              className={`nav-link relative inline-flex h-8 shrink-0 items-center justify-center rounded-full border text-[8px] font-semibold uppercase tracking-[0.12em] transition-all duration-300 sm:h-9 sm:text-[9px] sm:tracking-[0.15em] md:h-11 md:text-[10px] md:tracking-[0.18em] ${isFirstOrLast ? 'px-4 md:px-8' : 'px-3 md:px-5'
-                } ${isActive
+              className={`nav-link relative inline-flex h-8 shrink-0 items-center justify-center rounded-full border text-[8px] font-semibold uppercase tracking-[0.12em] transition-all duration-300 sm:h-9 sm:text-[9px] sm:tracking-[0.15em] md:h-11 md:text-[10px] md:tracking-[0.18em] ${
+                isFirstOrLast ? 'px-4 md:px-8' : 'px-3 md:px-5'
+              } ${
+                isActive
                   ? 'border-transparent text-white'
                   : 'border-transparent text-white/68 hover:border-white/10 hover:bg-white/[0.06] hover:text-white/92'
-                }`}
+              }`}
             >
               {isActive && (
                 <motion.div
@@ -490,8 +496,8 @@ export default function LandingPage() {
 
     try {
       // Ensure the email has @gmail.com appended if it doesn't already
-      const fullEmail = email.toLowerCase().includes('@') 
-        ? email 
+      const fullEmail = email.toLowerCase().includes('@')
+        ? email
         : `${email}@gmail.com`;
 
       const response = await joinWaitlist(fullEmail);
@@ -542,10 +548,12 @@ export default function LandingPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5 }}
           className="absolute inset-x-0 top-0 -z-10 bg-black/5 backdrop-blur-xl transition-all duration-300"
-          style={{ 
+          style={{
             height: navHeight + 24,
-            maskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)'
+            maskImage:
+              'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, black 0%, black 80%, transparent 100%)',
           }}
         />
 
@@ -717,7 +725,10 @@ export default function LandingPage() {
               <h2 className="mt-4 max-w-[54rem] text-2xl font-light tracking-tight text-white sm:mt-6 sm:text-3xl md:text-5xl">
                 Reading email is easy. Keeping up is not.
               </h2>
-              <p className="mt-2 max-w-4xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
+              <p
+                className="mt-2 max-w-4xl text-base font-light leading-relaxed text-white/40 md:text-xl"
+                style={{ opacity: 1, transform: 'none' }}
+              >
                 The hard part is remembering what each message needs from you.
                 Deadlines, follow-ups, scheduling, requests, and key details get
                 buried across threads.
@@ -754,10 +765,11 @@ export default function LandingPage() {
               className="flex min-h-[calc(100svh-100px)] w-full flex-col justify-center"
             >
               <PageRail
-                className={`flex flex-col items-center justify-center gap-8 sm:gap-12 ${section.layout === 'reverse'
-                  ? 'md:flex-row-reverse'
-                  : 'md:flex-row'
-                  } md:gap-24`}
+                className={`flex flex-col items-center justify-center gap-8 sm:gap-12 ${
+                  section.layout === 'reverse'
+                    ? 'md:flex-row-reverse'
+                    : 'md:flex-row'
+                } md:gap-24`}
               >
                 <div className="w-full max-w-[44rem] flex-1">
                   <motion.div
@@ -791,10 +803,11 @@ export default function LandingPage() {
                 </div>
 
                 <div
-                  className={`flex w-full flex-1 justify-center ${section.layout === 'reverse'
-                    ? 'lg:justify-start'
-                    : 'lg:justify-end'
-                    }`}
+                  className={`flex w-full flex-1 justify-center ${
+                    section.layout === 'reverse'
+                      ? 'lg:justify-start'
+                      : 'lg:justify-end'
+                  }`}
                 >
                   <FadeInText
                     delay={0.2}
@@ -825,7 +838,10 @@ export default function LandingPage() {
                 <h3 className="max-w-[44rem] text-2xl font-light tracking-tight text-white sm:text-3xl md:text-5xl">
                   What it handles for you.
                 </h3>
-                <p className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
+                <p
+                  className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl"
+                  style={{ opacity: 1, transform: 'none' }}
+                >
                   It finds the work inside email, keeps it visible, and helps
                   you follow through without relying on memory.
                 </p>
@@ -860,9 +876,12 @@ export default function LandingPage() {
               <h2 className="mb-6 bg-gradient-to-b from-white via-white/[0.7] to-white/[0.3] bg-clip-text text-3xl font-light leading-snug tracking-tight text-transparent sm:mb-8 sm:text-4xl md:text-[70px] md:leading-[1.15]">
                 Ready to stop carrying every thread in your head?
               </h2>
-              <p className="mt-2 mb-12 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl" style={{ opacity: 1, transform: 'none' }}>
-                Join the waitlist for priority onboarding, early feedback access,
-                and first release invites.
+              <p
+                className="mt-2 mb-12 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl"
+                style={{ opacity: 1, transform: 'none' }}
+              >
+                Join the waitlist for priority onboarding, early feedback
+                access, and first release invites.
               </p>
 
               <AnimatePresence mode="wait">

@@ -142,7 +142,13 @@ html.light .bg-clip-text.text-transparent {
 html.light .gold-text-fix.bg-clip-text {
   filter: invert(1) hue-rotate(180deg);
   /* Extended Gold range (70%) with a quick charcoal fade at the bottom for contrast */
-  background-image: linear-gradient(to bottom, #B8860B 0%, #B8860B 70%, #7A5901 85%, #333333 100%) !important;
+  background-image: linear-gradient(
+    to bottom,
+    #b8860b 0%,
+    #b8860b 70%,
+    #7a5901 85%,
+    #333333 100%
+  ) !important;
 }
 
 /* Force non-gold header text to solid black (white source) in light mode */
@@ -206,15 +212,20 @@ html.light .nav-flare {
   display: none !important;
 }
 
-
 /* 6. Bubbly Nav Active Pill in Light Mode */
 html.light .nav-active-pill {
   /* When inverted: becomes a subtle grey gradient: rgba(0,0,0,0.12) -> rgba(0,0,0,0.02) */
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.02)
+  ) !important;
   /* When inverted: definitive black border */
   border-color: rgba(255, 255, 255, 0.35) !important;
   /* When inverted: black drop shadow + brilliant white top rim reflection */
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(0, 0, 0, 0.8) !important;
+  box-shadow:
+    0 8px 20px rgba(255, 255, 255, 0.15),
+    inset 0 1px 1px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* 7. Card Hover States in Light Mode (Calculated to "darken" for better contrast on white) */
@@ -227,7 +238,11 @@ html.light .hover\:bg-white\/\[0\.04\]:hover {
    We use white source which inverts to a solid black-alpha depth.
 */
 html.light .group:hover .bg-gradient-to-br.from-white\/\[0\.05\] {
-  background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent) !important;
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  ) !important;
 }
 
 html.light .group:hover .hover\:border-white\/\[0\.1\] {
@@ -237,5 +252,9 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* 8. Smooth Image Masking (Fixes Octagon/Box Artifacts) */
 .parallax-image-container {
   mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
-  -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    black 40%,
+    transparent 85%
+  );
 }

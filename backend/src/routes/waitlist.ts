@@ -17,10 +17,20 @@ export const waitlistRouter = Router();
 waitlistRouter.use(
   rateLimit({
     windowMs: 60_000,
-    max: 5,
+    max: 10, // Slightly higher for stats
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' },
+  })
+);
+
+waitlistRouter.get(
+  '/stats',
+  asyncRoute(async (_req, res) => {
+    const result = await db.query(
+      'SELECT COUNT(*)::int as total FROM waitlist'
+    );
+    return res.json({ success: true, total: result.rows[0]?.total ?? 0 });
   })
 );
 

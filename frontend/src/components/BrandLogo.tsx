@@ -35,7 +35,8 @@ const StaggeredText = ({
     <span className={className}>
       {chars.map((char, index) => {
         // RTL logic: last character appears first
-        const letterDelay = delay + (mode === 'rtl' ? (chars.length - 1 - index) : index) * stagger;
+        const letterDelay =
+          delay + (mode === 'rtl' ? chars.length - 1 - index : index) * stagger;
 
         return (
           <motion.span
@@ -79,7 +80,7 @@ export const BrandLogo = () => {
 
   const stagger = 0.05;
   const splitDelay = 0.6; // Icon starts splitting here
-  const textDelay = 1.1;  // Words start appearing
+  const textDelay = 1.1; // Words start appearing
 
   return (
     <div className="relative flex items-center justify-start overflow-visible">
@@ -131,7 +132,9 @@ export const BrandLogo = () => {
                         <motion.div
                           className="absolute inset-0 w-1/2 overflow-hidden"
                           animate={
-                            stage === 'animating' ? { x: -140, opacity: [1, 1, 1, 0] } : { x: 0 }
+                            stage === 'animating'
+                              ? { x: -140, opacity: [1, 1, 1, 0] }
+                              : { x: 0 }
                           }
                           transition={{
                             duration: 2.0,
@@ -145,7 +148,9 @@ export const BrandLogo = () => {
                         <motion.div
                           className="absolute inset-0 w-1/2 left-1/2 overflow-hidden"
                           animate={
-                            stage === 'animating' ? { x: 180, opacity: [1, 1, 1, 0] } : { x: 0 }
+                            stage === 'animating'
+                              ? { x: 180, opacity: [1, 1, 1, 0] }
+                              : { x: 0 }
                           }
                           transition={{
                             duration: 2.0,

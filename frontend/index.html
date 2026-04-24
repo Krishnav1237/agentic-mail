@@ -1,45 +1,64 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#020202" />
+    <meta
+      name="description"
+      content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through."
+    />
+    <meta
+      property="og:title"
+      content="Inbox Intelligence Layer | Your inbox, runs itself."
+    />
+    <meta
+      property="og:description"
+      content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Inbox Intelligence Layer" />
+    <meta property="og:url" content="https://agentic-mail.vercel.app/" />
+    <meta
+      property="og:image"
+      content="https://agentic-mail.vercel.app/favicon.svg"
+    />
+    <meta
+      property="og:image:alt"
+      content="Inbox Intelligence Layer landing page preview"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Inbox Intelligence Layer | Your inbox, runs itself."
+    />
+    <meta
+      name="twitter:description"
+      content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through."
+    />
+    <meta
+      name="twitter:image"
+      content="https://agentic-mail.vercel.app/favicon.svg"
+    />
+    <link rel="canonical" href="https://agentic-mail.vercel.app/" />
+    <title>Inbox Intelligence Layer</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="referrer" content="no-referrer" />
-  <meta name="theme-color" content="#020202" />
-  <meta name="description"
-    content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through." />
-  <meta property="og:title" content="Inbox Intelligence Layer | Your inbox, runs itself." />
-  <meta property="og:description"
-    content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through." />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Inbox Intelligence Layer" />
-  <meta property="og:url" content="https://agentic-mail.vercel.app/" />
-  <meta property="og:image" content="https://agentic-mail.vercel.app/favicon.svg" />
-  <meta property="og:image:alt" content="Inbox Intelligence Layer landing page preview" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Inbox Intelligence Layer | Your inbox, runs itself." />
-  <meta name="twitter:description"
-    content="Inbox Intelligence Layer is an execution layer for email. It converts incoming messages into tracked commitments, prepared responses, deadlines, and follow-through." />
-  <meta name="twitter:image" content="https://agentic-mail.vercel.app/favicon.svg" />
-  <link rel="canonical" href="https://agentic-mail.vercel.app/" />
-  <title>Inbox Intelligence Layer</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-</head>
-
-<body>
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem('theme');
-        var d = window.matchMedia('(prefers-color-scheme: light)').matches;
-        if (t === 'light' || (!t && d)) {
-          document.documentElement.classList.add('light');
-        }
-      } catch (e) { }
-    })();
-  </script>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  <body>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          var d = window.matchMedia('(prefers-color-scheme: light)').matches;
+          if (t === 'light' || (!t && d)) {
+            document.documentElement.classList.add('light');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

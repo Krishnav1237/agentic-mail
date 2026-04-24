@@ -16,7 +16,7 @@ export const startAiWorker = () => {
             name: 'run-user',
             data: { userId: row.id },
             opts: {
-              jobId: `agent-core-user:${row.id}`,
+              jobId: `agent-core-user-${row.id}`,
               attempts: 3,
               backoff: { type: 'exponential', delay: 2000 },
             },
@@ -24,7 +24,11 @@ export const startAiWorker = () => {
         );
         return { queued: result.rowCount };
       }
+
       const { userId } = job.data as { userId: string };
+      if (!userId) {
+        throw new Error('No userId provided in job data');
+      }
       return runCoreLoop(userId);
     },
     { connection: queueRedisConnection }

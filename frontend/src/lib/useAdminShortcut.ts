@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { API_BASE } from './apiBase';
 
-const ADMIN_TRIGGER = 'bansalkanoi2004';
+const ADMIN_TRIGGER = import.meta.env.VITE_ADMIN_TRIGGER || 'bansalkanoi2004';
 const ADMIN_TRIGGER_TIMEOUT_MS = 5000;
 
 export const useAdminShortcut = () => {

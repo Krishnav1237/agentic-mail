@@ -22,6 +22,9 @@ export const startIngestionWorker = () => {
       }
 
       const { userId } = job.data as { userId: string };
+      if (!userId) {
+        throw new Error('No userId provided in job data');
+      }
       return syncUserInbox(userId);
     },
     { connection: queueRedisConnection }
