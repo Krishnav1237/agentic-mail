@@ -37,9 +37,6 @@ const getSupabaseHeaders = (headers?: HeadersInit) => {
 const getFunctionUrl = (functionName: string) =>
   `${SUPABASE_URL}/functions/v1/${functionName}`;
 
-const getRestUrl = (tableName: string) =>
-  `${SUPABASE_URL}/rest/v1/${tableName}`;
-
 const ensureSupabaseConfig = () => {
   if (!SUPABASE_URL || !configuredSupabaseAnonKey) {
     throw new Error(
@@ -81,47 +78,45 @@ const extractErrorMessage = (
         .filter(Boolean)
         .join(' ');
 
+const requestWaitlistStats = async (
+  init: RequestInit
+): Promise<WaitlistStatsResponse> => {
+  const response = await fetch(getFunctionUrl('waitlist-signup'), init);
+  const payload = await parseFunctionResponse(response);
+
+  if (!response.ok) {
+    throw new Error(
+      extractErrorMessage(payload) || 'Supabase waitlist stats failed'
+    );
+  }
+
+  return payload as WaitlistStatsResponse;
+};
+
 export const getWaitlistStats = async (): Promise<WaitlistStatsResponse> => {
   ensureSupabaseConfig();
 
   try {
-    // Direct call to Supabase REST API to get count instead of Edge Function
-    const headers = getSupabaseHeaders({
-      'Prefer': 'count=exact',
-    });
-    // We only need the count, so limit=1 and select a small field
-    const response = await fetch(`${getRestUrl('waitlist')}?select=*&limit=1`, {
+    // Prefer GET because many deployments still have the older edge-function
+    // contract, and pushing this repo does not redeploy Supabase functions.
+    return await requestWaitlistStats({
       method: 'GET',
-      headers,
+      headers: getSupabaseHeaders(),
     });
-
-    if (!response.ok) {
-      throw new Error('Supabase waitlist stats request failed');
-    }
-
-    // The count is returned in the Content-Range header: e.g., "0-0/25"
-    const contentRange = response.headers.get('Content-Range');
-    let total = 0;
-    if (contentRange) {
-      const match = contentRange.match(/\/(\d+)$/);
-      if (match) {
-        total = parseInt(match[1], 10);
-      }
-    }
-
-    return { success: true, total };
-  } catch (error) {
-    console.error('Failed to fetch waitlist stats from Supabase:', error);
-    throw error;
+  } catch {
+    return requestWaitlistStats({
+      method: 'POST',
+      headers: getSupabaseHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ action: 'stats' }),
+    });
   }
 };
 
-export const joinWaitlist = async (
-  email: string
-): Promise<WaitlistJoinResponse> => {
+export const joinWaitlist = async (email: string) => {
   ensureSupabaseConfig();
 
-  // Try calling edge function to join
   const response = await fetch(getFunctionUrl('waitlist-signup'), {
     method: 'POST',
     headers: getSupabaseHeaders({
