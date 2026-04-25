@@ -20,27 +20,27 @@ import { BrandLogo } from '../components/BrandLogo';
 
 const launchProofCards = [
   {
-    label: 'Hidden deadlines',
-    title: 'Important dates get buried in busy threads.',
-    desc: 'Meeting times, due dates, and promised follow-ups are easy to miss inside long conversations.',
+    label: 'Missed opportunities',
+    title: 'Important emails get buried.',
+    desc: 'Recruiter messages, internship offers, and hard deadlines get lost under a mountain of daily spam.',
   },
   {
-    label: 'Scattered requests',
-    title: 'One inbox can create a lot of small work.',
-    desc: 'Replies, approvals, scheduling, and shared details end up spread across messages and memory.',
+    label: 'Hidden obligations',
+    title: 'Reading the email isn’t the work.',
+    desc: 'Crucial tasks and scheduling details stay hidden inside long personal and professional threads.',
   },
   {
-    label: 'Lost follow-through',
-    title: 'Reading the email does not finish the work.',
-    desc: 'Open loops disappear after the thread is read, then return later as stress or missed action.',
+    label: 'Lost follow-ups',
+    title: 'Forgetting who needs a reply.',
+    desc: 'Without reminders, keeping track of commitments and open loops becomes a huge mental burden.',
   },
 ] as const;
 
 const narrativeSections = [
   {
-    label: 'Dates and commitments',
-    title: 'It finds what matters, and when it matters.',
-    desc: 'Due dates, meeting times, and promised actions are pulled out of the thread before they get missed.',
+    label: 'Step 1: Read',
+    title: 'Reads incoming emails continuously.',
+    desc: 'The AI securely scans your inbox in the background, identifying newsletters, spam, and crucial messages from real people.',
     src: '/assets/syllabus.png',
     lightSrc: '/assets/syllabus-light.png',
     glowColor: 'bg-blue-500/20',
@@ -48,9 +48,9 @@ const narrativeSections = [
     layout: 'default' as const,
   },
   {
-    label: 'Clear next steps',
-    title: 'It turns messages into actions you can handle.',
-    desc: 'Requests, approvals, and follow-ups become structured next steps instead of staying buried in email.',
+    label: 'Step 2: Prioritize',
+    title: 'Identifies what is important.',
+    desc: 'It surfaces recruiter messages, extracts deadlines, and pulls out hidden obligations from long conversation threads.',
     src: '/assets/drafts.png',
     lightSrc: '/assets/drafts-light.png',
     glowColor: 'bg-purple-500/20',
@@ -58,9 +58,9 @@ const narrativeSections = [
     layout: 'reverse' as const,
   },
   {
-    label: 'Open work stays visible',
-    title: 'It keeps unfinished work in view.',
-    desc: 'You can see what is pending, what needs a reply, and what is still waiting on someone else.',
+    label: 'Step 3: Execute',
+    title: 'Takes action and drafts replies.',
+    desc: 'It auto-drafts context-aware replies and cleans up spam automatically. If authorized, it can even send replies on your behalf.',
     src: '/assets/inbox.png',
     lightSrc: '/assets/inbox-light.png',
     glowColor: 'bg-rose-500/20',
@@ -68,9 +68,9 @@ const narrativeSections = [
     layout: 'default' as const,
   },
   {
-    label: 'Less inbox overhead',
-    title: 'It helps you move faster with less effort.',
-    desc: 'You spend less time rereading threads and less energy trying to remember what still needs attention.',
+    label: 'Step 4: Manage',
+    title: 'Tracks reminders and follow-ups.',
+    desc: 'Stay on top of your commitments. The AI tracks who hasn\'t replied and reminds you of upcoming deadlines and meetings.',
     src: '/assets/network.png',
     lightSrc: '/assets/network-light.png',
     glowColor: 'bg-emerald-500/20',
@@ -81,36 +81,36 @@ const narrativeSections = [
 
 const featureCards = [
   {
-    title: 'Commitments found',
-    desc: 'Pulls out what each message is asking for.',
+    title: 'Auto-draft replies',
+    desc: 'Generates context-aware responses instantly.',
   },
   {
-    title: 'Deadlines surfaced',
-    desc: 'Highlights dates, due times, and scheduling details.',
+    title: 'Priority intelligence',
+    desc: 'Surfaces recruiter and urgent opportunity emails.',
   },
   {
-    title: 'Replies prepared',
-    desc: 'Drafts responses with the right context.',
+    title: 'Spam cleanup',
+    desc: 'Automatically archives clutter and noise.',
   },
   {
-    title: 'Follow-ups tracked',
-    desc: 'Keeps open loops from getting lost.',
+    title: 'Deadline reminders',
+    desc: 'Extracts dates and notifies you before they pass.',
   },
   {
-    title: 'Requests organized',
-    desc: 'Turns scattered asks into clear next steps.',
+    title: 'Follow-up tracking',
+    desc: 'Monitors threads waiting on a reply.',
   },
   {
-    title: 'Status made visible',
-    desc: 'Shows what is pending, waiting, active, or done.',
+    title: 'Action extraction',
+    desc: 'Pulls out specific requests and obligations.',
   },
   {
-    title: 'Less to remember',
-    desc: 'Reduces the mental load of staying on top of email.',
+    title: 'Permission-controlled',
+    desc: 'You decide what the AI is allowed to send.',
   },
   {
-    title: 'You stay in control',
-    desc: 'Important actions still require your approval.',
+    title: 'Secure processing',
+    desc: 'Sensitive information is encrypted and masked.',
   },
 ] as const;
 
@@ -647,7 +647,7 @@ export default function LandingPage() {
                 style={{ opacity: 1, transform: 'none' }}
                 className="mt-2 max-w-2xl mx-auto text-center text-base font-light leading-relaxed text-white/40 md:text-xl"
               >
-                IIL turns emails into clear tasks, replies, and follow-ups.
+                Automates your entire mail pipeline. It reads, drafts, deletes, and prioritizes emails for you while you sleep.
               </motion.p>
 
               <motion.div
@@ -723,15 +723,13 @@ export default function LandingPage() {
                 </span>
               </div>
               <h2 className="mt-4 max-w-[54rem] text-2xl font-light tracking-tight text-white sm:mt-6 sm:text-3xl md:text-5xl">
-                Reading email is easy. Keeping up is not.
+                People don't struggle reading emails.
               </h2>
               <p
                 className="mt-2 max-w-4xl text-base font-light leading-relaxed text-white/40 md:text-xl"
                 style={{ opacity: 1, transform: 'none' }}
               >
-                The hard part is remembering what each message needs from you.
-                Deadlines, follow-ups, scheduling, requests, and key details get
-                buried across threads.
+                They struggle managing the work emails create. Deadlines, requests, and follow-ups turn your inbox into a chaotic to-do list.
               </p>
             </FadeInText>
 
@@ -842,8 +840,7 @@ export default function LandingPage() {
                   className="mt-2 max-w-2xl text-base font-light leading-relaxed text-white/40 md:text-xl"
                   style={{ opacity: 1, transform: 'none' }}
                 >
-                  It finds the work inside email, keeps it visible, and helps
-                  you follow through without relying on memory.
+                  You have full control over what the AI can access. All sensitive information is securely encrypted and masked.
                 </p>
               </div>
             </FadeInText>
