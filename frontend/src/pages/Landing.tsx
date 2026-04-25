@@ -167,12 +167,14 @@ const scrollToSection = (sectionId: string) => {
 function PageRail({
   children,
   className = '',
+  style,
 }: {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
-    <div className={`${pageRailClassName} ${className}`.trim()}>{children}</div>
+    <div className={`${pageRailClassName} ${className}`.trim()} style={style}>{children}</div>
   );
 }
 
