@@ -1,659 +1,107 @@
-# Testing Guide
-
-This is the production validation checklist for Inbox Intelligence Layer. Use it before onboarding real users, before enabling higher autopilot levels, and before every major release.
-
-## How To Use This Document
-
-Test in this order:
-
-1. Core infrastructure and auth
-2. Provider integrations
-3. Product workflows
-4. Agent autonomy and safety
-5. Recovery and rollback
-6. Security and abuse cases
-7. Performance, scale, and cost
-
-Run tests in both:
-
-- Gmail-connected accounts
-- Outlook-connected accounts
-
-Where provider behavior differs, test both explicitly.
-
-## Test Environments
-
-Use at least three environments:
-
-- local development
-- staging with real provider credentials
-- production-like environment with realistic data volume
-
-Use at least three mailbox personas:
-
-- heavy academic inbox
-- internship and recruiter-heavy inbox
-- noisy promotional inbox
-
-## 1. Infrastructure and Startup
-
-### What to test
-
-- backend boots with valid env
-- worker boots with valid env
-- frontend boots and talks to backend
-- Postgres connection succeeds
-- Redis connection succeeds
-- migrations apply cleanly in order
-- production builds succeed
-
-### Expected result
-
-- no boot-time crashes
-- no missing env surprises
-- worker connects to BullMQ and Redis cleanly
-- dashboard loads without API errors
-
-## 2. Authentication and Session Flows
-
-### Gmail OAuth
-
-Test:
-
-- connect Gmail account
-- reject consent flow
-- reconnect existing Gmail user
-- token refresh path
-- session survives page refresh
-- logout clears session
-
-Verify:
-
-- user record updated correctly
-- tokens stored and encrypted
-- `/auth/session` reflects login state
-- landing page and dashboard redirect correctly
-
-### Outlook OAuth
-
-Test:
-
-- connect Outlook account
-- reconnect existing Outlook user
-- Graph subscription creation if webhook URL is configured
-- logout and reconnect
-
-Verify:
-
-- Graph subscription is persisted
-- session cookie is set
-- redirect lands on `/auth/callback`
-
-### Auth edge cases
-
-Test:
-
-- invalid OAuth state
-- expired cookie
-- expired bearer token
-- issuer/audience mismatch
-- unauthenticated access to protected routes
-
-Expected result:
-
-- graceful failure
-- no silent partial login state
-- no protected data leakage
-
-## 3. Inbox Sync and Ingestion
-
-### What to test
-
-- `POST /emails/sync` queues work
-- worker ingests recent emails
-- duplicate syncs do not create duplicate emails
-- noisy inboxes still process
-- large inbox batches respect limits
-- provider API failures trigger retries
-
-### Verify in depth
-
-- `emails` table contents
-- sender metadata correctness
-- thread IDs are stored consistently
-- status transitions from pending to processed
-- sync latency under repeated runs
-
-### Failure scenarios
-
-- provider rate limiting
-- revoked provider token
-- bad message payload from provider
-- worker restart mid-sync
-
-Expected result:
-
-- retries happen
-- failures are logged
-- no permanent duplicate spam in the database
-
-## 4. Email Intelligence and Extraction
-
-### Classification
-
-Test these classes thoroughly:
-
-- assignment
-- internship
-- event
-- academic
-- personal
-- spam
-- other
-
-### Extraction
-
-Verify:
-
-- deadlines extracted accurately
-- tasks extracted accurately
-- links preserved
-- relevant entities captured
-- malformed or low-signal emails do not generate junk tasks
-
-### Prompt robustness cases
-
-Test:
-
-- forwarded emails
-- reply chains
-- newsletters
-- professor emails with vague dates
-- recruiter outreach with scheduling intent
-- emails with no deadline but clear action
-- emails with multiple tasks
-
-### Expected result
-
-- structured JSON remains valid
-- retries happen on invalid model outputs
-- extraction errors do not crash ingestion
-
-## 5. Task System and Dashboard Integrity
-
-### Task generation
-
-Test:
-
-- one email creates one task
-- one email creates multiple tasks
-- due dates map correctly
-- priority scores are populated
-- category is correct
-
-### Task actions
-
-Test:
-
-- mark task completed
-- snooze task
-- create calendar event from task
-- direct task updates reflect immediately in UI
-
-### Dashboard
-
-Verify:
-
-- `criticalToday` is correct
-- `upcomingDeadlines` is correct
-- `opportunities` is correct
-- `lowPriority` is correct
-- `groupedActions`, `workflowSummaries`, and `impact` are populated sensibly
-
-### Pagination and filters
-
-Test:
-
-- large task counts
-- high offset values
-- search text
-- category filters
-- due-date filters
-- sort order stability
-
-Expected result:
-
-- counts remain correct
-- filters are consistent with server state
-- no broken pagination when data changes
-
-## 6. Inbox UI and Email Operations
-
-### Inbox list
-
-Test:
-
-- pagination
-- classification filters
-- search
-- rendering with long subjects and senders
-- empty state behavior
-
-### Direct actions
-
-Test:
-
-- mark important
-- draft reply
-- snooze from related task
-- add to calendar where context exists
-
-### Provider-specific behavior
-
-Gmail:
-
-- labels update correctly
-- archive removes from inbox
-- draft appears in Gmail drafts
-
-Outlook:
-
-- importance/category changes apply
-- folder movement behaves correctly
-- draft exists in Outlook mailbox
-
-## 7. Agent Planning and Autonomy
-
-### State-aware skip behavior
-
-This needs careful validation.
-
-Test:
-
-- same semantic inbox state twice
-- same inbox with changed timestamps only
-- same inbox with reordered thread messages
-- changed goals
-- changed intent
-- changed strategist output
-- changed recent actions
-
-Verify:
-
-- unchanged semantic state skips heavy planning
-- semantic changes trigger replanning
-- normalized threads hash stably
-
-### Fast planner
-
-Test rule modules independently:
-
-- recruiter rules
-- scheduling rules
-- cleanup rules
-
-Verify:
-
-- deterministic outputs
-- correct workflow labels
-- no cross-rule dependency bugs
-
-### Heavy planner fallback
-
-Test:
-
-- no fast-plan output
-- partial fast-plan output
-- low remaining loop budget
-
-Expected result:
-
-- heavy planner runs only when needed
-- low budget forces fast-planner-only path
-
-## 8. Preview, Approval, and Workflow UX
-
-### Preview generation
-
-Test:
-
-- preview created for each suggested step
-- workflow preview summary created
-- preview includes risk and estimated time saved
-
-### Approval actions
-
-Test:
-
-- approve one action
-- modify one action
-- cancel one action
-- approve all actions in a workflow
-
-Verify:
-
-- approved action executes once
-- modified payload is what executes
-- cancelled action never executes
-- workflow ordering is preserved
-
-### UI expectations
-
-Test:
-
-- approval queue renders pending previews
-- grouped workflow cards feel coherent
-- after approval, feed reflects execution quickly
-
-## 9. Execution, Idempotency, and Dedupe
-
-### Dedupe
-
-Test:
-
-- same step produced by fast and heavy planners
-- same step produced on rapid consecutive runs
-- same target with differently ordered input fields
-
-Verify:
-
-- only one persisted action remains
-- highest-confidence action wins
-- ties keep earliest order
-
-### Idempotency
-
-Test:
-
-- worker restart during execution
-- retry after network timeout
-- repeated approval click
-
-Expected result:
-
-- no duplicate side effects
-- same execution key reused
-- action status converges correctly
-
-## 10. Tool-by-Tool Validation
-
-### `create_task`
-
-Test:
-
-- valid task creation
-- duplicate avoidance
-- undo path
-
-### `create_calendar_event`
-
-Test:
-
-- Gmail calendar event creation
-- Outlook calendar event creation
-- undo path
-
-### `draft_reply`
-
-Test:
-
-- draft generation quality
-- provider draft creation
-- undo path
-
-### `send_reply`
-
-Test:
-
-- never auto-executes
-- requires approval
-- risky outcome logging exists
-
-### `snooze`
-
-Test:
-
-- task snooze
-- notification updates
-- undo path
-
-### `mark_important`
-
-Test:
-
-- Gmail important/starred handling
-- Outlook importance reset on undo
-
-### `archive_email`
-
-Test:
-
-- Gmail archive
-- Outlook move to archive
-- undo returns to inbox
-
-### `delete_email`
-
-Test:
-
-- approval required
-- Gmail trash
-- Outlook move to deleted items
-- undo path
-- risky outcome signal
-
-### `move_to_folder`
-
-Test:
-
-- allowlisted destination only
-- Outlook folder resolution
-- undo behavior
-
-### `label_email`
-
-Test:
-
-- allowed labels only
-- Gmail label add/remove
-- Outlook category add/remove
-
-## 11. Feedback, Policy, and Learning
-
-### Feedback system
-
-Test:
-
-- approve
-- reject
-- always_allow
-- modify
-- cancel
-
-Verify:
-
-- feedback is stored
-- confidence changes over time
-- workflow and tool policy updates are reflected
-- `always_allow` persists across future similar actions
-
-### Contextual learning
-
-Test:
-
-- repeated approvals improve action confidence
-- repeated rejections lower confidence
-- stale behavior decays toward neutral
-
-## 12. Memory and Reflection
-
-### Reflection
-
-Test:
-
-- successful execution reflection
-- failed execution reflection
-- partial workflow reflection
-
-Verify:
-
-- reflection records exist
-- suggestions are reasonable
-- future planning changes after repeated outcomes
-
-### Memory optimization
-
-Test:
-
-- old episodic memory summarization
-- active workflow markers remain intact
-- recent signals are preserved
-- always-allow policy survives optimization
-
-## 13. Cost Tracking and Observability
-
-### LLM usage events
-
-Test:
-
-- classification call logs tokens
-- extraction call logs tokens
-- planning call logs tokens
-- reflection call logs tokens
-- strategist call logs tokens
-
-Verify:
-
-- rows appear in `llm_usage_events`
-- provider/model are correct
-- latency and token counts are plausible
-
-### Aggregates
-
-Test:
-
-- daily per-user cost aggregation
-- per-workflow aggregation
-- cost per action
-- cost per successful action
-
-Verify:
-
-- Redis and Postgres aggregates stay in sync enough for reads
-- no negative or impossible cost values
-
-## 14. Security and Abuse Testing
-
-### Input validation
-
-Test all write endpoints with:
-
-- wrong types
-- missing required fields
-- oversized strings
-- invalid enums
-- malicious nested payloads
-
-### Authorization
-
-Test:
-
-- user A trying to access user B data
-- invalid action ID on approve/undo
-- invalid workflow ID on approve-all/rollback
-
-### Rate limits
-
-Test:
-
-- burst auth attempts
-- burst sync requests
-- burst webhook traffic
-
-### Expected result
-
-- safe rejection
-- no cross-user leakage
-- no stack trace leakage
-
-## 15. Performance and Scale
-
-### Data scale tests
-
-Test with:
-
-- 10k emails
-- 50k emails
-- 100k+ tasks and actions in staging if possible
-
-Watch:
-
-- `/emails` pagination latency
-- `/tasks` pagination latency
-- `/agent/actions` latency
-- dashboard cache hit rate
-- queue backlog growth
-
-### Agent efficiency tests
-
-Test:
-
-- repeated loop runs against mostly unchanged data
-- large noisy inboxes
-- recruiter-heavy inboxes
-
-Expected result:
-
-- skip rate rises on unchanged state
-- heavy planner usage remains controlled
-- cost per action stays reasonable
-
-## 16. UX Quality and Product Trust
-
-This product is not only about correctness. It has to feel trustworthy.
-
-Test:
-
-- landing page clarity
-- dashboard clarity with real data
-- agent page explanation of what happened
-- preview wording
-- approval button confidence
-- visibility of undo/rollback
-- empty states
-- loading states
-- error states
-
-Ask during testing:
-
-- does the user understand what the agent did?
-- does the user understand why it did it?
-- does the user know what can be undone?
-- does the UI feel stable when the dataset grows?
-
-## 17. Release Gate
-
-Before shipping to real users, do not skip these:
-
-1. Gmail OAuth end-to-end
-2. Outlook OAuth end-to-end
-3. Inbox sync and extraction on real mailboxes
-4. Preview and approve-all workflow tests
-5. High-risk action gating for `delete_email` and `send_reply`
-6. Undo and rollback tests
-7. State-aware skip validation
-8. Cost aggregate validation
-9. Security negative tests
-10. Full frontend and backend production builds
-
-## Suggested Test Artifacts
-
-Keep:
-
-- screenshots of each core page
-- sample inbox fixtures
-- provider-specific test accounts
-- query results for `agent_actions`, `agent_plans`, `agent_reflections`, `llm_usage_events`
-- logs from failure drills
-
-If you want a single source of truth for ongoing QA, this is the document to operationalize into a release checklist or test management tool.
+# Testing Guide & Quality Assurance Specification
+*Inbox Intelligence Layer (IIL) Backend — Testing Reference*
+
+---
+
+> **Implementation Baseline**: Backend Phases 1–4 and the validation operations infrastructure are implemented and structurally verified through automated tests. Real Google OAuth, live Gmail synchronization, real-provider extraction quality, manual forwarding feasibility, user demand, willingness to pay, and vertical selection still require owner-led validation. Phase 5–7 remain deferred.
+
+---
+
+## 1. Automated Test Suite Inventory & Commands
+
+Execute the full verification gate from `backend/`:
+
+```bash
+cd backend
+
+# 1. TypeScript compilation build check
+npm run build
+
+# 2. Unit & security gate tests
+npx tsx src/test/security_gate_phase1_2.ts
+npx tsx src/test/phase3_ingestion.test.ts
+npx tsx src/test/phase4_extraction.test.ts
+
+# 3. Full integration test gate (12 suites against real PostgreSQL 16 & Redis 7)
+npm run test:integration
+
+# 4. Structural & safety regression benchmark (20 synthetic fixtures)
+npm run validation:regression
+
+# 5. Extraction quality benchmark (Requires live provider & external held-out corpus)
+npm run validation:quality
+```
+
+---
+
+## 2. Benchmark Suite Definitions
+
+### 2.1 Structural & Safety Regression Benchmark (`npm run validation:regression`)
+- **Script**: `cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true tsx src/test/validation.regression.ts`
+- **Purpose**: Evaluates system pipeline mechanics, schema bounds, candidate limits, entity key generation (`materialized_entity_key`), privacy compliance (no PII in scoring reasons), and adversarial prompt-injection safety boundaries across 20 synthetic fixtures (`SyntheticTestAiProvider`).
+- **Safety Metric**: Measures `adversarial safety-boundary pass rate` (asserting 0 Approvals, 0 Executions, and 0 side effects on malicious input).
+- **Scope Note**: Does NOT evaluate or claim real LLM extraction accuracy.
+
+### 2.2 Extraction Quality Benchmark (`npm run validation:quality`)
+- **Script**: `tsx src/test/validation.quality.ts`
+- **Prerequisite Boundary**: Requires an external gitignored path via `VALIDATION_HELDOUT_CORPUS_PATH` and a live AI provider key (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`, or `GROQ_API_KEY`).
+- **Prerequisite Check Result (`QUALITY_BENCHMARK_NOT_RUN`)**: When prerequisites are missing or when the path points inside a tracked git repository directory, the script outputs `QUALITY_BENCHMARK_NOT_RUN` with exit code `0`. This indicates real extraction quality is unmeasured and prevents score fabrication.
+- **Authoritative Thresholds (v1)**:
+  - Action precision $\ge 85\%$ ($0.85$)
+  - Opportunity precision $\ge 80\%$ ($0.80$)
+  - Deadline precision $\ge 95\%$ ($0.95$)
+  - Critical email recall $\ge 95\%$ ($0.95$)
+  - Semantic duplicate rate $\le 2\%$ ($0.02$)
+  - Extraction failure rate $< 5\%$ ($0.05$)
+
+---
+
+## 3. Integration Test Gate Suite Breakdown (`npm run test:integration`)
+
+The integration runner ([`backend/src/test/integration/run.ts`](../backend/src/test/integration/run.ts)) executes 12 automated suites against real PostgreSQL 16 and Redis 7:
+
+1. **[Suite 1] Database Migrations & Schema Introspection**:
+   - Clean application of migrations 001–007.
+   - Model A derived ownership introspection on `email_intelligence` (`user_id` column removed, `email_id FK` intact).
+   - Introspection of active partial unique indexes (`idx_sync_runs_active_user`, `idx_extraction_runs_active_email`).
+   - Immutable `audit_events` trigger enforcement (rejecting `UPDATE` and `DELETE`).
+   - Upgrade path test from migration 004 $\rightarrow$ 005.
+   - **Sub-suite 1.6**: Upgrade path test from migration 006 $\rightarrow$ 007 with historical row data retention, raw score conversion (`0.75`), `normalized_score=null`, `JSONB` array preservation, unclamped insertion (>1.0 and <0.0), and DDL idempotency.
+2. **[Suite 2] Real Redis Lua Lock & Atomic State Operations**:
+   - Atomic OAuth state consumption via `GETDEL`.
+   - Lock acquisition, contention enforcement, Lua compare-and-DEL release, and compare-and-PEXPIRE renewal.
+3. **[Suite 3] Model A Derived Ownership & Cross-Tenant Isolation**:
+   - Derived ownership access via `emails.user_id` JOIN.
+   - Cross-tenant isolation verification (User B gets 0 rows for User A email).
+   - `ON DELETE CASCADE` verification when parent email is deleted.
+4. **[Suite 4] Materialized Entity Key Redesign & Reprocessing Protection**:
+   - Separation of `extraction_candidate_key` vs `materialized_entity_key`.
+   - Unicode (NFC) and whitespace normalization.
+   - Idempotent reprocessing preserving user completed states without entity duplication.
+5. **[Suite 5] Active Synchronization & Database Partial Index Concurrency**:
+   - Database partial unique index preventing duplicate active sync run for same user.
+   - BullMQ worker lock contention and job skipping.
+6. **[Suite 6] Crash-Safe History Cursor Progression**:
+   - Simulated crash during history pagination keeping cursor unchanged.
+   - Successful sync retry advancing cursor safely as a string (`"2000"`).
+7. **[Suite 7] Complete Phase 1–4 HTTP Route Coverage & HTML Policy**:
+   - Endpoint coverage across all 12 core HTTP routes (`/health/*`, `/auth/*`, `/emails/*`, `/sync/*`).
+   - HTML safety policy verification: plain text body returned, raw HTML not exposed in API responses.
+8. **[Suite 8] Expanded Prompt-Injection Resistance & Safety Boundary**:
+   - Prompt-injection resistance across 6 attack surfaces.
+   - Malicious flooded candidate rejection with `EXTRACTION_OUTPUT_INVALID`.
+9. **[Suite 9] Expanded AI Request Timeout Enforcement & AbortSignal Teardown**:
+   - `AbortSignal` propagation, 300ms timeout enforcement, terminal `extraction_runs` status recording, and absence of `llm_usage_events` records for failed/fallback runs.
+10. **[Suite 10] Error Sanitization & Token Leak Prevention**:
+    - Mapping dirty error payloads to bounded `ErrorCode` strings via `toSafeCode()`.
+11. **[Suite 11] Redis-Backed Rate Limiting & Spoofing Defense**:
+    - Rate limit header verification (`X-RateLimit-*`), route key isolation (`auth` vs `email_action`), and spoofed `X-Forwarded-For` header defense (`TRUST_PROXY=0`).
+12. **[Suite 12] Validation Program Integrity Tests**:
+    - Validation schema introspection (10 validation tables present).
+    - Deny-by-default validation token auth matrix (503 unconfigured, 401 missing, 403 invalid, 200/next valid).
+    - AI fallback safety contract matrix (`resolveAnalysisPath` returning `unavailable`, `deterministic_fallback`, `configured_provider`, or `injected_provider`).
+    - Cohort & participant CRUD, interview note storage rules, and email label ownership safety.
+    - Metrics computation engine and Go/No-Go decision engine with segmented `MinimumSampleSize` criteria.
+    - Score modelling verification (`raw_score` NUMERIC unclamped, `normalized_score=null`, DB persistence of >1.0 and <0.0).
+    - Privacy controls verification (scoring reasons contain signal codes only).
+    - Production safety rule: rejection of `EMAIL_SCORING_MODE=active` in `production`.

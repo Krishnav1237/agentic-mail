@@ -1,239 +1,65 @@
-# Security
-
-This document describes the security posture of Inbox Intelligence Layer and the operational safeguards expected in production.
-
-## Security Goals
-
-- Protect mailbox and calendar data
-- Prevent unauthorized account access
-- Prevent unsafe autonomous actions
-- Make all agent activity traceable
-- Limit blast radius when components fail
-
-## Implemented Controls
-
-## Authentication and Session Management
-
-Implemented:
-
-- JWT signing with `AUTH_JWT_SECRET`
-- issuer validation via `AUTH_JWT_ISSUER`
-- audience validation via `AUTH_JWT_AUDIENCE`
-- HttpOnly auth cookie support
-- bearer token support for compatibility
-- short-lived OAuth state cookies
-
-Relevant files:
-
-- `backend/src/routes/auth.ts`
-- `backend/src/middleware/auth.ts`
-
-Recommended production settings:
-
-- use HTTPS only
-- keep `secure` cookies enabled in production
-- rotate JWT secrets with a planned cutover
-- avoid exposing bearer tokens in browser-visible storage for new clients
-
-## OAuth and Provider Tokens
-
-Implemented:
-
-- Google OAuth
-- Microsoft OAuth
-- encrypted token storage at rest using `TOKEN_ENC_KEY`
-- provider token refresh support
-- session establishment after successful OAuth
-
-Operational guidance:
-
-- store OAuth secrets in a real secret manager
-- limit redirect URIs to known domains
-- keep Google and Azure app permissions minimal
-- review granted scopes quarterly
-
-## API Hardening
-
-Implemented:
-
-- Zod validation on public request bodies and query strings
-- Helmet middleware
-- `x-powered-by` disabled
-- `no-referrer` policy
-- route-level and global rate limiting
-- cookie parsing with explicit auth handling
-
-Relevant files:
-
-- `backend/src/app.ts`
-- `backend/src/middleware/validate.ts`
-
-## Autonomous Action Safety
-
-The agent is autonomous, but not unconstrained.
-
-Implemented:
-
-- tool-level risk classification
-- approval requirements for risky tools
-- never auto-send guarded email actions
-- action previews before user-approved execution
-- workflow-level preview approval
-- idempotent action records
-- rollback and undo support where possible
-- action and decision trace persistence
-
-Relevant files:
-
-- `backend/src/agent/executor.ts`
-- `backend/src/agent/preview.ts`
-- `backend/src/agent/recovery.ts`
-- `backend/src/agent/decisionTrace.ts`
-- `backend/src/tools/types.ts`
-
-## Tool Risk Model
-
-Current high-level posture:
-
-- low risk: safe organizational actions such as labeling and archiving
-- medium risk: mailbox movement and similar structural changes
-- high risk: destructive or irreversible actions
-
-Examples:
-
-- `label_email` - low risk
-- `archive_email` - low risk
-- `move_to_folder` - medium risk
-- `delete_email` - high risk, never auto-executed
-- `send_reply` - human approval required
-
-## Data Protection
-
-Sensitive data in this product includes:
-
-- email content and metadata
-- task content
-- calendar details
-- OAuth access tokens
-- user behavior and feedback signals
-
-Current protections:
-
-- provider tokens encrypted at rest
-- scoped provider access
-- auth-protected product endpoints
-- database-backed auditability of actions and reflections
-
-Recommended additions for a production deployment:
-
-- database encryption at rest
-- encrypted backups
-- row-level audit export pipeline
-- environment-specific secret rotation policy
-
-## Traceability and Auditability
-
-Implemented stores:
-
-- `agent_actions`
-- `agent_logs`
-- `agent_reflections`
-- decision trace records
-- `llm_usage_events`
-- daily cost aggregates
-
-This gives the product a concrete audit trail from:
-
-```text
-input -> reasoning -> decision -> preview/approval -> execution -> result -> reflection
-```
-
-## State-Aware Safety
-
-The system avoids unnecessary replanning and excess AI usage by hashing normalized, decision-relevant state.
-
-Benefits:
-
-- lower cost
-- reduced accidental thrash
-- more stable automation behavior
-
-Relevant file:
-
-- `backend/src/agent/stateManager.ts`
-
-## Memory Safety
-
-Memory can influence future decisions, so it is treated carefully.
-
-Implemented safeguards:
-
-- active patterns are not compressed away
-- `always_allow` rules are preserved
-- stale signals decay toward neutral
-- only inactive episodic memory is summarized
-
-Relevant file:
-
-- `backend/src/memory/optimizer.ts`
-
-## Cost and Abuse Monitoring
-
-Implemented:
-
-- token usage tracking
-- request cost estimation
-- daily cost aggregates
-- workflow-level cost visibility
-
-Relevant file:
-
-- `backend/src/observability/costTracker.ts`
-
-Why this matters:
-
-- helps detect runaway loops
-- helps detect prompt or planner regressions
-- supports per-user and per-workflow spend analysis
-
-## Security Headers and Disclosure
-
-Implemented:
-
-- Helmet security headers
-- `/.well-known/security.txt`
-
-Relevant file:
-
-- `backend/src/app.ts`
-
-## Production Security Checklist
-
-Before launch:
-
-1. Use managed secrets, not plaintext env files on shared infrastructure
-2. Enforce HTTPS and HSTS at the edge
-3. Restrict CORS to production domains only
-4. Restrict OAuth redirect URIs to exact trusted URLs
-5. Use separate Google/Azure apps for staging and production
-6. Rotate `AUTH_JWT_SECRET` and provider credentials on a schedule
-7. Protect Postgres and Redis with network-level isolation
-8. Enable centralized log aggregation with access controls
-9. Monitor auth failures, preview cancellations, undo frequency, and rate-limit spikes
-10. Keep `delete_email` and `send_reply` human-gated until live behavior is proven
-
-## What To Pen-Test
-
-High-value security test areas:
-
-- session fixation and cookie handling
-- bearer vs cookie auth precedence
-- OAuth state validation
-- rate-limit bypass attempts
-- validation bypass attempts on all write endpoints
-- replay of preview approval requests
-- duplicate action creation under concurrent plan execution
-- unauthorized rollback/undo attempts
-- mailbox tool abuse through crafted inputs
-
-For full product validation coverage, use `docs/TESTING.md`.
+# Security Safeguards & Risk Controls
+*Inbox Intelligence Layer (IIL) Backend — Security Reference*
+
+---
+
+> **Security Baseline**: Backend Phases 1–4 and the validation operations infrastructure are implemented and structurally verified through automated tests. Real Google OAuth, live Gmail synchronization, real-provider extraction quality, manual forwarding feasibility, user demand, willingness to pay, and vertical selection still require owner-led validation. Phase 5–7 remain deferred.
+
+---
+
+## 1. Verified Security Controls
+
+### 1.1 Authentication & Session Security
+- **JWT Verification**: Session tokens use HMAC-SHA256 (`HS256`) signed with `AUTH_JWT_SECRET` (min 32 chars). Verification enforces explicit algorithm validation, `iss` (`AUTH_JWT_ISSUER`), and `aud` (`AUTH_JWT_AUDIENCE`).
+- **Cookie Security**: Auth cookies (`auth_token`) use `HttpOnly`, `SameSite=lax` (or `SameSite=none` in production HTTPS), and `path='/'`.
+- **Conflicting Auth Rejection**: Presenting BOTH session cookie AND Bearer authorization headers results in immediate rejection with HTTP `401 Unauthorized` (`AUTH_CONFLICT`).
+- **CSRF Double-Submit Protection**: Cookie-authenticated state-changing requests (`POST`/`PUT`/`DELETE`) require a matching `x-csrf-token` header (`CSRF_INVALID`).
+
+### 1.2 OAuth 2.0 & Credential Storage
+- **PKCE Flow**: Google OAuth uses PKCE (Proof Key for Code Exchange) with cryptographically random 128-byte verifiers and SHA-256 code challenges.
+- **Atomic State Consumption**: OAuth state parameters are stored in Redis with 10-minute TTL. State verification uses an atomic Redis Lua script (`atomicGetDel`) to prevent state replay attacks.
+- **AES-256-GCM Encryption at Rest**: Provider access and refresh tokens are stored encrypted in `user_credentials` using AES-256-GCM with a 12-byte initialization vector, 16-byte authentication tag, and key versioning (`v1`).
+- **Atomic Refresh Lock**: Provider token refreshes are protected by a per-user Redis lock (`lock:token_refresh:userId`).
+
+### 1.3 Internal Validation API Authorization
+- **Dependency-Injected Middleware**: Validation auth uses `createValidationAuthMiddleware(getToken: () => string)` without global mutable test setters.
+- **Timing-Safe Token Comparison**: Request tokens (`X-Validation-Token`) are compared against configured pre-shared secrets using `safeTokenEquals` (`crypto.timingSafeEqual` with safe pre-check buffer length validation).
+- **Deny-by-Default Authorization Matrix**:
+  - Missing/empty `VALIDATION_TOKEN` in env $\rightarrow$ HTTP 503 (`VALIDATION_NOT_CONFIGURED`).
+  - Missing/empty request header $\rightarrow$ HTTP 401 (`VALIDATION_TOKEN_REQUIRED`).
+  - Incorrect token $\rightarrow$ HTTP 403 (`VALIDATION_TOKEN_INVALID`).
+  - Correct token $\rightarrow$ Access permitted.
+- **Not Customer APIs**: Internal validation routes are not exposed to customer UI flows and are disabled by default.
+
+### 1.4 Hardening, Proxy Topology & Rate Limiting
+- **CORS Defense**: Whitelist verification matches `FRONTEND_URL`. Disallowed origins receive no credentialed headers (`credentials: true`).
+- **Trust Proxy (`TRUST_PROXY`)**: Default is `'0'` (disabled) in dev/test, ignoring untrusted `X-Forwarded-For` headers. Production requires explicit proxy hop configuration (`TRUST_PROXY=1`).
+- **Redis-Backed Rate Limiting**: Sliding-window rate limiter attached to auth, email action, and validation endpoints (`X-RateLimit-*` headers, 429 `RATE_LIMITED`).
+- **Error Code Sanitization**: `toSafeCode()` ensures raw SQL errors, stack traces, file paths, and tokens are converted to bounded `ErrorCode` strings before storage or HTTP response.
+
+### 1.5 Content Boundary & Execution Safety
+- **Read-Only Scope**: Requested Google OAuth scope is strictly `https://www.googleapis.com/auth/gmail.readonly`.
+- **No Production Fallback**: `resolveAnalysisPath()` permits deterministic fallback ONLY in non-production environments when `AI_FALLBACK_ENABLED=true`. In production, missing API keys return HTTP 503 `EXTRACTION_PROVIDER_UNAVAILABLE`.
+- **Production Active Mode Rejection**: Setting `EMAIL_SCORING_MODE=active` when `NODE_ENV=production` causes environment parsing to fail at startup.
+- **External Held-Out Corpus Boundary**: Quality benchmarks (`validation:quality`) read from external path `VALIDATION_HELDOUT_CORPUS_PATH`. Paths inside tracked git repository directories are refused to prevent PII leaks.
+- **Sanitized Exports**: Validation data exports (`validationExportService.ts`) explicitly exclude email bodies, prompts, raw tokens, and personal interview notes. Raw interview transcript storage is forbidden.
+
+### 1.6 Prompt Injection Safeguards
+- **Untrusted Content Isolation**: Incoming email subjects and bodies are treated as untrusted data wrapped in distinct system delimiter boundaries.
+- **Strict Schema Enforcement**: Candidate outputs are validated against strict Zod schemas (`EmailExtractionSchema`). Flooded candidate outputs (>20 actions/opps) trigger immediate rejection with `EXTRACTION_OUTPUT_INVALID`.
+- **Side-Effect Isolation**: Extraction runs create candidate entities in PostgreSQL only. No emails are dispatched, drafted, modified, or deleted during extraction.
+- **Automated Adversarial Safety Suite**: The structural regression suite (`npm run validation:regression`) tests prompt injection resistance across 6 attack surfaces (plain text, quoted history `>`, forwarded headers, HTML comments `<!-- -->`, hidden HTML `display:none`, signature blocks `-- \n`), asserting 0 Approvals and 0 Agent Executions created.
+
+> [!CAUTION]
+> **Prompt Injection Defenses**: The backend enforces strict untrusted-content boundaries, Zod schema validation, candidate limits, side-effect isolation, and automated adversarial safety tests. Complete prompt-injection prevention in LLMs remains an open research problem; no claim of absolute prevention is made.
+
+---
+
+## 2. Security Checklist for Deployment
+
+Before deploying to staging or production:
+
+1. **Secret Management**: Ensure `AUTH_JWT_SECRET` and `TOKEN_ENC_KEY` use cryptographically strong, 32-byte random values stored in environment secrets.
+2. **Reverse Proxy Configuration**: Verify load balancers strip incoming untrusted `X-Forwarded-For` headers and configure `TRUST_PROXY=1`.
+3. **Validation Pre-Shared Secret**: Set `VALIDATION_TOKEN` to a random $\ge 32$-character secret. Do not expose this token in client bundles or repositories.
+4. **Scoring Mode**: Keep `EMAIL_SCORING_MODE=off` or `shadow` in production until extraction quality is validated.
