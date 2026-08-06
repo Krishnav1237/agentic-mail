@@ -41,7 +41,7 @@ In **production mode** (`NODE_ENV=production`), strict safety checks enforce tha
 | `AI_MAX_INPUT_CHARS` | `'6000'` | Optional | Maximum body text length passed to AI model (1–50000). |
 | `INITIAL_SYNC_MAX_MESSAGES` | `'500'` | Optional | Maximum messages imported during initial sync (1–5000). |
 | `AI_REQUEST_TIMEOUT_MS` | `'30000'` | Optional | Provider API request timeout in ms (1000–120000). |
-| `VALIDATION_TOKEN` | `""` | Required ($\ge 32$ chars) | Pre-shared secret for internal `/api/v1/validation/*` APIs. Deny-by-default (HTTP 503) when missing/invalid. |
+| `VALIDATION_TOKEN` | `""` | Required ($\ge 32$ chars) | Pre-shared secret for internal `/validation/*` APIs. Deny-by-default (HTTP 503) when missing/invalid. |
 | `EMAIL_SCORING_MODE` | `'off'` | `off` or `shadow` | Pre-LLM noise scoring mode (`off`, `shadow`, `active`). `active` mode is REJECTED in production. |
 | `VALIDATION_HELDOUT_CORPUS_PATH` | `""` | Optional | Local path to external held-out human corpus for `validation:quality`. Must live outside tracked repo root. |
 
@@ -51,7 +51,7 @@ In **production mode** (`NODE_ENV=production`), strict safety checks enforce tha
 
 ### 3.1 Validation API Pre-Shared Secret (`VALIDATION_TOKEN`)
 - Must be at least 32 characters long.
-- Protects internal validation tooling routes (`/api/v1/validation/*`).
+- Protects internal validation tooling routes (`/validation/*`).
 - Requests must pass header `X-Validation-Token: <token>`.
 - Evaluated via timing-safe comparison (`crypto.timingSafeEqual`).
 - If missing, empty, or shorter than 32 characters, validation routes fail closed with HTTP 503 `VALIDATION_NOT_CONFIGURED`.

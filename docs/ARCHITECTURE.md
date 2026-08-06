@@ -27,7 +27,7 @@ graph TD
   StructuredAI -. "Non-Production Fallback" .-> FallbackEngine["Deterministic Fallback Engine"]
 
   subgraph Validation Subsystem
-    ValRoutes["Validation Routes (/api/v1/validation/*)"] --> ValRepo["Validation Repository"]
+    ValRoutes["Validation Routes (/validation/*)"] --> ValRepo["Validation Repository"]
     ValRepo --> DB
     ValMetrics["Validation Metrics Service"] --> DB
     ValDecision["Go/No-Go Decision Engine"] --> ValMetrics
@@ -43,7 +43,7 @@ graph TD
 
 ### 2.1 Backend API Process (`backend/src/app.ts`, `server.ts`)
 - Express REST API server running on Node.js (ES modules).
-- Handles OAuth authentication (`/auth/google`), session management (`/auth/session`), synchronization triggers (`/emails/sync`), email reading (`/emails`), extraction triggering (`/emails/:id/extract`), intelligence retrieval (`/emails/:id/intelligence`), and internal validation tooling (`/api/v1/validation/*`).
+- Handles OAuth authentication (`/auth/google`), session management (`/auth/session`), synchronization triggers (`/emails/sync`), email reading (`/emails`), extraction triggering (`/emails/:id/extract`), intelligence retrieval (`/emails/:id/intelligence`), and internal validation tooling (`/validation/*`).
 - Protects endpoints via session cookies/Bearer JWTs or pre-shared `X-Validation-Token` headers.
 
 ### 2.2 Background Worker Process (`backend/src/workers/index.ts`)

@@ -94,7 +94,7 @@ psql "$DATABASE_URL" -f db/migrations/007_validation_scoring_integrity.sql
 
 ## 6. Production Security Rules & Validation API Notes
 
-1. **Validation API Authorization**: Internal validation tooling routes (`/api/v1/validation/*`) are protected by `X-Validation-Token` compared via timing-safe equality (`crypto.timingSafeEqual`). They are disabled (HTTP 503) when `VALIDATION_TOKEN` is unconfigured. They are NOT Phase 5 customer APIs.
+1. **Validation API Authorization**: Internal validation tooling routes (`/validation/*`) are protected by `X-Validation-Token` compared via timing-safe equality (`crypto.timingSafeEqual`). They are disabled (HTTP 503) when `VALIDATION_TOKEN` is unconfigured. They are NOT Phase 5 customer APIs.
 2. **Production Fallback Prohibition**: Deterministic fallback (`generateDeterministicFallback`) is disabled in production. If no live AI provider key is configured, calls return HTTP 503 `EXTRACTION_PROVIDER_UNAVAILABLE`.
 3. **Production Active Scoring Rejection**: Setting `EMAIL_SCORING_MODE=active` when `NODE_ENV=production` causes environment parsing to fail at startup, preventing accidental active scheduling changes before extraction quality is measured.
 
@@ -106,6 +106,6 @@ After deployment, run the following verification checks:
 
 1. **Liveness Check**: `GET /health/live` $\rightarrow$ `{"status": "ok"}`
 2. **Readiness Check**: `GET /health/ready` $\rightarrow$ `{"status": "ok", "db": true, "redis": true}`
-3. **Validation Route Fail-Closed**: `GET /api/v1/validation/cohorts` without header $\rightarrow$ HTTP 401 `VALIDATION_TOKEN_REQUIRED`
-4. **Invalid Token Protection**: `GET /api/v1/validation/cohorts` with invalid `X-Validation-Token` header $\rightarrow$ HTTP 403 `VALIDATION_TOKEN_INVALID`
+3. **Validation Route Fail-Closed**: `GET /validation/cohorts` without header $\rightarrow$ HTTP 401 `VALIDATION_TOKEN_REQUIRED`
+4. **Invalid Token Protection**: `GET /validation/cohorts` with invalid `X-Validation-Token` header $\rightarrow$ HTTP 403 `VALIDATION_TOKEN_INVALID`
 5. **Session Endpoint**: `GET /auth/session` $\rightarrow$ `{"authenticated": false}`

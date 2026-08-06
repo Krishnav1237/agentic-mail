@@ -45,98 +45,93 @@ Follow this protocol to manually verify the internal validation tooling subsyste
 
 ### Step 1: Create a Validation Cohort
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/cohorts \
+curl -s -X POST http://localhost:4000/validation/cohorts \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Manual Placement Cohort 1",
     "vertical": "placement",
     "startDate": "2026-08-01",
-    "endDate": "2026-08-15",
-    "targetParticipantCount": 20
+    "endDate": "2026-08-15"
   }'
 ```
 
 ### Step 2: Add Cohort Participants
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/participants \
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/participants \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "cohortId": "<cohort_id>",
-    "userEmail": "student1@college.edu",
-    "personaSegment": "student",
-    "recruitmentChannel": "campus_referral"
+    "participantCode": "P001",
+    "persona": "student",
+    "source": "campus_referral"
   }'
 ```
 
 ### Step 3: Record Ingestion Attempts
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/participants/<participant_id>/ingestion-attempts \
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/ingestion-attempts \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "ingestionMode": "oauth",
-    "setupSeconds": 90,
-    "firstIngestionSuccess": true
+    "participantId": "<PARTICIPANT_ID>",
+    "ingestionMode": "oauth"
   }'
 ```
 
 ### Step 4: Submit Human Email Ground-Truth Labels
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/labels \
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/email-labels \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "cohortId": "<cohort_id>",
-    "emailId": "<email_id>",
+    "emailId": "<EMAIL_ID>",
     "reviewerCode": "R01",
     "isCritical": true,
     "shouldCreateAction": true,
     "shouldCreateOpportunity": false,
-    "correctCategory": "career",
-    "correctDeadline": "2026-08-10T17:00:00Z"
+    "correctDeadline": "2026-08-10"
   }'
 ```
 
 ### Step 5: Submit Extraction Reviews
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/reviews \
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/extraction-reviews \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "cohortId": "<cohort_id>",
-    "extractionRunId": "<run_id>",
-    "candidateType": "action",
-    "candidateKey": "key_hash",
+    "emailId": "<EMAIL_ID>",
     "reviewerCode": "R01",
-    "isValid": true,
-    "isSemanticDuplicate": false
+    "actionValid": true,
+    "opportunityValid": false
   }'
 ```
 
-### Step 6: Record 1-Week Follow-Ups
+### Step 6: Record Discovery Interview
 ```bash
-curl -s -X POST http://localhost:4000/api/v1/validation/participants/<participant_id>/follow-ups \
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/interviews \
   -H "X-Validation-Token: $VALIDATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "stillUsingProduct": true,
-    "weeklyActiveUsageDays": 5,
-    "primaryValueReported": "Caught urgent interview deadline",
-    "npsScore": 9
+    "participantId": "<PARTICIPANT_ID>",
+    "problemSeverity": "high",
+    "currentWorkaround": "calendar",
+    "preferredIngestionMode": "oauth",
+    "priceResponse": "willing_trial"
   }'
 ```
 
 ### Step 7: Evaluate Cohort Decision & Metrics
 ```bash
 # Compute metrics
-curl -s http://localhost:4000/api/v1/validation/cohorts/<cohort_id>/metrics \
+curl -s http://localhost:4000/validation/cohorts/<COHORT_ID>/metrics \
   -H "X-Validation-Token: $VALIDATION_TOKEN"
 
 # Evaluate decision rules
-curl -s http://localhost:4000/api/v1/validation/cohorts/<cohort_id>/decision \
-  -H "X-Validation-Token: $VALIDATION_TOKEN"
+curl -s -X POST http://localhost:4000/validation/cohorts/<COHORT_ID>/decision \
+  -H "X-Validation-Token: $VALIDATION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 ### Step 8: Run Extraction Quality Benchmark
@@ -157,7 +152,7 @@ When conducting manual verification, record test execution notes using this temp
 Date: 2026-07-23
 Git commit: <commit_hash>
 Environment: Local Development (PostgreSQL 16 + Redis 7)
-Endpoint/workflow: POST /api/v1/validation/labels
+Endpoint/workflow: POST /validation/cohorts/:id/email-labels
 Input: cohortId="...", emailId="...", reviewerCode="R01"
 Expected result: HTTP 201 Created, label record persisted.
 Actual result: HTTP 201 Created, label record created with ID.

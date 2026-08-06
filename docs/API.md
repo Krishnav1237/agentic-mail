@@ -148,15 +148,17 @@ Internal validation tooling endpoints accept:
 
 ### Endpoint Summary
 
-- `POST /api/v1/validation/cohorts`: Create a validation cohort (`name`, `vertical`, `startDate`, `endDate`, `targetParticipantCount`).
-- `GET /api/v1/validation/cohorts`: List validation cohorts.
-- `GET /api/v1/validation/cohorts/:id`: Get validation cohort details.
-- `POST /api/v1/validation/participants`: Add a participant to a cohort (`cohortId`, `userEmail`, `personaSegment`, `recruitmentChannel`).
-- `POST /api/v1/validation/participants/:id/interviews`: Record an interview summary (`problemSeverityScore`, `manualWorkflowDescription`, `workflowPainPoints`, `willingnessToPayMonthlyUsd`, `featureRequests`, `rawInterviewNotesPath`). Note: Raw transcript storage is forbidden.
-- `POST /api/v1/validation/participants/:id/ingestion-attempts`: Record an ingestion attempt (`ingestionMode`, `setupSeconds`, `firstIngestionSuccess`, `failureReason`, `adminPolicyBlocked`).
-- `POST /api/v1/validation/labels`: Record a human email label (`cohortId`, `emailId`, `reviewerCode`, `isCritical`, `shouldCreateAction`, `shouldCreateOpportunity`, `correctCategory`, `correctDeadline`).
-- `POST /api/v1/validation/reviews`: Record an extraction candidate review (`cohortId`, `extractionRunId`, `candidateType`, `candidateKey`, `reviewerCode`, `isValid`, `isSemanticDuplicate`, `rejectionReason`).
-- `POST /api/v1/validation/participants/:id/follow-ups`: Record a 1-week follow-up (`stillUsingProduct`, `weeklyActiveUsageDays`, `primaryValueReported`, `churnReason`, `npsScore`).
-- `GET /api/v1/validation/cohorts/:id/metrics`: Compute cohort metrics against ground-truth reviews.
-- `GET /api/v1/validation/cohorts/:id/decision`: Evaluate cohort Go/No-Go decision rules against versioned thresholds (`v1`).
-- `GET /api/v1/validation/cohorts/:id/export`: Export sanitized cohort validation data for analysis (excludes email bodies, prompts, raw tokens, and personal interview transcripts).
+- `POST /validation/cohorts`: Create a validation cohort (`name`, `vertical`, `startDate`, `endDate`).
+- `GET /validation/cohorts`: List validation cohorts.
+- `GET /validation/cohorts/:id`: Get validation cohort details.
+- `PATCH /validation/cohorts/:id`: Update validation cohort details or status (`planning`, `active`, `completed`, `cancelled`).
+- `POST /validation/cohorts/:id/participants`: Add a participant code (`participantCode`, `persona`, `source`).
+- `GET /validation/cohorts/:id/participants`: List participants in a cohort.
+- `PATCH /validation/participants/:id`: Update participant onboarding, retention, or willingness-to-pay.
+- `POST /validation/cohorts/:id/ingestion-attempts`: Record an ingestion attempt (`participantId`, `ingestionMode`).
+- `POST /validation/cohorts/:id/email-labels`: Record a human email label (`emailId`, `reviewerCode`, `isCritical`, `shouldCreateAction`, `shouldCreateOpportunity`, `correctDeadline`).
+- `POST /validation/cohorts/:id/extraction-reviews`: Record an extraction candidate review (`emailId`, `reviewerCode`, `actionValid`, `opportunityValid`).
+- `POST /validation/cohorts/:id/interviews`: Record discovery interview data (`participantId`, `problemSeverity`, `currentWorkaround`, `priceResponse`).
+- `GET /validation/cohorts/:id/metrics`: Compute cohort metrics against ground-truth reviews.
+- `POST /validation/cohorts/:id/decision`: Evaluate cohort Go/No-Go decision rules against versioned thresholds (`v1`).
+- `GET /validation/cohorts/:id/export`: Export sanitized cohort validation data for analysis (excludes email bodies, prompts, raw tokens, and personal interview transcripts).
