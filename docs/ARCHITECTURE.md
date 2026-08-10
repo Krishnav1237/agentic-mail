@@ -1,424 +1,94 @@
-# Architecture
+# System Architecture & Component Design
+*Inbox Intelligence Layer (IIL) Backend — Implementation Reference*
 
-This document explains how Inbox Intelligence Layer is built, how data moves through the system, and where each production concern lives.
+---
 
-## System Overview
+> **Implementation Baseline**: Backend Phases 1–4 and the validation operations infrastructure are implemented and structurally verified through automated tests. Real Google OAuth, live Gmail synchronization, real-provider extraction quality, manual forwarding feasibility, user demand, willingness to pay, and vertical selection still require owner-led validation. Phase 5–7 remain deferred.
 
-The product is a single-agent autonomous inbox operator. It does not use a multi-agent architecture. Instead, it keeps one goal-aware control loop with modular subsystems for perception, planning, execution, memory, policy, and recovery.
+---
 
-Primary design goals:
+## 1. Subsystem Architecture Overview
 
-- Production safety over novelty
-- Traceable decisions
-- Idempotent execution
-- Efficient AI usage
-- Scalable async processing
-- Human approval for risky actions
-
-## Core Runtime Components
-
-### Frontend
-
-- React + Vite
-- TypeScript
-- Tailwind CSS
-- Multi-page app shell with server-driven list screens
-
-Primary responsibility:
-
-- authentication handoff
-- dashboard rendering
-- approvals and preview actions
-- task and inbox operations
-- settings and goal management
-
-### Backend API
-
-- Express
-- Zod validation
-- Cookie and bearer authentication support
-- Route groups for auth, tasks, emails, actions, feedback, preferences, and agent operations
-
-Primary responsibility:
-
-- product API surface
-- auth/session management
-- low-latency reads and writes
-- preview approval and rollback endpoints
-
-### Workers
-
-- BullMQ + Redis
-- background ingestion
-- AI processing
-- continuous and periodic planning
-
-Primary responsibility:
-
-- run expensive or asynchronous work outside request/response latency
-
-### PostgreSQL
-
-Primary system of record for:
-
-- users
-- emails
-- extracted tasks
-- plans and actions
-- memory
-- preferences
-- feedback
-- notifications
-- LLM usage events and daily cost aggregates
-
-### Redis
-
-Used for:
-
-- BullMQ queue backend
-- hot cache
-- last normalized state hash
-- fast cost aggregate reads
-
-## High-Level Component Graph
+The Inbox Intelligence Layer backend is an **execution layer built on top of communication**. In Phases 1–4, the architecture focuses strictly on read-only inbox synchronization, MIME parsing, structured AI extraction, candidate entity materialization, shadow-mode noise scoring, and internal validation program infrastructure.
 
 ```mermaid
 graph TD
-  UI["Frontend"] --> API["Express API"]
-  API --> DB[(PostgreSQL)]
-  API --> Redis[(Redis)]
-  API --> Providers["Gmail / Microsoft Graph"]
-  Workers["BullMQ Workers"] --> DB
-  Workers --> Redis
-  Workers --> Providers
-  Workers --> Ingestion["Ingestion Pipeline"]
-  Workers --> Agent["Single Agent Loop"]
-  Agent --> Memory["Memory System"]
-  Agent --> Policy["Policy + Confidence"]
-  Agent --> Tools["Tool Registry + Executor"]
-  Agent --> Obs["Observability + Cost Tracking"]
+  Client["Web Client (Browser)"] --> API["Backend API Process (Express)"]
+  API --> DB[(PostgreSQL 16)]
+  API --> Redis[(Redis 7 Cache / Locks)]
+  API --> Google["Google OAuth 2.0 (PKCE)"]
+
+  Worker["BullMQ Ingestion Worker Process"] --> Redis
+  Worker --> DB
+  Worker --> GmailAPI["Gmail REST API (gmail.readonly)"]
+  Worker --> StructuredAI["Structured AI Service"]
+
+  StructuredAI --> LLMProvider["Live LLM Provider (Gemini / OpenRouter / Groq)"]
+  StructuredAI -. "Non-Production Fallback" .-> FallbackEngine["Deterministic Fallback Engine"]
+
+  subgraph Validation Subsystem
+    ValRoutes["Validation Routes (/validation/*)"] --> ValRepo["Validation Repository"]
+    ValRepo --> DB
+    ValMetrics["Validation Metrics Service"] --> DB
+    ValDecision["Go/No-Go Decision Engine"] --> ValMetrics
+    ValDecision --> ThresholdConfig["v1 Threshold Config"]
+  end
+
+  API --> ValRoutes
 ```
 
-## End-To-End Data Flow
-
-```mermaid
-sequenceDiagram
-  participant User
-  participant UI
-  participant API
-  participant Worker
-  participant DB
-  participant Redis
-  participant Provider
-
-  User->>UI: Connect mailbox
-  UI->>API: OAuth start
-  API->>Provider: OAuth exchange
-  Provider-->>API: Tokens
-  API->>DB: Store encrypted tokens
-  User->>UI: Sync inbox
-  UI->>API: POST /emails/sync
-  API->>Redis: Queue job
-  Worker->>Provider: Read inbox messages
-  Worker->>DB: Store emails
-  Worker->>Agent: Run planning loop
-  Agent->>DB: Read context + memory
-  Agent->>Redis: Check state hash
-  Agent->>DB: Persist plans/actions
-  Agent->>Provider: Execute approved/safe tools
-  Agent->>DB: Persist results, reflections, memory
-  API->>UI: Serve dashboard, inbox, agent feed
-```
-
-## Agent Loop
-
-The agent loop is implemented in `backend/src/agent/coreLoop.ts`.
-
-Logical stages:
-
-1. Perceive
-2. Filter context
-3. Build context
-4. Normalize decision state
-5. Choose planning path
-6. Dedupe and persist plan
-7. Preview or execute
-8. Reflect
-9. Update memory and policy
-10. Emit activity feed and product-facing summaries
-
-### Agent Loop Diagram
-
-```mermaid
-graph LR
-  P["Perception"] --> F["Context Filter"]
-  F --> C["Context Builder"]
-  C --> S["State Manager"]
-  S --> FP["Fast Planner"]
-  FP --> HP["Heavy Planner (when needed)"]
-  HP --> M["Plan Merge + Dedupe"]
-  M --> PR["Preview Layer"]
-  PR --> EX["Executor"]
-  EX --> RF["Reflection"]
-  RF --> MEM["Memory Optimizer"]
-  MEM --> POL["Policy + Confidence"]
-  POL --> FP
-```
-
-## Key Agent Modules
-
-### `backend/src/agent/contextFilter.ts`
-
-Reduces noise before planning:
-
-- keeps relevant emails
-- promotes actionable tasks and events
-- removes low-signal noise
-- returns diagnostics for observability
-
-### `backend/src/agent/stateManager.ts`
-
-Avoids unnecessary LLM work:
-
-- normalizes decision state
-- removes non-semantic fields
-- normalizes thread-level email data
-- hashes only planning-relevant state
-- stores last hash in Redis
-- skips heavy planning if nothing materially changed
-
-### `backend/src/agent/fastPlanner.ts`
-
-Deterministic planner path:
-
-- cheap to run
-- modular rule sets
-- returns partial plans fast
-
-Rule modules:
-
-- `backend/src/planner/rules/recruiterRules.ts`
-- `backend/src/planner/rules/schedulingRules.ts`
-- `backend/src/planner/rules/cleanupRules.ts`
-
-### `backend/src/agent/heavyPlanner.ts`
-
-LLM-backed planner path:
-
-- only runs when state changed and budget allows
-- sees filtered context, goals, strategist output, intents, and energy context
-
-### `backend/src/agent/planMerge.ts`
-
-Guarantees stable action sequences:
-
-- merges fast and heavy planner outputs
-- dedupes steps using tool + target + normalized input
-- preserves order
-- generates stable execution keys
-
-### `backend/src/agent/preview.ts`
-
-Human-aligned control layer:
-
-- generates action previews
-- generates workflow previews
-- supports `approve`, `modify`, `cancel`, and `approve_all`
-
-### `backend/src/agent/executor.ts`
-
-Executes deduped plans:
-
-- enforces approval policy
-- uses confidence calibration
-- retries failures
-- persists action status
-- preserves workflow ordering
-- prevents duplicate action inserts
-
-### `backend/src/agent/recovery.ts`
-
-Safety and reversibility:
-
-- undo executed actions when supported
-- rollback workflows
-- detect risky outcomes
-
-### `backend/src/agent/strategist.ts`
-
-Higher-level behavior tuning:
-
-- adjusts focus areas
-- nudges aggressiveness
-- adapts based on historical outcomes
-
-## Planning Inputs
-
-Planner inputs are assembled from:
-
-- filtered emails
-- open tasks
-- upcoming calendar events
-- user goals
-- strategist output
-- short-term intents
-- recent actions
-- memory summaries
-- energy context
-
-Shared planner typing is defined in `backend/src/agent/planningTypes.ts`.
-
-## Tool System
-
-The tool registry is the boundary between agent decisions and real side effects.
-
-Core files:
-
-- `backend/src/tools/types.ts`
-- `backend/src/tools/registry.ts`
-
-Current tools:
-
-- `create_task`
-- `create_calendar_event`
-- `draft_reply`
-- `send_reply`
-- `snooze`
-- `mark_important`
-- `archive_email`
-- `delete_email`
-- `move_to_folder`
-- `label_email`
-
-Each tool defines:
-
-- schema validation
-- execution logic
-- risk level
-- reversibility
-- approval posture
-- estimated time saved
-
-## Memory System
-
-Memory is split across product stores rather than a single vector-only store.
-
-### Short-term memory
-
-- recent emails
-- recent actions
-- pending previews
-
-### Long-term memory
-
-- user preferences
-- goal tuning
-- policy rules
-- learned behavior patterns
-
-### Episodic memory
-
-- prior decisions
-- outcomes
-- reflections
-
-Relevant files:
-
-- `backend/src/memory/summary.ts`
-- `backend/src/memory/optimizer.ts`
-
-Memory optimizer rules:
-
-- summarize stale episodic entries
-- decay stale patterns toward neutral
-- preserve active signals
-- never compress persistent allow rules
-
-## Policy and Confidence
-
-Confidence is not static. Execution confidence is adjusted using:
-
-- base LLM confidence
-- historical accuracy
-- recency weight
-- context similarity
-
-Policy and confidence files:
-
-- `backend/src/agent/policy.ts`
-- `backend/src/agent/confidence.ts`
-- `backend/src/services/agentFeedback.ts`
-
-## Observability and Cost
-
-AI spend is tracked explicitly.
-
-Files:
-
-- `backend/src/observability/costTracker.ts`
-- `backend/src/ai/llmProviders.ts`
-- `backend/src/services/ai.ts`
-
-Recorded metrics:
-
-- provider
-- model
-- prompt tokens
-- completion tokens
-- total tokens
-- request latency
-- estimated cost
-- cost per action
-- cost per successful action
-- cost per workflow
-
-## Product-Facing Summary Layer
-
-The dashboard and agent pages receive additive “magic moment” fields that make automation visible:
-
-- `groupedActions`
-- `workflowSummaries`
-- `impact`
-
-Implemented in:
-
-- `backend/src/agent/magicOutput.ts`
-- `backend/src/routes/tasks.ts`
-- `backend/src/routes/agent.ts`
-
-## Database Model
-
-Primary tables:
-
-- `users`
-- `emails`
-- `extracted_tasks`
-- `user_preferences`
-- `user_behavior_logs`
-- `notifications`
-- `user_goals`
-- `agent_plans`
-- `agent_actions`
-- `agent_reflections`
-- `agent_logs`
-- `memory_store`
-- `episodic_memory`
-- `llm_usage_events`
-- `llm_cost_daily_aggregates`
-
-Schema and migrations:
-
-- `backend/db/schema.sql`
-- `backend/db/migrations/`
-
-## Scale and Safety Principles
-
-This architecture is intentionally conservative:
-
-- one agent, not many
-- async work isolated to workers
-- deterministic planner path before expensive LLM planning
-- skip planning when state has not changed
-- approval before risky operations
-- all actions persisted and traceable
-- rollback pathways for reversible operations
+---
+
+## 2. Component Breakdown
+
+### 2.1 Backend API Process (`backend/src/app.ts`, `server.ts`)
+- Express REST API server running on Node.js (ES modules).
+- Handles OAuth authentication (`/auth/google`), session management (`/auth/session`), synchronization triggers (`/emails/sync`), email reading (`/emails`), extraction triggering (`/emails/:id/extract`), intelligence retrieval (`/emails/:id/intelligence`), and internal validation tooling (`/validation/*`).
+- Protects endpoints via session cookies/Bearer JWTs or pre-shared `X-Validation-Token` headers.
+
+### 2.2 Background Worker Process (`backend/src/workers/index.ts`)
+- BullMQ worker consuming async background jobs from Redis queues.
+- Executes `gmail_sync` jobs: initial sync, incremental history sync, and history cursor reconciliation fallback.
+- Enforces user-scoped Redis Lua locks to prevent concurrent sync runs per user (`idx_sync_runs_active_user`).
+
+### 2.3 Persistence Layer (PostgreSQL 16)
+- Migration schema `001` through `007`.
+- Multi-tenant data model using **Model A derived ownership**: `emails`, `actions`, `opportunities`, and `email_filtering_decisions` are scoped to users via `email_id FK -> emails(id) -> user_id`.
+- Immutable audit trail (`audit_events`) enforced via PostgreSQL trigger rejecting `UPDATE` and `DELETE`.
+
+### 2.4 Cache & Locking Layer (Redis 7)
+- Distributed Lua locks (`iil:lock:sync:<userId>`, `iil:lock:extract:<emailId>`) for atomic state operations, renewal, and compare-and-DEL release.
+- Rate-limiting window storage (`iil:ratelimit:<route>:<ip>`).
+- Atomic OAuth state consumption via `GETDEL`.
+
+### 2.5 Structured AI Service (`backend/src/ai/structuredAiService.ts`)
+- Calls live external LLM providers (Gemini via `AI_MODEL`, e.g. `gemini-flash-latest`; or OpenRouter / Groq) using Zod schema validation (`EmailExtractionSchema`).
+- Resolves execution path explicitly via `resolveAnalysisPath()`:
+  - `injected_provider` / `configured_provider`: Calls LLM API.
+  - `deterministic_fallback`: Executes deterministic rule engine (permitted ONLY in non-production environments when `AI_FALLBACK_ENABLED=true`).
+  - `unavailable`: Throws HTTP 503 `EXTRACTION_PROVIDER_UNAVAILABLE`.
+- Enforces 30-second timeout via `AbortSignal` with clean timer teardown.
+
+### 2.6 Pre-LLM Noise Scoring Engine (`backend/src/services/emailScoringService.ts`)
+- Pre-LLM heuristic scorer outputting additive `raw_score` (`NUMERIC NOT NULL`, unclamped) and `normalized_score` (`null` until probability calibration exists).
+- Operates in shadow mode (`EMAIL_SCORING_MODE=shadow`). Scores are persisted to `email_filtering_decisions` but never alter queue order or discard emails.
+- Active queue scheduling mode (`EMAIL_SCORING_MODE=active`) is **rejected during startup** in production.
+
+### 2.7 Internal Validation Subsystem (`backend/src/services/validation*`)
+- 10 validation tables tracking cohorts, participants, interview records, ingestion attempts, human ground-truth labels, extraction reviews, and 1-week follow-ups.
+- Deterministic Go/No-Go decision engine (`validationDecisionService.ts`) evaluating cohort metrics against versioned thresholds (`v1`) and segmented `MinimumSampleSize` criteria.
+- External held-out quality benchmark boundary (`validation.quality.ts`) reading from external gitignored `VALIDATION_HELDOUT_CORPUS_PATH`.
+
+---
+
+## 3. Explicit Architecture Boundaries & Unimplemented/Deferred Scope
+
+| Component / Feature | Current Status | Notes / Rationale |
+|---|---|---|
+| **Telegram Integration** | ❌ Unimplemented | Out of scope for Phase 1–4 base. |
+| **Inbound Forwarding Webhook (Postmark / SendGrid)** | ❌ Unimplemented | Forwarding path is an unvalidated hypothesis; manual forwarding experiment guide created for offline testing. |
+| **Payments & Referrals** | ❌ Unimplemented | Billing and referral tracking deferred until vertical demand is validated. |
+| **Phase 5 Customer Dashboard & Product APIs** | ⏸️ Deferred | Endpoints `/dashboard`, `/actions`, `/opportunities`, `/approvals` remain unbuilt. |
+| **Phase 6 Write Execution & Approvals** | ⏸️ Deferred | `POST /approvals/:id/approve` and Gmail write scopes (`gmail.modify`, `gmail.send`) remain unbuilt. |
+| **Phase 7 Agent Orchestration & Planners** | ⏸️ Deferred | Single-agent loop, Fast Planner, Heavy Planner, strategist, and memory optimization remain unbuilt. |
+| **Microsoft Graph / Outlook Integration** | ❌ Unimplemented | Future roadmap consideration after Gmail vertical validation. |

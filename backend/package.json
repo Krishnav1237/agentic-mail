@@ -1,0 +1,39 @@
+{
+  "name": "inbox-intelligence-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "worker": "tsx watch src/workers/index.ts",
+    "test:integration": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true AI_PROVIDER=disabled GEMINI_API_KEY= OPENROUTER_API_KEY= GROQ_API_KEY= tsx src/test/integration/run.ts",
+    "validation:regression": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true AI_PROVIDER=disabled GEMINI_API_KEY= OPENROUTER_API_KEY= GROQ_API_KEY= tsx src/test/validation.regression.ts",
+    "validation:quality": "tsx src/test/validation.quality.ts"
+  },
+  "dependencies": {
+    "bullmq": "^5.12.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.10",
+    "@types/pg": "^8.11.6",
+    "cross-env": "^7.0.3",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}

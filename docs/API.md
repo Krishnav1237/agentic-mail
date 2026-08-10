@@ -1,583 +1,164 @@
 # API Reference
+*Inbox Intelligence Layer (IIL) Backend — Phases 1–4 + Validation Infrastructure*
 
-All endpoints are JSON over HTTPS. Protected endpoints require either:
+---
 
-- an HttpOnly session cookie, or
-- `Authorization: Bearer <jwt>`
+> [!NOTE]
+> **VALIDATION OPERATIONS & STRATEGY STATUS**
+> - **Validation Infrastructure:** Implemented (`/api/v1/validation/*` internal endpoints, deny-by-default token auth).
+> - **Synthetic Regression Benchmark:** Implemented (`npm run validation:regression`).
+> - **Real Quality Benchmark:** NOT YET COMPLETED (requires live LLM provider key and external held-out human corpus; returns `QUALITY_BENCHMARK_NOT_RUN`).
+> - **Placement Vertical / OAuth vs Forwarding Path:** UNVALIDATED (pending 14-day cohort study execution).
+> - **Phase 5–7 APIs:** DEFERRED (Product UI APIs, Gmail write execution, and agent planners remain unbuilt).
 
-Base URL examples:
+---
 
-- local backend: `http://localhost:4000`
-- frontend dev app: `http://localhost:5173`
+## 1. Global Conventions
 
-## Conventions
+### 1.1 Base URL
+- **Local Development**: `http://localhost:4000`
+- **Production API**: `https://your-api.up.railway.app`
 
-### Pagination
+### 1.2 Request ID Correlation
+Every HTTP response includes an `x-request-id` header containing a 16-character hexadecimal correlation ID for request tracing:
+```http
+HTTP/1.1 200 OK
+x-request-id: a1b2c3d4e5f67890
+```
 
-List endpoints use:
+### 1.3 Standard Response Envelopes
 
-- `limit`
-- `offset`
+#### Success Response
+Success responses return JSON objects or arrays directly with HTTP status `200 OK` or `202 Accepted`.
 
-Typical response shape:
-
+#### Error Response Envelope
+All error responses return standard JSON matching this structure:
 ```json
 {
-  "items": [],
-  "total": 0,
-  "limit": 50,
-  "offset": 0
+  "error": "ERROR_CODE",
+  "message": "Human-readable description of what went wrong",
+  "requestId": "a1b2c3d4e5f67890"
 }
 ```
 
-### Common status values
+---
 
-Agent action statuses commonly seen:
+## 2. Security & Authentication Rules
 
-- `preview`
-- `modified`
-- `executed`
-- `failed`
-- `cancelled`
-- `undone`
+### 2.1 Supported Authentication Modes
+Protected application endpoints accept either:
+1. **HttpOnly Session Cookie**: `auth_token=<jwt>`
+2. **Authorization Header**: `Authorization: Bearer <jwt>`
 
-Task statuses:
+Internal validation tooling endpoints accept:
+1. **Validation Header**: `X-Validation-Token: <token>`
 
-- `open`
-- `snoozed`
-- `completed`
+---
 
-### Magic-moment fields
+## 3. Core Application Endpoints (Phases 1–4)
 
-Dashboard and agent responses may include additive fields:
+### 3.1 Health & Readiness
 
-- `groupedActions`
-- `workflowSummaries`
-- `impact`
+#### `GET /health/live`
+- **Auth**: Public
+- **Response `200 OK`**: `{"status": "ok"}`
 
-Example:
+#### `GET /health/ready`
+- **Auth**: Public
+- **Response `200 OK`**: `{"status": "ok", "db": true, "redis": true}`
 
-```json
-{
-  "impact": {
-    "savedTimeMinutes": 12.5,
-    "automationsCompleted": 6,
-    "approvalsPending": 2
-  }
-}
-```
+---
 
-## Auth
+### 3.2 Authentication & Google OAuth
 
-### `GET /auth/google`
+#### `GET /auth/google`
+- **Auth**: Public
+- **Purpose**: Initiates Google OAuth 2.0 PKCE authorization flow (`gmail.readonly`).
 
-Starts Google OAuth.
+#### `GET /auth/google/callback`
+- **Auth**: Public
+- **Purpose**: Consumes PKCE authorization code and state token, exchanges code for Google tokens, encrypts tokens at rest, and sets session cookie.
 
-### `GET /auth/google/callback`
+#### `GET /auth/session`
+- **Auth**: Protected
+- **Purpose**: Check current session state and connected account details.
 
-OAuth callback endpoint used by Google.
+#### `POST /auth/logout`
+- **Auth**: Protected
+- **Purpose**: Clears session cookie and invalidates session token.
 
-Behavior:
+#### `POST /auth/google/disconnect`
+- **Auth**: Protected
+- **Purpose**: Revokes and deletes stored Google OAuth credentials for the user.
 
-- validates state cookie
-- exchanges code for tokens
-- stores provider tokens
-- creates session cookie
-- redirects to frontend callback
+---
 
-### `GET /auth/microsoft`
+### 3.3 Synchronization Operations
 
-Starts Microsoft OAuth.
+#### `POST /emails/sync`
+- **Auth**: Protected
+- **Purpose**: Trigger an asynchronous Gmail sync job for the authenticated user.
 
-### `GET /auth/microsoft/callback`
+#### `GET /sync/status`
+- **Auth**: Protected
+- **Purpose**: Inspect current provider sync status and active run details.
 
-OAuth callback endpoint used by Microsoft Graph.
+---
 
-### `GET /auth/session`
+### 3.4 Email & Intelligence Operations
 
-Returns session state.
+#### `GET /emails`
+- **Auth**: Protected
+- **Query Parameters**:
+  - `limit`: Number (1–100, default 50)
+  - `offset`: Number (default 0)
+  - `status`: String (optional)
+  - `classification`: String (optional)
+- **Safety Policy**: Returns plain `body_text` only. Executable HTML tags are stripped during ingestion. Raw HTML is **not** exposed in API responses.
 
-Example response:
+#### `POST /emails/:id/extract`
+- **Auth**: Protected
+- **Path Parameters**: `:id` (UUID format)
+- **Rate Limit**: 30 req / 1 min
+- **Purpose**: Execute structured AI extraction on a specific email.
 
-```json
-{
-  "authenticated": true,
-  "user": {
-    "userId": "uuid",
-    "email": "student@example.com"
-  },
-  "authMode": "cookie"
-}
-```
+#### `GET /emails/:id/intelligence`
+- **Auth**: Protected
+- **Path Parameters**: `:id` (UUID format)
+- **Purpose**: Retrieve the latest structured AI intelligence snapshot for an email.
 
-### `POST /auth/logout`
+---
 
-Clears the auth cookie.
+## 4. Internal Validation Tooling Endpoints
 
-Response:
+> [!IMPORTANT]
+> **Internal Validation Tooling Notice**
+> - Protected by `X-Validation-Token` pre-shared secret.
+> - **NOT Phase 5 Customer APIs**.
+> - Disabled (HTTP 503) when `VALIDATION_TOKEN` is unconfigured or < 32 characters in environment.
 
-```json
-{ "ok": true }
-```
+### Authorization Behavior
 
-### `GET /auth/verify`
-
-Protected verification endpoint.
-
-## Emails
-
-### `POST /emails/sync`
-
-Queues an inbox sync job.
-
-Response:
-
-```json
-{ "status": "queued" }
-```
-
-### `GET /emails`
-
-Returns paginated inbox records.
-
-Query parameters:
-
-- `limit` - integer, 1 to 200
-- `offset` - integer, 0+
-- `status` - optional email processing status
-- `classification` - optional classification filter
-- `query` - sender/subject search
-
-Example response:
-
-```json
-{
-  "emails": [
-    {
-      "id": "uuid",
-      "message_id": "provider-message-id",
-      "subject": "Internship application reminder",
-      "sender_email": "recruiter@company.com",
-      "sender_name": "Hiring Team",
-      "received_at": "2026-03-22T07:30:00.000Z",
-      "classification": "internship",
-      "ai_score": 0.92,
-      "status": "processed"
-    }
-  ],
-  "total": 240,
-  "limit": 50,
-  "offset": 0
-}
-```
-
-## Tasks
-
-### `GET /tasks`
-
-Returns paginated tasks.
-
-Query parameters:
-
-- `limit`
-- `offset`
-- `status`
-- `category`
-- `query`
-- `sort` - `priority`, `due`, `created`
-- `minPriority`
-- `maxPriority`
-- `dueOnly`
-- `dueFrom`
-- `dueTo`
-
-Example response:
-
-```json
-{
-  "tasks": [
-    {
-      "id": "uuid",
-      "email_id": "uuid",
-      "message_id": "provider-message-id",
-      "title": "Submit operating systems assignment",
-      "description": "Complete and upload the assignment.",
-      "due_at": "2026-03-24T18:00:00.000Z",
-      "link": "https://portal.example.edu",
-      "category": "assignment",
-      "priority_score": 3.7,
-      "status": "open",
-      "created_at": "2026-03-22T08:00:00.000Z"
-    }
-  ],
-  "total": 120,
-  "limit": 50,
-  "offset": 0
-}
-```
-
-### `GET /tasks/dashboard`
-
-Returns dashboard task sections plus workflow visibility.
-
-Example response:
-
-```json
-{
-  "criticalToday": [],
-  "upcomingDeadlines": [],
-  "opportunities": [],
-  "lowPriority": [],
-  "groupedActions": [],
-  "workflowSummaries": [],
-  "impact": {
-    "savedTimeMinutes": 0,
-    "automationsCompleted": 0,
-    "approvalsPending": 0
-  }
-}
-```
-
-### `PATCH /tasks/:id`
-
-Updates a task status.
-
-Body:
-
-```json
-{
-  "status": "completed"
-}
-```
-
-Response:
-
-```json
-{ "ok": true }
-```
-
-## Preferences
-
-### `GET /preferences`
-
-Returns user-defined weights.
-
-Example response:
-
-```json
-{
-  "weights": {
-    "assignment": 1.5,
-    "internship": 1.8
-  }
-}
-```
-
-### `PUT /preferences`
-
-Updates weights.
-
-Body:
-
-```json
-{
-  "weights": {
-    "assignment": 1.4,
-    "internship": 1.8
-  }
-}
-```
-
-Response:
-
-```json
-{ "ok": true }
-```
-
-## Legacy Feedback
-
-### `POST /feedback`
-
-Stores lightweight user feedback not tied to a planner preview action.
-
-Body:
-
-```json
-{
-  "emailId": "uuid",
-  "action": "thumbs_up",
-  "category": "academic",
-  "metadata": {
-    "source": "dashboard"
-  }
-}
-```
-
-## Direct Actions
-
-These are user-triggered shortcut operations that bypass the autonomous planner and invoke tools directly.
-
-### `POST /actions/calendar`
-
-Body:
-
-```json
-{
-  "taskId": "uuid"
-}
-```
-
-### `POST /actions/important`
-
-Body:
-
-```json
-{
-  "emailId": "provider-message-id"
-}
-```
-
-### `POST /actions/reply`
-
-Body:
-
-```json
-{
-  "emailId": "provider-message-id",
-  "send": false
-}
-```
-
-### `POST /actions/snooze`
-
-Body:
-
-```json
-{
-  "taskId": "uuid",
-  "until": "2026-03-25T09:00:00.000Z"
-}
-```
-
-## Agent
-
-### `GET /agent/goals`
-
-Returns goals and autopilot settings.
-
-### `PUT /agent/goals`
-
-Body:
-
-```json
-{
-  "goals": [
-    { "goal": "focus on academics", "weight": 2 },
-    { "goal": "get internship", "weight": 3 }
-  ],
-  "autopilotLevel": 1,
-  "personalityMode": "proactive"
-}
-```
-
-### `GET /agent/intent`
-
-Reads active short-term intent state.
-
-Optional query parameter:
-
-- `sessionId`
-
-### `POST /agent/intent`
-
-Updates short-term intent state.
-
-Body:
-
-```json
-{
-  "intents": ["finish assignments this week"],
-  "sessionOverrides": ["ignore club outreach today"],
-  "priorityBoosts": {
-    "academic": 1.2
-  },
-  "sessionId": "study-session-1",
-  "ttlHours": 24
-}
-```
-
-### `GET /agent/actions`
-
-Returns paginated agent actions plus grouped workflow output.
-
-Query parameters:
-
-- `limit`
-- `offset`
-- `status`
-
-Example response:
-
-```json
-{
-  "actions": [
-    {
-      "id": "uuid",
-      "action_type": "create_task",
-      "status": "preview",
-      "workflow_name": "Scheduling Triage",
-      "workflow_id": "a1b2c3",
-      "action_payload": {
-        "__preview": {
-          "summary": "Create task: Respond to scheduling request"
-        }
-      }
-    }
-  ],
-  "total": 32,
-  "limit": 50,
-  "offset": 0,
-  "groupedActions": [],
-  "workflowSummaries": [],
-  "impact": {
-    "savedTimeMinutes": 4.5,
-    "automationsCompleted": 3,
-    "approvalsPending": 2
-  }
-}
-```
-
-### `GET /agent/activity-feed`
-
-Returns the latest daily activity feed plus grouped workflow output.
-
-### `POST /agent/feedback`
-
-Records feedback for a specific agent action.
-
-Canonical statuses:
-
-- `approve`
-- `reject`
-- `always_allow`
-- `modified`
-- `cancel`
-
-Accepted aliases are also supported for compatibility.
-
-Body:
-
-```json
-{
-  "actionId": "uuid",
-  "status": "always_allow",
-  "notes": "This kind of archive is always fine",
-  "metadata": {
-    "source": "agent_page"
-  }
-}
-```
-
-### `POST /agent/preview/approve`
-
-Approves a single preview action.
-
-Body:
-
-```json
-{
-  "actionId": "uuid",
-  "payloadOverride": {}
-}
-```
-
-### `POST /agent/preview/modify`
-
-Modifies a preview action before approval.
-
-Body:
-
-```json
-{
-  "actionId": "uuid",
-  "payloadOverride": {
-    "title": "Reworded task title"
-  }
-}
-```
-
-### `POST /agent/preview/cancel`
-
-Cancels a pending preview.
-
-Body:
-
-```json
-{
-  "actionId": "uuid",
-  "reason": "user_cancelled"
-}
-```
-
-### `POST /agent/preview/approve-all`
-
-Approves every pending action in a workflow.
-
-Body:
-
-```json
-{
-  "workflowId": "a1b2c3"
-}
-```
-
-### `POST /agent/recovery/undo`
-
-Attempts to undo one executed action.
-
-Body:
-
-```json
-{
-  "actionId": "uuid"
-}
-```
-
-### `POST /agent/recovery/rollback`
-
-Attempts to rollback an entire workflow in reverse execution order.
-
-Body:
-
-```json
-{
-  "workflowId": "a1b2c3"
-}
-```
-
-## Webhooks
-
-### `POST /webhooks/graph`
-
-Receives Microsoft Graph change notifications.
-
-Behavior:
-
-- validates subscription mapping
-- queues mailbox sync for the affected user
-
-## Health and Security
-
-### `GET /health`
-
-Health endpoint.
-
-Response:
-
-```json
-{ "ok": true }
-```
-
-### `GET /.well-known/security.txt`
-
-Serves security disclosure metadata.
+| Environment `VALIDATION_TOKEN` | Request Header `X-Validation-Token` | HTTP Status | Response Error Code |
+|---|---|---|---|
+| Unconfigured or < 32 chars | Any | `503` | `VALIDATION_NOT_CONFIGURED` |
+| Configured | Missing or empty | `401` | `VALIDATION_TOKEN_REQUIRED` |
+| Configured | Incorrect token | `403` | `VALIDATION_TOKEN_INVALID` |
+| Configured | Correct token | `200` / `next()` | Access Permitted |
+
+### Endpoint Summary
+
+- `POST /validation/cohorts`: Create a validation cohort (`name`, `vertical`, `startDate`, `endDate`).
+- `GET /validation/cohorts`: List validation cohorts.
+- `GET /validation/cohorts/:id`: Get validation cohort details.
+- `PATCH /validation/cohorts/:id`: Update validation cohort details or status (`planning`, `active`, `completed`, `cancelled`).
+- `POST /validation/cohorts/:id/participants`: Add a participant code (`participantCode`, `persona`, `source`).
+- `GET /validation/cohorts/:id/participants`: List participants in a cohort.
+- `PATCH /validation/participants/:id`: Update participant onboarding, retention, or willingness-to-pay.
+- `POST /validation/cohorts/:id/ingestion-attempts`: Record an ingestion attempt (`participantId`, `ingestionMode`).
+- `POST /validation/cohorts/:id/email-labels`: Record a human email label (`emailId`, `reviewerCode`, `isCritical`, `shouldCreateAction`, `shouldCreateOpportunity`, `correctDeadline`).
+- `POST /validation/cohorts/:id/extraction-reviews`: Record an extraction candidate review (`emailId`, `reviewerCode`, `actionValid`, `opportunityValid`).
+- `POST /validation/cohorts/:id/interviews`: Record discovery interview data (`participantId`, `problemSeverity`, `currentWorkaround`, `priceResponse`).
+- `GET /validation/cohorts/:id/metrics`: Compute cohort metrics against ground-truth reviews.
+- `POST /validation/cohorts/:id/decision`: Evaluate cohort Go/No-Go decision rules against versioned thresholds (`v1`).
+- `GET /validation/cohorts/:id/export`: Export sanitized cohort validation data for analysis (excludes email bodies, prompts, raw tokens, and personal interview transcripts).

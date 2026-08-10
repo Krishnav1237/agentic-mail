@@ -9,3 +9,6 @@ frontend/dist
 *.log.*
 docker_out.txt
 supabase/.temp/
+validation-data/
+heldout-*.json
+*.validation-private.json

@@ -1,152 +1,120 @@
-# Deployment Guide
+# Production Deployment Guide
+*Inbox Intelligence Layer (IIL) Backend*
 
-## Target Setup
+---
 
-- Frontend: Vercel
-- Backend API: Railway
-- Background worker: Railway
+## Target Topology
 
-This repository now supports that split directly:
+- **Frontend**: Vercel
+- **Backend API**: Railway / Container Platform
+- **Background Worker**: Railway / Container Platform
+- **Database**: PostgreSQL 16 (Railway / Neon / Supabase)
+- **Cache & Queue**: Redis 7 (Railway / Upstash / Redis Cloud)
 
-- the frontend includes `frontend/vercel.json` for SPA route rewrites
-- the backend supports cross-site auth cookies for Vercel to Railway setups
-- origin matching supports exact domains plus preview-style patterns such as `https://your-app-*.vercel.app`
+---
 
-## Frontend (Vercel)
+## 1. Frontend Configuration (Vercel)
 
-1. Create a new Vercel project and point it at the `frontend/` directory.
-2. Use these settings:
-   - Framework: Vite
-   - Build command: `npm run build`
-   - Output directory: `dist`
-3. Add environment variables:
+1. Connect Vercel to your GitHub repository and set the root directory to `frontend/`.
+2. Configure build settings:
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+3. Add Environment Variables:
    - `VITE_API_BASE=https://your-api.up.railway.app`
 4. Deploy.
 
-Notes:
-- `frontend/vercel.json` handles client-side routes such as `/auth/callback`, `/dashboard`, and `/tasks`.
-- If you only want the landing page live first, Vercel can deploy that immediately. The waitlist form will work once `VITE_API_BASE` points to the Railway backend.
+---
 
-### Frontend-Only Waitlist Mode
+## 2. Backend API Configuration
 
-If you want the landing page and waitlist live before deploying the backend,
-the frontend can invoke a Supabase Edge Function instead of calling `/waitlist`
-on the API.
-
-Set these in Vercel:
-
-- `VITE_SUPABASE_URL=https://your-project.supabase.co`
-- `VITE_SUPABASE_ANON_KEY=your_supabase_anon_key`
-
-In this mode:
-
-- the landing page waitlist calls `supabase/functions/waitlist-signup`
-- the rest of the authenticated app still needs the backend later
-- the `waitlist` table should be created from `supabase/sql/waitlist.sql`
-- Resend runs inside the Edge Function, not in the browser
-
-Supabase requirements:
-
-1. Run the SQL in `supabase/sql/waitlist.sql` in your Supabase project.
-2. Set Edge Function secrets:
-   - `RESEND_API_KEY`
-   - `RESEND_FROM_EMAIL` (optional, defaults to `onboarding@resend.dev`)
-3. Deploy the function:
-
-```bash
-supabase functions deploy waitlist-signup --no-verify-jwt
-```
-
-Notes:
-
-- `--no-verify-jwt` is intentional because the landing page is public.
-- Git pushes and Vercel deploys do not redeploy Supabase Edge Functions. If you
-  change `supabase/functions/waitlist-signup/index.ts`, redeploy that function
-  separately or the frontend and function contract can drift.
-- Do not move `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or the Resend key
-  into the frontend.
-
-## Backend API (Railway)
-
-1. Create a Railway service from the `backend/` directory.
-2. Set:
-   - Build command: `npm install && npm run build`
-   - Start command: `npm run start`
-3. Add environment variables from `backend/.env.example`.
-4. For a Vercel frontend, set these explicitly:
-   - `FRONTEND_URL=https://your-app.vercel.app,https://your-app-*.vercel.app`
-   - `AUTH_COOKIE_SAME_SITE=none`
-   - `AUTH_COOKIE_SECURE=true`
-5. Set your provider callback URLs to the Railway API domain:
+1. Create a service pointing to the `backend/` directory.
+2. Build & Start Settings:
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm run start`
+3. Required Environment Variables:
+   - `NODE_ENV=production`
+   - `PORT=4000`
+   - `DATABASE_URL=postgres://...`
+   - `REDIS_URL=redis://...`
+   - `FRONTEND_URL=https://your-app.vercel.app`
+   - `TRUST_PROXY=1` (Requires explicit `1` setting for single-hop proxy topology; ignores spoofed `X-Forwarded-For`)
+   - `AUTH_JWT_SECRET=<32_char_random_secret>` (Must NOT use development default)
+   - `AUTH_JWT_ISSUER=iil-api`
+   - `AUTH_JWT_AUDIENCE=iil-app`
+   - `TOKEN_ENC_KEY=<base64_32_byte_key>` (Must NOT use development default)
+   - `GOOGLE_CLIENT_ID=<google_client_id>`
+   - `GOOGLE_CLIENT_SECRET=<google_client_secret>`
    - `GOOGLE_REDIRECT_URI=https://your-api.up.railway.app/auth/google/callback`
-   - `MS_REDIRECT_URI=https://your-api.up.railway.app/auth/microsoft/callback`
+   - `AI_PROVIDER=gemini`
+   - `AI_MODEL=gemini-flash-latest` (use a model your API key can call; deprecated IDs return HTTP 404)
+   - `GEMINI_API_KEY=<gemini_api_key>`
+   - `AI_FALLBACK_ENABLED=false` (Production mode NEVER executes fallback when no API key exists; throws 503)
+   - `VALIDATION_TOKEN=<32_char_pre_shared_secret>` (Protects internal validation tooling routes, NOT public customer APIs. Missing/empty token returns 503 VALIDATION_NOT_CONFIGURED)
+   - `EMAIL_SCORING_MODE=off` or `shadow` (`active` mode is REJECTED during production startup until extraction quality is measured)
+   - `VALIDATION_HELDOUT_CORPUS_PATH=/secure/local/path/heldout-corpus.json` (Must point to an external gitignored path outside tracked repository root)
 
-Important:
-- Put the canonical Vercel production URL first in `FRONTEND_URL`. The backend uses the first exact origin for redirecting the OAuth callback back to the frontend.
-- The `https://your-app-*.vercel.app` pattern is for preview deployments. If you use a custom preview domain strategy instead, prefer that.
+---
 
-## Backend Worker (Railway)
+## 3. Background Ingestion Worker
 
-Create a second Railway service from the same `backend/` directory:
+Create a second service from the same `backend/` directory:
 
-- Build command: `npm install && npm run build`
-- Start command: `node dist/workers/index.js`
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `node dist/workers/index.js`
 
-Use the same env values as the API service.
+Use identical environment variables as the Backend API service.
 
-## Postgres + Redis
+---
 
-Use managed services such as Neon, Supabase, or Railway Postgres for DB, and Upstash, Railway Redis, or Redis Cloud for Redis.
+## 4. Database Migrations (001–007)
 
-Set the following environment variables:
-
-- `DATABASE_URL`
-- `REDIS_URL`
-- `QUEUE_REDIS_URL` (optional override for BullMQ)
-- `CACHE_REDIS_URL` (optional override for cache/state reads)
-- `FRONTEND_URL`
-- `AUTH_JWT_SECRET`
-- `AUTH_JWT_ISSUER`
-- `AUTH_JWT_AUDIENCE`
-- `AUTH_COOKIE_NAME`
-- `AUTH_COOKIE_SAME_SITE`
-- `AUTH_COOKIE_SECURE`
-- `TOKEN_ENC_KEY`
-- `SECURITY_CONTACT`
-- `SECURITY_POLICY_URL`
-- `MS_CLIENT_ID`
-- `MS_CLIENT_SECRET`
-- `MS_REDIRECT_URI`
-- `MS_SCOPES`
-- `MS_WEBHOOK_NOTIFICATION_URL`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_REDIRECT_URI`
-- `GOOGLE_SCOPES`
-- `AI_PROVIDER`, `AI_MODEL`, and API keys
-
-Run migrations for the agent system if you are upgrading:
+Apply migrations 001 through 007 sequentially on your production PostgreSQL database:
 
 ```bash
-psql "$DATABASE_URL" -f backend/db/migrations/002_agent_system.sql
-psql "$DATABASE_URL" -f backend/db/migrations/003_autopilot_level.sql
-psql "$DATABASE_URL" -f backend/db/migrations/004_agent_enhancements.sql
-psql "$DATABASE_URL" -f backend/db/migrations/005_personality_mode.sql
-psql "$DATABASE_URL" -f backend/db/migrations/006_google_integration.sql
-psql "$DATABASE_URL" -f backend/db/migrations/007_productization_indexes.sql
-psql "$DATABASE_URL" -f backend/db/migrations/008_autonomous_operator_hardening.sql
+psql "$DATABASE_URL" -f db/migrations/001_baseline_schema.sql
+psql "$DATABASE_URL" -f db/migrations/002_gmail_ingestion.sql
+psql "$DATABASE_URL" -f db/migrations/003_intelligence_extraction.sql
+psql "$DATABASE_URL" -f db/migrations/004_phase1_4_audit_fixes.sql
+psql "$DATABASE_URL" -f db/migrations/005_runtime_integrity_fixes.sql
+psql "$DATABASE_URL" -f db/migrations/006_validation_program.sql
+psql "$DATABASE_URL" -f db/migrations/007_validation_scoring_integrity.sql
 ```
 
-## Microsoft Graph Webhooks
+---
 
-Ensure `MS_WEBHOOK_NOTIFICATION_URL` is publicly reachable over HTTPS and routed to:
+## 5. Google OAuth Consent Screen Configuration
 
-- `POST /webhooks/graph`
+1. Enable **Gmail API** (`gmail.googleapis.com`) on the same Cloud project as the OAuth client.
+2. OAuth client type must be **Web application**.
+3. Authorized redirect URI must match `GOOGLE_REDIRECT_URI` **exactly** (scheme, host, port, path; no trailing slash), e.g.:
+   `https://your-api.up.railway.app/auth/google/callback`
+4. OAuth consent screen scopes must include:
+   - `openid`, `email` / `userinfo.email`, `profile` / `userinfo.profile`
+   - `https://www.googleapis.com/auth/gmail.readonly` (required for sync; identity-only tokens cause `Insufficient Permission`)
+5. While the app is in **Testing**, every operator Gmail must be listed under **Test users**.
+6. PKCE uses `code_challenge_method=S256` (uppercase). Do not override this in clients.
 
-Update your Azure App Registration redirect URI to:
+---
 
-- `https://your-api.up.railway.app/auth/microsoft/callback`
+## 6. Production Security Rules & Validation API Notes
 
-Update your Google Cloud OAuth redirect URI to:
+1. **Validation API Authorization**: Internal validation tooling routes (`/validation/*`) are protected by `X-Validation-Token` compared via timing-safe equality (`crypto.timingSafeEqual`). They are disabled (HTTP 503) when `VALIDATION_TOKEN` is unconfigured. They are NOT Phase 5 customer APIs.
+2. **Production Fallback Prohibition**: Deterministic fallback (`generateDeterministicFallback`) is disabled in production. If no live AI provider key is configured, calls return HTTP 503 `EXTRACTION_PROVIDER_UNAVAILABLE`.
+3. **Production Active Scoring Rejection**: Setting `EMAIL_SCORING_MODE=active` when `NODE_ENV=production` causes environment parsing to fail at startup, preventing accidental active scheduling changes before extraction quality is measured.
+4. **Never commit secrets**: `.env` is gitignored. Rotate any secret that was shared outside a secret store.
+5. **Scope honesty**: Phases 5–7 (customer dashboard APIs, Gmail write/send, agent planners) are deferred. This deploy is read-only ingestion + extraction + validation ops — not a full end-user product.
 
-- `https://your-api.up.railway.app/auth/google/callback`
+---
+
+## 7. Deployment Smoke-Test Verification
+
+After deployment, run the following verification checks:
+
+1. **Liveness Check**: `GET /health/live` $\rightarrow$ HTTP 200 with `"status": "live"`
+2. **Readiness Check**: `GET /health/ready` $\rightarrow$ HTTP 200 with `"status": "ready"` and database/redis up
+3. **Validation Route Fail-Closed**: `GET /validation/cohorts` without header $\rightarrow$ HTTP 401 `VALIDATION_TOKEN_REQUIRED` (or 503 if `VALIDATION_TOKEN` unset)
+4. **Invalid Token Protection**: `GET /validation/cohorts` with invalid `X-Validation-Token` header $\rightarrow$ HTTP 403 `VALIDATION_TOKEN_INVALID`
+5. **Session Endpoint**: `GET /auth/session` $\rightarrow$ `{"authenticated": false}`
+6. **OAuth + Sync (owner)**: complete Google login, confirm stored scopes include `gmail.readonly`, then `POST /emails/sync` with worker running
+7. **Extract (owner)**: `POST /emails/:id/extract` with a valid `GEMINI_API_KEY` / `AI_MODEL` pair
