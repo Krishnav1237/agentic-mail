@@ -48,7 +48,8 @@ export const getGoogleAuthUrlWithPKCE = async (state: string) => {
     scope: GMAIL_SCOPES,
     state,
     code_challenge: challenge,
-    code_challenge_method: 's256' as any,
+    // Google requires uppercase S256 (RFC 7636); lowercase s256 → Error 400 invalid_request
+    code_challenge_method: 'S256' as any,
   });
 
   return authUrl;
