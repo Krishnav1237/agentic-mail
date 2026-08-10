@@ -30,6 +30,18 @@ const GOLD_REASONS = [
   'identified_nonobvious_obligation',
 ] as const;
 
+const GOLD_REASON_SET = new Set<string>(GOLD_REASONS);
+
+/** Accept known enum values; coerce free-text LLM output to null (not a hard fail). */
+const GoldReasonSchema = z
+  .union([z.enum(GOLD_REASONS), z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null || v === '') return null;
+    return GOLD_REASON_SET.has(v) ? (v as (typeof GOLD_REASONS)[number]) : null;
+  })
+  .nullable()
+  .optional();
+
 const ANALYSIS_MODES = ['llm', 'deterministic_fallback'] as const;
 export type AnalysisMode = (typeof ANALYSIS_MODES)[number];
 
@@ -44,7 +56,7 @@ export const ActionCandidateSchema = z.object({
   hasExactTime: z.boolean().default(false),
   confidence: z.number().min(0).max(1).default(0.8),
   isGold: z.boolean().default(false),
-  goldReason: z.enum(GOLD_REASONS).optional().nullable(),
+  goldReason: GoldReasonSchema,
 });
 
 export const OpportunityCandidateSchema = z.object({
@@ -54,7 +66,7 @@ export const OpportunityCandidateSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   confidence: z.number().min(0).max(1).default(0.8),
   isGold: z.boolean().default(false),
-  goldReason: z.enum(GOLD_REASONS).optional().nullable(),
+  goldReason: GoldReasonSchema,
 });
 
 export const EmailExtractionSchema = z.object({
@@ -101,6 +113,7 @@ const MODEL_PRICING: Record<string, ModelPricing> = {
   'gemini-1.5-flash': { promptPerToken: 0.000_000_075, completionPerToken: 0.000_000_300 },
   'gemini-1.5-pro': { promptPerToken: 0.000_001_25, completionPerToken: 0.000_005_00 },
   'gemini-2.0-flash': { promptPerToken: 0.000_000_10, completionPerToken: 0.000_000_40 },
+  'gemini-flash-latest': { promptPerToken: 0.000_000_10, completionPerToken: 0.000_000_40 },
 };
 
 function estimateCost(

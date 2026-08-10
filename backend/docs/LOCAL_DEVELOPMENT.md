@@ -73,7 +73,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:4000/auth/google/callback
 
 AI_PROVIDER=gemini
-AI_MODEL=gemini-1.5-flash
+AI_MODEL=gemini-flash-latest
 GEMINI_API_KEY=your_gemini_api_key
 AI_FALLBACK_ENABLED=true
 

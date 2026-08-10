@@ -33,7 +33,7 @@ In **production mode** (`NODE_ENV=production`), strict safety checks enforce tha
 | `GOOGLE_CLIENT_SECRET` | `""` | Required | Google Cloud OAuth 2.0 Web Client Secret. |
 | `GOOGLE_REDIRECT_URI` | `http://...` | Required | OAuth redirect URI registered in Google Console. |
 | `AI_PROVIDER` | `gemini` | Required | Provider selection (`gemini`, `openrouter`, `groq`, `disabled`). |
-| `AI_MODEL` | `gemini-1.5-flash` | Required | Model identifier string sent to provider. |
+| `AI_MODEL` | `gemini-flash-latest` | Required | Model identifier sent to the provider. Gemini IDs change over time; verify the model supports `generateContent` for your key (legacy IDs like `gemini-1.5-flash` may return 404). |
 | `GEMINI_API_KEY` | `""` | Optional | Google Gemini API key. |
 | `OPENROUTER_API_KEY` | `""` | Optional | OpenRouter API key. |
 | `GROQ_API_KEY` | `""` | Optional | Groq API key. |

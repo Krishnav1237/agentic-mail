@@ -47,7 +47,7 @@
    - `GOOGLE_CLIENT_SECRET=<google_client_secret>`
    - `GOOGLE_REDIRECT_URI=https://your-api.up.railway.app/auth/google/callback`
    - `AI_PROVIDER=gemini`
-   - `AI_MODEL=gemini-1.5-flash`
+   - `AI_MODEL=gemini-flash-latest` (use a model your API key can call; deprecated IDs return HTTP 404)
    - `GEMINI_API_KEY=<gemini_api_key>`
    - `AI_FALLBACK_ENABLED=false` (Production mode NEVER executes fallback when no API key exists; throws 503)
    - `VALIDATION_TOKEN=<32_char_pre_shared_secret>` (Protects internal validation tooling routes, NOT public customer APIs. Missing/empty token returns 503 VALIDATION_NOT_CONFIGURED)
@@ -85,10 +85,15 @@ psql "$DATABASE_URL" -f db/migrations/007_validation_scoring_integrity.sql
 
 ## 5. Google OAuth Consent Screen Configuration
 
-1. In Google Cloud Console, add your production API redirect URI:
+1. Enable **Gmail API** (`gmail.googleapis.com`) on the same Cloud project as the OAuth client.
+2. OAuth client type must be **Web application**.
+3. Authorized redirect URI must match `GOOGLE_REDIRECT_URI` **exactly** (scheme, host, port, path; no trailing slash), e.g.:
    `https://your-api.up.railway.app/auth/google/callback`
-2. Requested scope:
-   `https://www.googleapis.com/auth/gmail.readonly`
+4. OAuth consent screen scopes must include:
+   - `openid`, `email` / `userinfo.email`, `profile` / `userinfo.profile`
+   - `https://www.googleapis.com/auth/gmail.readonly` (required for sync; identity-only tokens cause `Insufficient Permission`)
+5. While the app is in **Testing**, every operator Gmail must be listed under **Test users**.
+6. PKCE uses `code_challenge_method=S256` (uppercase). Do not override this in clients.
 
 ---
 
@@ -97,6 +102,8 @@ psql "$DATABASE_URL" -f db/migrations/007_validation_scoring_integrity.sql
 1. **Validation API Authorization**: Internal validation tooling routes (`/validation/*`) are protected by `X-Validation-Token` compared via timing-safe equality (`crypto.timingSafeEqual`). They are disabled (HTTP 503) when `VALIDATION_TOKEN` is unconfigured. They are NOT Phase 5 customer APIs.
 2. **Production Fallback Prohibition**: Deterministic fallback (`generateDeterministicFallback`) is disabled in production. If no live AI provider key is configured, calls return HTTP 503 `EXTRACTION_PROVIDER_UNAVAILABLE`.
 3. **Production Active Scoring Rejection**: Setting `EMAIL_SCORING_MODE=active` when `NODE_ENV=production` causes environment parsing to fail at startup, preventing accidental active scheduling changes before extraction quality is measured.
+4. **Never commit secrets**: `.env` is gitignored. Rotate any secret that was shared outside a secret store.
+5. **Scope honesty**: Phases 5–7 (customer dashboard APIs, Gmail write/send, agent planners) are deferred. This deploy is read-only ingestion + extraction + validation ops — not a full end-user product.
 
 ---
 
@@ -104,8 +111,10 @@ psql "$DATABASE_URL" -f db/migrations/007_validation_scoring_integrity.sql
 
 After deployment, run the following verification checks:
 
-1. **Liveness Check**: `GET /health/live` $\rightarrow$ `{"status": "ok"}`
-2. **Readiness Check**: `GET /health/ready` $\rightarrow$ `{"status": "ok", "db": true, "redis": true}`
-3. **Validation Route Fail-Closed**: `GET /validation/cohorts` without header $\rightarrow$ HTTP 401 `VALIDATION_TOKEN_REQUIRED`
+1. **Liveness Check**: `GET /health/live` $\rightarrow$ HTTP 200 with `"status": "live"`
+2. **Readiness Check**: `GET /health/ready` $\rightarrow$ HTTP 200 with `"status": "ready"` and database/redis up
+3. **Validation Route Fail-Closed**: `GET /validation/cohorts` without header $\rightarrow$ HTTP 401 `VALIDATION_TOKEN_REQUIRED` (or 503 if `VALIDATION_TOKEN` unset)
 4. **Invalid Token Protection**: `GET /validation/cohorts` with invalid `X-Validation-Token` header $\rightarrow$ HTTP 403 `VALIDATION_TOKEN_INVALID`
 5. **Session Endpoint**: `GET /auth/session` $\rightarrow$ `{"authenticated": false}`
+6. **OAuth + Sync (owner)**: complete Google login, confirm stored scopes include `gmail.readonly`, then `POST /emails/sync` with worker running
+7. **Extract (owner)**: `POST /emails/:id/extract` with a valid `GEMINI_API_KEY` / `AI_MODEL` pair

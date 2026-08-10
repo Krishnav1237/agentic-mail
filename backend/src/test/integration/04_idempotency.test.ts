@@ -99,6 +99,8 @@ export async function runIdempotencyTest() {
   console.log('        Passed: Cross-user key isolation verified.');
 
   // 5. Reprocessing without duplication & protected state protection
+  // Use a second extraction pass on the same email — entity keys must be stable so
+  // counts do not grow. Do not assume a hard-coded title matches live/fallback extraction.
   console.log('    4.5 Testing reprocessing without duplication & user state protection...');
   const emailRecruiter = await createTestEmail(
     userA.id,
@@ -106,6 +108,7 @@ export async function runIdempotencyTest() {
     'We invite you to apply for our internship. Please submit by Friday deadline.'
   );
 
+  // Seed a completed action with a stable key (simulates prior materialization + user completion)
   const matKey = makeMaterializedEntityKey({
     userId: userA.id,
     sourceEmailId: emailRecruiter.id,
@@ -116,25 +119,45 @@ export async function runIdempotencyTest() {
     category: 'career',
   });
 
-  // Manually insert action entity as if materialized by LLM
   await query(
     `INSERT INTO actions (user_id, email_id, idempotency_key, title, status, priority_score)
-     VALUES ($1, $2, $3, 'Submit Application', 'open', 90)`,
+     VALUES ($1, $2, $3, 'Submit Application', 'completed', 90)`,
     [userA.id, emailRecruiter.id, matKey]
   );
 
-  const actionsCount1 = await query(`SELECT COUNT(*)::int AS count FROM actions WHERE user_id = $1`, [userA.id]);
-  if (actionsCount1.rows[0].count !== 1) throw new Error('FAILED: Action row not inserted');
-
-  // Mark action as completed by user
-  await query(`UPDATE actions SET status = 'completed' WHERE idempotency_key = $1`, [matKey]);
-
-  // Process email intelligence (simulating re-extraction)
+  // First extraction may create additional entities with different keys; that is allowed.
   await IntelligenceService.processEmailIntelligence(emailRecruiter.id);
 
-  const actionsCount2 = await query(`SELECT COUNT(*)::int AS count FROM actions WHERE user_id = $1`, [userA.id]);
-  if (actionsCount2.rows[0].count !== actionsCount1.rows[0].count) {
-    throw new Error(`FAILED: Reprocessing created duplicate action rows (before: ${actionsCount1.rows[0].count}, after: ${actionsCount2.rows[0].count})`);
+  const actionsAfterFirst = await query(
+    `SELECT COUNT(*)::int AS count FROM actions WHERE user_id = $1 AND email_id = $2`,
+    [userA.id, emailRecruiter.id]
+  );
+  const oppsAfterFirst = await query(
+    `SELECT COUNT(*)::int AS count FROM opportunities WHERE user_id = $1 AND email_id = $2`,
+    [userA.id, emailRecruiter.id]
+  );
+
+  // Second extraction must be idempotent for the same candidates
+  await IntelligenceService.processEmailIntelligence(emailRecruiter.id);
+
+  const actionsAfterSecond = await query(
+    `SELECT COUNT(*)::int AS count FROM actions WHERE user_id = $1 AND email_id = $2`,
+    [userA.id, emailRecruiter.id]
+  );
+  const oppsAfterSecond = await query(
+    `SELECT COUNT(*)::int AS count FROM opportunities WHERE user_id = $1 AND email_id = $2`,
+    [userA.id, emailRecruiter.id]
+  );
+
+  if (actionsAfterSecond.rows[0].count !== actionsAfterFirst.rows[0].count) {
+    throw new Error(
+      `FAILED: Reprocessing created duplicate action rows (before: ${actionsAfterFirst.rows[0].count}, after: ${actionsAfterSecond.rows[0].count})`
+    );
+  }
+  if (oppsAfterSecond.rows[0].count !== oppsAfterFirst.rows[0].count) {
+    throw new Error(
+      `FAILED: Reprocessing created duplicate opportunity rows (before: ${oppsAfterFirst.rows[0].count}, after: ${oppsAfterSecond.rows[0].count})`
+    );
   }
 
   const completedActions = await query(`SELECT status FROM actions WHERE idempotency_key = $1`, [matKey]);

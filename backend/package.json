@@ -8,8 +8,8 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "worker": "tsx watch src/workers/index.ts",
-    "test:integration": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true tsx src/test/integration/run.ts",
-    "validation:regression": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true tsx src/test/validation.regression.ts",
+    "test:integration": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true AI_PROVIDER=disabled GEMINI_API_KEY= OPENROUTER_API_KEY= GROQ_API_KEY= tsx src/test/integration/run.ts",
+    "validation:regression": "cross-env NODE_ENV=test AI_FALLBACK_ENABLED=true AI_PROVIDER=disabled GEMINI_API_KEY= OPENROUTER_API_KEY= GROQ_API_KEY= tsx src/test/validation.regression.ts",
     "validation:quality": "tsx src/test/validation.quality.ts"
   },
   "dependencies": {

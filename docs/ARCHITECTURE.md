@@ -62,7 +62,7 @@ graph TD
 - Atomic OAuth state consumption via `GETDEL`.
 
 ### 2.5 Structured AI Service (`backend/src/ai/structuredAiService.ts`)
-- Calls live external LLM providers (`gemini-1.5-flash`, `openrouter`, `groq`) using Zod schema validation (`EmailExtractionSchema`).
+- Calls live external LLM providers (Gemini via `AI_MODEL`, e.g. `gemini-flash-latest`; or OpenRouter / Groq) using Zod schema validation (`EmailExtractionSchema`).
 - Resolves execution path explicitly via `resolveAnalysisPath()`:
   - `injected_provider` / `configured_provider`: Calls LLM API.
   - `deterministic_fallback`: Executes deterministic rule engine (permitted ONLY in non-production environments when `AI_FALLBACK_ENABLED=true`).

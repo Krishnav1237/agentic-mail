@@ -65,7 +65,7 @@ const envSchema = z.object({
 
   // AI provider config
   AI_PROVIDER: z.enum(['gemini', 'openrouter', 'groq', 'disabled']).default('gemini'),
-  AI_MODEL: z.string().min(1).default('gemini-1.5-flash'),
+  AI_MODEL: z.string().min(1).default('gemini-flash-latest'),
   GEMINI_API_KEY: z.string().optional().default(''),
   OPENROUTER_API_KEY: z.string().optional().default(''),
   GROQ_API_KEY: z.string().optional().default(''),
