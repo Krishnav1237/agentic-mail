@@ -12,3 +12,5 @@ supabase/.temp/
 validation-data/
 heldout-*.json
 *.validation-private.json
+.claude/
+.playwright-mcp/

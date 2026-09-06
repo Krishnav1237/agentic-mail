@@ -5,22 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
     "format:check": "prettier . --check --ignore-path ./.prettierignore",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@react-three/fiber": "^8.18.0",
     "@vercel/analytics": "^2.0.1",
-    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.456.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
-    "tailwind-merge": "^3.5.0",
     "three": "^0.150.1"
   },
   "devDependencies": {
@@ -40,7 +43,8 @@
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.29.1",
-    "vite": "^7.1.10"
+    "vite": "^7.1.10",
+    "vitest": "^3.2.7"
   },
   "overrides": {
     "picomatch": "^2.3.2",

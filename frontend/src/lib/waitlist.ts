@@ -45,36 +45,45 @@ const ensureSupabaseConfig = () => {
   }
 };
 
-const parseFunctionResponse = async (
-  response: Response
-): Promise<
+/** Anything the edge function can hand back: a success body, an error body,
+ * or (for a non-JSON failure, e.g. a gateway error page) raw text. */
+type WaitlistPayload =
   | WaitlistJoinResponse
   | WaitlistStatsResponse
   | SupabaseErrorResponse
   | { error?: string }
-  | string
-> => {
+  | string;
+
+const parseFunctionResponse = async (
+  response: Response
+): Promise<WaitlistPayload> => {
   const contentType = response.headers.get('content-type') ?? '';
-  return contentType.includes('application/json')
-    ? ((await response.json()) as
-        | WaitlistJoinResponse
-        | WaitlistStatsResponse
-        | SupabaseErrorResponse
-        | { error?: string })
-    : await response.text();
+  if (!contentType.includes('application/json')) return response.text();
+  // A response can advertise JSON and still not contain any (a truncated
+  // body, an empty 502) — `.json()` throws there, which would surface as an
+  // unhandled parse error instead of the request failure it actually is.
+  try {
+    return (await response.json()) as WaitlistPayload;
+  } catch {
+    return '';
+  }
 };
 
-const extractErrorMessage = (
-  payload:
-    | WaitlistJoinResponse
-    | WaitlistStatsResponse
-    | SupabaseErrorResponse
-    | { error?: string }
-    | string
-) =>
+/** Every shape an error body can arrive in, read defensively. A failed
+ * response is the one case where the payload genuinely isn't one of the
+ * success types, so each field is looked up rather than assumed present —
+ * indexing the union directly only type-checked by accident of which member
+ * happened to declare which key. */
+const readErrorField = (payload: object, key: string): string | undefined => {
+  const value = (payload as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const extractErrorMessage = (payload: WaitlistPayload) =>
   typeof payload === 'string'
     ? payload
-    : [payload.message, payload.details, payload.hint, payload.error]
+    : ['message', 'details', 'hint', 'error']
+        .map((key) => readErrorField(payload, key))
         .filter(Boolean)
         .join(' ');
 
