@@ -9,3 +9,5 @@ frontend/dist
 *.log.*
 docker_out.txt
 supabase/.temp/
+.claude/
+.playwright-mcp/

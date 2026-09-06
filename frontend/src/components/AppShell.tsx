@@ -1,274 +1,327 @@
+import { useId } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Activity,
-  CalendarClock,
-  ChevronRight,
+  CheckCheck,
+  ChevronDown,
   Home,
-  Inbox,
-  ListChecks,
-  LockKeyhole,
-  LogOut,
   Mail,
-  RefreshCcw,
-  Settings,
+  SquareCheck,
+  Sparkle,
   ShieldCheck,
-  Sparkles,
+  SlidersHorizontal,
+  type LucideIcon,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { API_BASE } from '../lib/apiBase';
-import { useApp } from '../lib/useApp';
+import { NavLink, useLocation, useOutlet } from 'react-router-dom';
+import { ThemeToggle } from './ThemeToggle';
+import { useAtmosphereVisible } from '../lib/useAtmosphereVisible';
+import { useQuickAccess } from '../lib/useQuickAccess';
+import { mailViewById } from '../lib/mailViews';
+import { useWorkspaceTheme } from '../lib/useWorkspaceTheme';
+import { settingsActions, useAgentSettings } from '../lib/settingsStore';
+import { DURATION, EASE, SPRING_PILL, usePageTransition } from './workspace/motion';
+import { Atmosphere } from './workspace/Atmosphere';
+import { AccountMenu, Divider, Eyebrow } from './workspace';
 
-const navItems = [
-  { label: 'Dashboard', icon: Home, to: '/dashboard' },
-  { label: 'Tasks', icon: ListChecks, to: '/tasks' },
-  { label: 'Deadlines', icon: CalendarClock, to: '/deadlines' },
-  { label: 'Opportunities', icon: Sparkles, to: '/opportunities' },
-  { label: 'Inbox', icon: Inbox, to: '/inbox' },
-  { label: 'Agent', icon: Activity, to: '/agent' },
-  { label: 'Settings', icon: Settings, to: '/settings' },
+const navItems: { label: string; to: string; icon: LucideIcon }[] = [
+  { label: 'Dashboard', to: '/dashboard', icon: Home },
+  { label: 'Inbox', to: '/inbox', icon: Mail },
+  { label: 'Approvals', to: '/approvals', icon: ShieldCheck },
+  { label: 'Actions', to: '/actions', icon: SquareCheck },
+  { label: 'Opportunities', to: '/opportunities', icon: Sparkle },
+  { label: 'Completed', to: '/completed', icon: CheckCheck },
+  { label: 'Settings', to: '/settings', icon: SlidersHorizontal },
 ];
 
-const routeContent: Record<string, { title: string; description: string }> = {
-  '/dashboard': {
-    title: 'Mission control for student work',
-    description:
-      'Monitor high-priority tasks, deadlines, opportunities, and agent activity from one secure workspace.',
-  },
-  '/tasks': {
-    title: 'Task operations',
-    description:
-      'Search, sort, and action the structured task graph generated from your inbox.',
-  },
-  '/deadlines': {
-    title: 'Deadline planning',
-    description:
-      'See the due-date timeline clearly and take action before work becomes urgent.',
-  },
-  '/opportunities': {
-    title: 'Opportunity pipeline',
-    description:
-      'Keep internships, events, and career moves visible before they vanish in your inbox.',
-  },
-  '/inbox': {
-    title: 'Intelligent inbox view',
-    description:
-      'Inspect how the system classifies and prioritizes incoming messages before they become work.',
-  },
-  '/agent': {
-    title: 'Agent operations',
-    description:
-      'Review approvals, activity summaries, and the agent’s execution trail with confidence.',
-  },
-  '/settings': {
-    title: 'Control surface',
-    description:
-      'Tune goals, execution posture, and personalization without a complicated admin maze.',
-  },
-};
-
+/**
+ * The IIL workspace shell: floating topbar + nav-only sidebar + rounded canvas.
+ * Formerly the (dead) dashboard shell — rewritten to the Sprint 1 design.
+ */
 export default function AppShell() {
+  const theme = useWorkspaceTheme();
+  const [atmosphereVisible] = useAtmosphereVisible();
+  const { quickAccess } = useQuickAccess();
+  const quickAccessViews = quickAccess
+    .map(mailViewById)
+    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  // Attention pigments + the Quick Access collapse state all come from the
+  // one preferences store, so both survive a reload and both are part of what
+  // a backend `PUT /preferences` already carries.
+  const prefs = useAgentSettings();
+  const quickAccessOpen = !prefs.quickAccessCollapsed;
+  const quickAccessListId = useId();
   const location = useLocation();
-  const {
-    hasToken,
-    status,
-    syncing,
-    syncInbox,
-    signOut,
-    userEmail,
-    authMode,
-    lastSyncedAt,
-    authLoading,
-  } = useApp();
-  const meta = routeContent[location.pathname] ?? routeContent['/dashboard'];
+  const outlet = useOutlet();
+  const pageTransition = usePageTransition();
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-6 lg:grid-cols-[300px_1fr] lg:px-8 relative z-10">
-        <aside className="glass-card sticky top-6 h-fit rounded-xl p-5 border border-neutral-800">
-          <div className="space-y-6">
-            <div className="rounded-xl bg-neutral-900 border border-neutral-800 px-5 py-5 text-neutral-100 shadow-sm">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-300">
-                Inbox Intelligence Layer
-              </div>
-              <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-neutral-100  ">
-                Agentic inbox OS
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-neutral-400">
-                Gmail and Outlook automation with approvals, memory, and a real
-                operational dashboard.
-              </p>
-            </div>
+    // The two attention pigments reach the entire application through these
+    // two attributes and nothing else: index.css resolves them into the
+    // `--attention-*` token family, which every rail, wash, dot, badge, count
+    // and label already reads. Changing either repaints every surface on the
+    // next frame — no reload, no prop threading, and no component that has to
+    // know a preference exists in order to honour it.
+    <div
+      className="iil-root"
+      data-theme={theme}
+      data-urgency={prefs.urgencyColor}
+      data-importance={prefs.importanceColor}
+      // The root's OWN background — see `--root-bg` in index.css — reads this
+      // rather than being gated by a second `atmosphereVisible &&` branch:
+      // `<Atmosphere>` below already owns every gold/warm layer that sits ON
+      // TOP of the root; this attribute is what lets the base underneath it
+      // also go neutral when there's nothing left to sit on top of, instead
+      // of silently keeping light theme's warm `--paper` as the floor colour
+      // even with the whole atmosphere switched off.
+      data-atmosphere={atmosphereVisible ? 'on' : 'off'}
+    >
+      {/* Shared atmosphere: the deep room the frosted surfaces float in, lit by
+          soft flowing golden light (Reference §29/§39/§42). Owns all ambient
+          motion; every page inherits it. Theme-driven purely via CSS tokens.
+          Gated by Settings → Advanced → "Show background" — the component and
+          its motion are unchanged either way, only whether it renders. */}
+      {atmosphereVisible && <Atmosphere />}
 
-            <nav className="space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={({ isActive }) =>
-                      clsx(
-                        'group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300',
-                        isActive
-                          ? 'bg-neutral-900 text-neutral-300 border border-neutral-800 shadow-sm'
-                          : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-400 border border-transparent'
-                      )
-                    }
-                  >
-                    <span className="flex items-center gap-3">
-                      <Icon
-                        size={18}
-                        className="opacity-80 transition-opacity group-hover:opacity-100"
+      {/* Experiment 1: Atmospheric Perspective — purely a depth cue for the
+          beam where it passes behind the main workspace canvas; see the
+          `.iil-depth-veil` rule in index.css for how it composes with the
+          atmosphere and the canvas. Gated the same as `<Atmosphere>` since it
+          has nothing to show when the atmosphere itself is hidden. */}
+      {atmosphereVisible && (
+        <div className="iil-depth-veil" aria-hidden="true" />
+      )}
+
+      {/* Topbar: brand left, theme + profile right (Constitution §8). */}
+      <header className="iil-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <img
+            src="/favicon.svg"
+            width={22}
+            height={22}
+            alt="IIL"
+            style={{
+              width: 'calc(var(--ui-scale) * 22px)',
+              height: 'calc(var(--ui-scale) * 22px)',
+              borderRadius: 'calc(var(--ui-scale) * 6px)',
+              display: 'block',
+            }}
+          />
+          <span
+            style={{
+              font: '600 calc(var(--ui-scale) * 14px)/1 Inter, sans-serif',
+              letterSpacing: '-0px',
+              color: 'rgb(var(--ink) / 0.94)',
+            }}
+          >
+            IIL
+          </span>
+          {/* Hidden at exactly the same breakpoint as the wordmark it
+              separates — on its own it read as a rule with nothing after it. */}
+          <span
+            className="hidden sm:inline"
+            style={{
+              width: 1,
+              height: 'calc(var(--ui-scale) * 14px)',
+              background: 'rgb(var(--ink) / 0.14)',
+            }}
+          />
+          <span
+            className="hidden sm:inline"
+            style={{
+              font: '450 calc(var(--ui-scale) * 14px)/1 Inter, sans-serif',
+              letterSpacing: 'calc(var(--ui-scale) * 1.5px)',
+              whiteSpace: 'nowrap',
+              color: 'rgb(var(--ink) / 0.94)',
+            }}
+          >
+            INBOX INTELLIGENCE LAYER
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <ThemeToggle className="scale-[0.78] origin-right" />
+          <AccountMenu />
+        </div>
+      </header>
+
+      {/* Sidebar: navigation only (Constitution §8), floating active pill. */}
+      <aside className="iil-sidebar">
+        <nav className="iil-nav">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink key={item.to} to={item.to} end className="iil-nav-item">
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <motion.span
+                        layoutId="iil-nav-pill"
+                        className="iil-pill"
+                        transition={SPRING_PILL}
                       />
+                    )}
+                    <span
+                      className="iil-nav-icon"
+                      style={{ color: isActive ? 'var(--text)' : undefined }}
+                    >
+                      {/* Lucide's `size` sets a raw SVG width/height attribute,
+                          not a CSS property — it can't read `--ui-scale` via
+                          calc(), so this is the token's factor (18 * 1.2)
+                          pre-computed as a literal instead. */}
+                      <Icon size={22} strokeWidth={1.5} aria-hidden />
+                    </span>
+                    <span
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        fontWeight: isActive ? 500 : 400,
+                        color: isActive ? 'rgb(var(--ink) / 0.98)' : undefined,
+                      }}
+                    >
                       {item.label}
                     </span>
-                    <ChevronRight
-                      size={16}
-                      className="opacity-30 transition group-hover:translate-x-0.5"
-                    />
-                  </NavLink>
-                );
-              })}
-            </nav>
-
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-neutral-400">
-                <ShieldCheck size={16} className="text-neutral-400  " />
-                Trust posture
-              </div>
-              <div className="mt-4 space-y-2 text-sm leading-7 text-neutral-400">
-                <div className="status-pill text-neutral-400 border-neutral-800 bg-neutral-900">
-                  OAuth protected
-                </div>
-                <div className="status-pill">Decision traces enabled</div>
-                <div className="status-pill">Safe-send guardrails</div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-400">
-              <div className="flex items-center gap-2 font-semibold text-neutral-400">
-                <LockKeyhole size={16} className="text-neutral-300  " />
-                Session
-              </div>
-              <div className="mt-4 space-y-2 leading-7">
-                <div className="text-neutral-400 font-medium">
-                  {authLoading
-                    ? 'Checking secure session...'
-                    : hasToken
-                      ? 'Authenticated workspace'
-                      : 'No active session'}
-                </div>
-                {userEmail && (
-                  <div className="text-neutral-400 truncate">{userEmail}</div>
+                  </>
                 )}
-                {authMode && (
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-300">
-                    {authMode} session
-                  </div>
-                )}
-                {lastSyncedAt && (
-                  <div className="text-xs text-neutral-400">
-                    Last sync queued{' '}
-                    {new Date(lastSyncedAt).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </aside>
+              </NavLink>
+            );
+          })}
+        </nav>
 
-        <div className="space-y-6">
-          <header className="glass-card rounded-xl p-5 md:p-6 border border-neutral-800">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div className="animate-fade">
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-300 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-neutral-900   shadow-sm"></span>
-                  Workspace /{' '}
-                  <span className="text-neutral-300">{meta.title}</span>
-                </div>
-                <h2 className="mt-3 font-display text-4xl font-bold tracking-tight text-neutral-100  ">
-                  {meta.title}
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-400">
-                  {meta.description}
-                </p>
-              </div>
+        {/* Quick Access — user-configurable promotion of mail-management
+            views (Starred, Sent, ...) into the main sidebar, managed from
+            Settings → Quick Access. Absent from the DOM entirely when empty,
+            so it stays unobtrusive rather than reserving dead space. */}
+        {quickAccessViews.length > 0 && (
+          <>
+            <Divider spacing={10} />
+            {/* The heading IS the control — a real <button> carrying the
+                section's label, its chevron and its ARIA state, rather than
+                a separate "More/Less" affordance sitting beside a
+                non-interactive heading. One target, and it's the thing the
+                eye already goes to.
 
-              <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[340px]">
-                <div className="flex flex-wrap gap-2 xl:justify-end">
-                  {!hasToken ? (
-                    <>
-                      <a
-                        className="btn-primary"
-                        href={`${API_BASE}/auth/google`}
-                      >
-                        <Mail size={16} /> Connect Gmail
-                      </a>
-                      <a
-                        className="btn-ghost"
-                        href={`${API_BASE}/auth/microsoft`}
-                      >
-                        <Mail size={16} /> Connect Outlook
-                      </a>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="btn-primary group"
-                        onClick={() => void syncInbox()}
-                        disabled={syncing}
-                      >
-                        <RefreshCcw
-                          size={16}
-                          className={clsx(
-                            'transition-transform group-hover:rotate-180',
-                            syncing && 'animate-spin'
+                `aria-controls` points at the list the button actually owns.
+                While collapsed that element is unmounted (the height
+                animation needs it gone, not just hidden), which is exactly
+                the case `aria-expanded="false"` describes to a screen
+                reader, so the pair stays coherent in both states. */}
+            <button
+              type="button"
+              className="iil-quick-access-toggle"
+              aria-expanded={quickAccessOpen}
+              aria-controls={quickAccessListId}
+              onClick={() =>
+                settingsActions.update({
+                  quickAccessCollapsed: quickAccessOpen,
+                })
+              }
+            >
+              <Eyebrow style={{ display: 'block' }}>Quick Access</Eyebrow>
+              <ChevronDown
+                size={12}
+                strokeWidth={2}
+                aria-hidden
+                style={{
+                  flex: 'none',
+                  transform: quickAccessOpen
+                    ? 'rotate(0deg)'
+                    : 'rotate(-90deg)',
+                  transition: 'transform var(--dur-micro) var(--ease)',
+                }}
+              />
+            </button>
+            {/* Same collapse motion as every other collapsible section in the
+                product (`Group`): height + opacity on the shared micro
+                duration and ease, nothing bespoke. On desktop the sidebar is
+                `position: fixed` between a top and a bottom inset, so its box
+                cannot change size as this animates — only the destinations
+                inside it come and go. In the compact top-nav layout the same
+                animation smoothly gives the row's height back to the canvas,
+                which is the correct behaviour there and needs no second
+                navigation model to express. */}
+            <AnimatePresence initial={false}>
+              {quickAccessOpen && (
+                <motion.div
+                  key="quick-access"
+                  id={quickAccessListId}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: DURATION.micro, ease: EASE }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <nav className="iil-nav" style={{ paddingTop: 6 }}>
+                    {quickAccessViews.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <NavLink
+                          key={item.id}
+                          to={item.path}
+                          end
+                          className="iil-nav-item"
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {isActive && (
+                                <motion.span
+                                  layoutId="iil-quickaccess-pill"
+                                  className="iil-pill"
+                                  transition={SPRING_PILL}
+                                />
+                              )}
+                              <span
+                                className="iil-nav-icon"
+                                style={{
+                                  color: isActive ? 'var(--text)' : undefined,
+                                }}
+                              >
+                                <Icon
+                                  size={22}
+                                  strokeWidth={1.5}
+                                  aria-hidden
+                                />
+                              </span>
+                              <span
+                                style={{
+                                  position: 'relative',
+                                  zIndex: 1,
+                                  fontWeight: isActive ? 500 : 400,
+                                  color: isActive
+                                    ? 'rgb(var(--ink) / 0.98)'
+                                    : undefined,
+                                }}
+                              >
+                                {item.label}
+                              </span>
+                            </>
                           )}
-                        />{' '}
-                        {syncing ? 'Syncing...' : 'Sync inbox'}
-                      </button>
-                      <button
-                        className="btn-ghost"
-                        onClick={() => void signOut()}
-                      >
-                        <LogOut size={16} /> Sign out
-                      </button>
-                    </>
-                  )}
-                </div>
+                        </NavLink>
+                      );
+                    })}
+                  </nav>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+      </aside>
 
-                <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm leading-7 text-neutral-400 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-neutral-900   rounded-full translate-x-1/2 -translate-y-1/2"></div>
-                  <div className="flex flex-wrap gap-2 relative z-10">
-                    <span className="status-pill text-neutral-300 border-neutral-800 bg-neutral-900">
-                      Continuous agent loop
-                    </span>
-                    <span className="status-pill text-neutral-400">
-                      Safe tools only
-                    </span>
-                    <span className="status-pill text-neutral-400">
-                      Audit-ready activity
-                    </span>
-                  </div>
-                  {status && (
-                    <div className="mt-3 text-neutral-400 font-medium relative z-10 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-neutral-900  "></div>
-                      {status}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main
-            className="space-y-6 animate-fade"
-            style={{ animationDelay: '0.1s' }}
+      {/* Canvas: the current screen. AppShell owns the understated route
+          transition (Reference §53); each page owns its internal scroll/padding.
+          `useOutlet` + a pathname key lets AnimatePresence cross-fade routes
+          while the shell itself stays permanent. */}
+      <main className="iil-canvas">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            style={{ height: '100%' }}
+            initial={pageTransition.initial}
+            animate={pageTransition.animate}
+            exit={pageTransition.exit}
           >
-            <Outlet />
-          </main>
-        </div>
-      </div>
+            {outlet}
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
