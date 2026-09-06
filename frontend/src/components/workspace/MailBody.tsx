@@ -41,7 +41,7 @@ export function MailBody({
 }) {
   const base: CSSProperties = {
     // The shared mail reading measure, not a literal — see `--measure-mail`
-    // in index.css. The body, IIL's insight and the suggested reply's
+    // in index.css. The body, Obligo's insight and the suggested reply's
     // preview are the three surfaces that make up a read email, and they
     // have to agree on their width; three separate `62ch` literals is how
     // they previously agreed by coincidence rather than by construction.
@@ -55,7 +55,7 @@ export function MailBody({
   if (body.html) {
     return (
       <div
-        className="iil-mail-body"
+        className="obligo-mail-body"
         style={base}
         // Safe by type, not by inspection: see this file's header. `body.html`
         // is `SanitizedHtml`, which cannot be constructed from a raw string
@@ -67,7 +67,7 @@ export function MailBody({
 
   return (
     <p
-      className="iil-mail-body"
+      className="obligo-mail-body"
       style={{
         ...base,
         // A real email is frequently more than one paragraph (adapters join

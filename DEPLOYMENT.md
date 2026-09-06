@@ -1,5 +1,5 @@
 # Production Deployment Guide
-*Inbox Intelligence Layer (IIL) Backend*
+*Obligo Backend*
 
 ---
 
@@ -40,8 +40,8 @@
    - `FRONTEND_URL=https://your-app.vercel.app`
    - `TRUST_PROXY=1` (Requires explicit `1` setting for single-hop proxy topology; ignores spoofed `X-Forwarded-For`)
    - `AUTH_JWT_SECRET=<32_char_random_secret>` (Must NOT use development default)
-   - `AUTH_JWT_ISSUER=iil-api`
-   - `AUTH_JWT_AUDIENCE=iil-app`
+   - `AUTH_JWT_ISSUER=obligo-api`
+   - `AUTH_JWT_AUDIENCE=obligo-app`
    - `TOKEN_ENC_KEY=<base64_32_byte_key>` (Must NOT use development default)
    - `GOOGLE_CLIENT_ID=<google_client_id>`
    - `GOOGLE_CLIENT_SECRET=<google_client_secret>`

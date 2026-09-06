@@ -1,5 +1,5 @@
 # Contributing & Engineering Guidelines
-*Inbox Intelligence Layer (IIL)*
+*Obligo*
 
 ---
 
@@ -37,7 +37,7 @@
 
 1. Apply migrations sequentially (`001` through `007`):
    ```bash
-   export DB_URL="postgres://HP@localhost:5432/iil_test"
+   export DB_URL="postgres://HP@localhost:5432/obligo_test"
 
    psql "$DB_URL" -f db/migrations/001_baseline_schema.sql
    psql "$DB_URL" -f db/migrations/002_gmail_ingestion.sql

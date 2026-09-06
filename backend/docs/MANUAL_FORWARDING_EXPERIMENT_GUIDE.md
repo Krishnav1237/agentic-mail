@@ -1,5 +1,5 @@
 # Manual Forwarding Experiment Guide
-*IIL Validation Program — Stage 5*
+*Obligo Validation Program — Stage 5*
 *Protocol for evaluating email forwarding as an alternative ingestion channel.*
 
 ---

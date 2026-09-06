@@ -38,7 +38,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`iil-btn iil-btn--${variant} ${className}`.trim()}
+      className={`obligo-btn obligo-btn--${variant} ${className}`.trim()}
       {...props}
     >
       {children}
@@ -65,10 +65,10 @@ export function Toggle({
       aria-checked={checked}
       aria-label={label}
       data-on={checked}
-      className="iil-toggle"
+      className="obligo-toggle"
       onClick={() => onChange(!checked)}
     >
-      <span className="iil-toggle__knob" />
+      <span className="obligo-toggle__knob" />
     </button>
   );
 }
@@ -104,7 +104,7 @@ export function Slider({
       </span>
       <input
         type="range"
-        className="iil-slider"
+        className="obligo-slider"
         min={min}
         max={max}
         step={step}
@@ -113,7 +113,7 @@ export function Slider({
         onChange={(e) => onChange(Number(e.target.value))}
       />
       <span
-        className="iil-mono"
+        className="obligo-mono"
         style={{
           font: '500 calc(var(--ui-scale) * 12px)/1 "JetBrains Mono", monospace',
           color: 'var(--text-muted)',
@@ -177,7 +177,7 @@ export function Select({
   // treat as inside too, same convention `RecipientDisclosure` uses).
   const triggerRef = useOutsideClose<HTMLButtonElement>(open, () => setOpen(false), popoverRef);
   // Portalled to escape the page's own `--content-scale` zoom — without
-  // this the listbox, still a `.iil-page` descendant,
+  // this the listbox, still a `.obligo-page` descendant,
   // would inherit that `transform: scale()` on top of its own `--ui-scale`
   // sizing and render far larger than the trigger that opened it.
   const position = usePopoverPosition(triggerRef, popoverRef, open, align);
@@ -208,7 +208,7 @@ export function Select({
     else setInfoHover(false);
   }, [open, value, options]);
 
-  // `.iil-menu`'s own `min-width: 100%` resolves against the trigger while
+  // `.obligo-menu`'s own `min-width: 100%` resolves against the trigger while
   // absolute-inside-it, but against the viewport once portalled — capture
   // the trigger's real width so the listbox still reads as "attached" to it
   // instead of shrink-wrapping to its longest option alone.
@@ -290,12 +290,12 @@ export function Select({
   };
 
   return (
-    <div className="iil-select">
+    <div className="obligo-select">
       <button
         ref={triggerRef}
         type="button"
         role="combobox"
-        className="iil-select__trigger"
+        className="obligo-select__trigger"
         data-open={open}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -308,7 +308,7 @@ export function Select({
         <span>{value}</span>
         {/* Lucide `size` is a raw SVG attribute, not calc()-able — literal
             14 * 1.2 pre-computed. */}
-        <ChevronDown className="iil-select__chev" size={17} strokeWidth={2} aria-hidden />
+        <ChevronDown className="obligo-select__chev" size={17} strokeWidth={2} aria-hidden />
       </button>
 
       {createPortal(
@@ -319,7 +319,7 @@ export function Select({
               id={listId}
               role="listbox"
               aria-label={ariaLabel}
-              className="iil-menu"
+              className="obligo-menu"
               style={
                 {
                   margin: 0,
@@ -345,7 +345,7 @@ export function Select({
                     aria-selected={opt === value}
                     aria-disabled={disabled}
                     aria-describedby={hasInfo && infoVisible ? infoTooltipId : undefined}
-                    className="iil-option"
+                    className="obligo-option"
                     data-active={i === activeIndex && !disabled}
                     data-selected={opt === value}
                     data-disabled={disabled}
@@ -397,11 +397,11 @@ export function Select({
                 ref={infoPopoverRef}
                 id={infoTooltipId}
                 role="tooltip"
-                className="iil-menu"
+                className="obligo-menu"
                 style={
                   {
                     ...infoPosition,
-                    // Overrides `.iil-menu`'s own `min-width: 100%` — against
+                    // Overrides `.obligo-menu`'s own `min-width: 100%` — against
                     // a `position: fixed` element that resolves to the
                     // VIEWPORT width, which is exactly the "stretches across
                     // essentially the entire available width" bug this

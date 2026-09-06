@@ -1,5 +1,5 @@
 /**
- * Sample data + types for the IIL workspace (Sprint 1).
+ * Sample data + types for the Obligo workspace (Sprint 1).
  *
  * The design handoff ships placeholder "Sample:" copy and states content is to
  * be replaced with real bindings. This module is the single seam where that
@@ -60,7 +60,7 @@ export type ActionItem = {
   id: string;
   title: string;
   meta?: string;
-  /* No `reason` field here on purpose. It used to hold a short IIL-authored
+  /* No `reason` field here on purpose. It used to hold a short Obligo-authored
    * explanation shown in this page's row-insight slot — a SECOND piece of
    * AI-authored insight text about the same email, sitting beside the mail's
    * own canonical `ThreadDetail.insight`. The two inevitably said nearly the
@@ -162,18 +162,18 @@ export type DemoMail = {
    * (narrows `Partial<MailMetadata>`'s optional `date` below) because every
    * real message has one. */
   date: string;
-  /** IIL's own insight about this mail — never the email's actual content,
-   * and never a summary of it either: what IIL inferred, recommends, or is
+  /** Obligo's own insight about this mail — never the email's actual content,
+   * and never a summary of it either: what Obligo inferred, recommends, or is
    * flagging for the user. THE canonical insight for this message (it becomes
    * `ThreadDetail.insight`), authored in full: the opened mail shows all of
    * it, and every row that previews it truncates a copy rather than storing a
-   * second, shorter one. Omit for a mail IIL genuinely has nothing to say
+   * second, shorter one. Omit for a mail Obligo genuinely has nothing to say
    * about — an absent insight renders no insight section at all, which is a
    * real and correct outcome, not a gap to fill with filler. */
   insight?: string;
   /** The real email, paragraph by paragraph. */
   body: string[];
-  /** An AI-suggested reply, if IIL has drafted one for this thread — omit
+  /** An AI-suggested reply, if Obligo has drafted one for this thread — omit
    * for a plain received email with nothing drafted yet. */
   draft?: string[];
   /** How much attention this mail needs — the one canonical channel (see
@@ -206,13 +206,13 @@ export const demoMail: Record<string, DemoMail> = {
     sender: 'HR — People Ops',
     senderEmail: 'hr@meridianlabs.com',
     subject: 'Signed offer letter — please return a copy',
-    // INSIGHT, NO SUGGESTED REPLY. IIL can't produce a signed copy of the
+    // INSIGHT, NO SUGGESTED REPLY. Obligo can't produce a signed copy of the
     // offer letter — that's a physical document only Alex has — so there is
-    // genuinely nothing to draft, and the insight is the whole of what IIL
+    // genuinely nothing to draft, and the insight is the whole of what Obligo
     // has to offer here. This is the case the opened mail used to lose
     // entirely.
     insight:
-      "HR can't schedule your onboarding until they have a signed copy of the offer letter back on file. IIL hasn't drafted a reply because the signed document has to come from you — attach it and this can go out as-is.",
+      "HR can't schedule your onboarding until they have a signed copy of the offer letter back on file. Obligo hasn't drafted a reply because the signed document has to come from you — attach it and this can go out as-is.",
     body: [
       'Hi Alex — congratulations again on the offer! To finish processing your start date, we need a signed copy of the attached offer letter sent back to us.',
       "We need it on file before onboarding can be scheduled, so please send it back as soon as you're able.",
@@ -242,10 +242,10 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'property-mgmt@example.com',
     subject: 'Lease renewal — decision needed',
     // INSIGHT, NO SUGGESTED REPLY. Renewal vs. month-to-month is Alex's call,
-    // not IIL's — a reply can't be drafted until that decision is made, so
+    // not Obligo's — a reply can't be drafted until that decision is made, so
     // the insight has to carry the whole decision on its own.
     insight:
-      'Your lease expires at the end of next month. Property Management is offering a 12-month renewal at your current rate, or a month-to-month arrangement at a modest increase, and they need your choice by the end of the week to prepare the paperwork. IIL has nothing drafted because the decision between the two options is yours.',
+      'Your lease expires at the end of next month. Property Management is offering a 12-month renewal at your current rate, or a month-to-month arrangement at a modest increase, and they need your choice by the end of the week to prepare the paperwork. Obligo has nothing drafted because the decision between the two options is yours.',
     body: [
       'Hi Alex — your current lease is set to expire at the end of next month. We can offer a 12-month renewal at the same rate, or a month-to-month option at a modest increase.',
       'Let us know which option you\'d like by the end of the week so we can prepare the paperwork.',
@@ -266,7 +266,7 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'iss@university.edu',
     subject: 'Visa document portal — upload needed',
     insight:
-      'The document portal opened earlier than usual this term, so the upload window is longer than it normally is. You need your current I-20 and passport bio page in by Thursday to keep your status in good standing — the upload happens in the portal itself, so there is nothing here for IIL to reply to.',
+      'The document portal opened earlier than usual this term, so the upload window is longer than it normally is. You need your current I-20 and passport bio page in by Thursday to keep your status in good standing — the upload happens in the portal itself, so there is nothing here for Obligo to reply to.',
     body: [
       'Hi Alex — the visa document portal is now open for this term. Please upload your current I-20 and passport bio page by Thursday to keep your status in good standing.',
       "Reach out if you're missing any of the required documents and we can help track them down.",
@@ -296,7 +296,7 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'orders@printservices.example.com',
     subject: 'Order confirmation — awaiting your response',
     insight:
-      "Print Services is still waiting on your go-ahead for the proof they sent, and the print run locks on Friday. IIL can't approve the artwork on your behalf, so this needs your eyes on the proof before anything goes back to them.",
+      "Print Services is still waiting on your go-ahead for the proof they sent, and the print run locks on Friday. Obligo can't approve the artwork on your behalf, so this needs your eyes on the proof before anything goes back to them.",
     body: [
       "Hi Alex — we haven't heard back on the proof we sent over for your order. The print run locks in on Friday, so we'll need your go-ahead before then to keep the timeline.",
       'Let us know if the proof looks good or if you need any changes.',
@@ -329,7 +329,7 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'noreply@passportrenewal.example.gov',
     subject: 'Renewal reminder — plan ahead of travel',
     insight:
-      'Nothing is due here yet. Passports need to be renewed at least six months ahead of travel, so this is worth starting before your next trip is booked rather than after — IIL is keeping it visible for that reason alone.',
+      'Nothing is due here yet. Passports need to be renewed at least six months ahead of travel, so this is worth starting before your next trip is booked rather than after — Obligo is keeping it visible for that reason alone.',
     body: [
       'This is a reminder that passports should be renewed at least 6 months before your travel date to avoid delays.',
       'You can start the renewal process online whenever is convenient.',
@@ -345,7 +345,7 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'appointments@wellness.example.edu',
     subject: 'Time to schedule your annual checkup',
     insight:
-      'A routine annual reminder with no deadline attached. Booking is self-serve, so there is nothing to reply to — IIL is only keeping it from getting buried.',
+      'A routine annual reminder with no deadline attached. Booking is self-serve, so there is nothing to reply to — Obligo is only keeping it from getting buried.',
     body: [
       "Hi Alex — it's been about a year since your last checkup. Feel free to schedule online whenever works for your calendar.",
       'Wellness Center',
@@ -376,7 +376,7 @@ export const demoMail: Record<string, DemoMail> = {
     subject: 'Please confirm your emergency contact on file',
     // NO INSIGHT, NO SUGGESTED REPLY — deliberately. A routine records
     // refresh with no deadline, no decision and no consequence is exactly the
-    // kind of mail IIL should have nothing to say about, and this is the one
+    // kind of mail Obligo should have nothing to say about, and this is the one
     // demo mail that proves the empty case renders as *nothing* (no header, no
     // empty container, no filler sentence) rather than an insight invented to
     // fill the slot.
@@ -394,9 +394,9 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'okafor@university.edu',
     subject: 'Thesis extension — revised timeline needed',
     // INSIGHT, NO SUGGESTED REPLY. The extension hinges on a target date only
-    // Alex can commit to — IIL can't invent one on his behalf.
+    // Alex can commit to — Obligo can't invent one on his behalf.
     insight:
-      "Prof. Okafor is willing to approve the extension, but won't sign off until he has a revised timeline — specifically the date you expect the next chapter draft. IIL can't commit to a date on your behalf, so the reply is waiting on that one answer from you.",
+      "Prof. Okafor is willing to approve the extension, but won't sign off until he has a revised timeline — specifically the date you expect the next chapter draft. Obligo can't commit to a date on your behalf, so the reply is waiting on that one answer from you.",
     body: [
       "Hi Alex — following up on your extension request. I can approve a short extension, but I'll need a revised timeline before I sign off, specifically when you expect to have the next chapter draft ready.",
       'Can you send that over so I can confirm?',
@@ -418,9 +418,9 @@ export const demoMail: Record<string, DemoMail> = {
     senderEmail: 'hr@meridianlabs.com',
     subject: 'Background check authorization — signature needed',
     // INSIGHT, NO SUGGESTED REPLY. The form needs Alex's actual signature —
-    // nothing IIL writes in a reply can stand in for that.
+    // nothing Obligo writes in a reply can stand in for that.
     insight:
-      'Your onboarding can\'t be completed until the signed background check authorization is back with HR. Your signature is the only thing missing, so there is no reply for IIL to draft — only a form to sign and return.',
+      'Your onboarding can\'t be completed until the signed background check authorization is back with HR. Your signature is the only thing missing, so there is no reply for Obligo to draft — only a form to sign and return.',
     body: [
       'Hi — as part of finalizing your onboarding, we need a signed copy of the attached background check authorization form.',
       'Please review, sign, and send it back at your earliest convenience so we can complete processing.',
@@ -471,11 +471,11 @@ export const demoMail: Record<string, DemoMail> = {
  * while the arrays below are records a backend will eventually supply. Pages
  * import these directly and read the records from `workflowStore`. */
 export const ACTIONS_INTRO =
-  "Everything here is blocked on you — a decision, a document, or a detail IIL can't supply on its own.";
+  "Everything here is blocked on you — a decision, a document, or a detail Obligo can't supply on its own.";
 export const APPROVALS_INTRO =
-  'IIL has finished preparing these — review the result and decide what happens next.';
+  'Obligo has finished preparing these — review the result and decide what happens next.';
 export const OPPORTUNITIES_INTRO =
-  'Opportunities IIL surfaced from your inbox that might be worth pursuing.';
+  'Opportunities Obligo surfaced from your inbox that might be worth pursuing.';
 export const APPROVAL_SHELF_ORDER = ['Ready to send'];
 export const INBOX_CATEGORIES = ['All', 'Primary', 'Updates', 'Promotions'] as const;
 export const OPPORTUNITY_TABS = [
@@ -492,11 +492,11 @@ export const OPPORTUNITY_GROUPS: OpportunityGroup[] = [
 ];
 
 export const actions = {
-  // Human-in-the-loop: everything on this page is here because IIL hit a
+  // Human-in-the-loop: everything on this page is here because Obligo hit a
   // wall it can't get past alone — a decision, a document, or a detail only
-  // Alex has. Distinct from Approvals, where IIL has already finished and
+  // Alex has. Distinct from Approvals, where Obligo has already finished and
   // is only waiting on a review (see `approvals.intro`).
-  intro: "Everything here is blocked on you — a decision, a document, or a detail IIL can't supply on its own.",
+  intro: "Everything here is blocked on you — a decision, a document, or a detail Obligo can't supply on its own.",
   /** One flat list — which of the five tiers (Overdue/Today/This Week/
    * Later/No deadline) each item belongs in, and the label shown next to
    * it, are both *computed* from `dueDate` (`dueBucketFor`/`formatDueLabel`
@@ -598,7 +598,7 @@ export type MailRow = {
    * urgency, gold for importance, and a mail with both shows both. */
   attention?: Attention;
   category: 'Primary' | 'Updates' | 'Promotions';
-  /** Set when this item is fully resolved — whether IIL handled it entirely
+  /** Set when this item is fully resolved — whether Obligo handled it entirely
    * on its own (a plain Inbox message with nothing ever pending on Alex) or
    * a user completed the workflow around it (approved/rejected in
    * Approvals, done in Actions, passed in Opportunities). The one
@@ -667,12 +667,12 @@ export type ThreadMessage = {
 } & Partial<MailMetadata>;
 
 /**
- * Per-row IIL detail, keyed by `MailRow.id`. THREE DIFFERENT THINGS, kept
+ * Per-row Obligo detail, keyed by `MailRow.id`. THREE DIFFERENT THINGS, kept
  * apart on purpose, because the opened mail renders each in its own place:
  *
  *   messages      what the sender actually wrote — the real thread
- *   insight       what IIL inferred/recommends/flags about it
- *   draftPreview  a reply IIL has drafted for the user to review and send
+ *   insight       what Obligo inferred/recommends/flags about it
+ *   draftPreview  a reply Obligo has drafted for the user to review and send
  *
  * AI-authored text never enters `messages`, and the sender's words never
  * enter `insight`. A row can legitimately have any combination of the two AI
@@ -680,8 +680,8 @@ export type ThreadMessage = {
  * doesn't) independently of the other.
  */
 export type ThreadDetail = {
-  /** THE canonical IIL insight for this thread, in full. Empty string means
-   * IIL has nothing to say about this mail, and the opened view renders no
+  /** THE canonical Obligo insight for this thread, in full. Empty string means
+   * Obligo has nothing to say about this mail, and the opened view renders no
    * insight section at all rather than an empty container. Every row preview
    * that shows an insight truncates a copy of *this* text — the row is never
    * the only place a given piece of AI output can be read. (Was `trace`,
@@ -689,7 +689,7 @@ export type ThreadDetail = {
    * `reason`/`why`/`summary`/`detail` this contract now forbids.) */
   insight: string;
   messages: ThreadMessage[];
-  /** The reply IIL drafted, if it drafted one. Empty string means there is
+  /** The reply Obligo drafted, if it drafted one. Empty string means there is
    * nothing to review — never a placeholder draft. */
   draftPreview: string;
 };
@@ -827,7 +827,7 @@ export const inbox = {
       date: '2026-08-10T07:30:00',
     },
   ] as MailRow[],
-  /** One entry per row that has real thread history, an IIL insight, or a
+  /** One entry per row that has real thread history, an Obligo insight, or a
    * drafted reply — the opened-email view looks this up by the selected
    * row's id, so every thread carries its own insight/messages/draft instead
    * of sharing one. A row with no entry here is a plain email: it opens
@@ -895,7 +895,7 @@ export const inbox = {
       // at once, each in its own place: the insight explains what matters,
       // the draft below it is the proposed response.
       insight:
-        'The fall cycle is open and your program qualifies for it. IIL caught the deadline four days before the portal announcement usually circulates and added the application to Actions, so the transcript and the form both have time to come together — the only hard constraint is the closing date itself.',
+        'The fall cycle is open and your program qualifies for it. Obligo caught the deadline four days before the portal announcement usually circulates and added the application to Actions, so the transcript and the form both have time to come together — the only hard constraint is the closing date itself.',
       messages: [
         {
           id: 't3a',
@@ -982,7 +982,7 @@ export type Opportunity = {
    * meta column computes timing from `closesAt`, and authored prose would
    * freeze at whatever was true the day it was written. */
   body: string[];
-  /** THE canonical IIL insight for this opportunity — why IIL surfaced it and
+  /** THE canonical Obligo insight for this opportunity — why Obligo surfaced it and
    * what's worth knowing before deciding. Becomes `ThreadDetail.insight` for
    * the mail this opportunity opens as (see `opportunityToThreadDetail`), so
    * the shelf row's truncated preview and the opened mail's full Insight
@@ -1020,7 +1020,7 @@ export type Opportunity = {
 
 
 export const opportunities = {
-  intro: 'Opportunities IIL surfaced from your inbox that might be worth pursuing.',
+  intro: 'Opportunities Obligo surfaced from your inbox that might be worth pursuing.',
   tabs: [
     { key: 'all', label: 'All' },
     { key: 'new', label: 'New' },
@@ -1046,7 +1046,7 @@ export const opportunities = {
         "Details and the application form are on their site — happy to make an introduction to the programme office if that would help.",
       ],
       why:
-        'This fellowship lines up directly with the research direction in your thesis proposal, and Linden rarely opens it to applicants at your stage. It is the closest match to your own work that IIL has seen come through this term, which is why it sits at the top of the page.',
+        'This fellowship lines up directly with the research direction in your thesis proposal, and Linden rarely opens it to applicants at your stage. It is the closest match to your own work that Obligo has seen come through this term, which is why it sits at the top of the page.',
       lifecycle: 'new',
       // IMPORTANT ONLY — a rare, directly-relevant fellowship, and its close
       // date is still outside the closing window, so nothing raises urgency.
@@ -1294,7 +1294,7 @@ export type Approval = {
    * about whether the mail mattered. */
   attention?: Attention;
   recipient: string;
-  /** THE canonical IIL insight for this approval — what IIL wants the user to
+  /** THE canonical Obligo insight for this approval — what Obligo wants the user to
    * know before deciding on the drafted reply, authored in full. Becomes
    * `ThreadDetail.insight` (see `approvalToThreadDetail`), so the list row's
    * truncated preview and the opened mail's Insight section are the same
@@ -1305,7 +1305,7 @@ export type Approval = {
   summary?: string;
   /** The actual received email `recipient` sent, paragraph by paragraph —
    * what the opened-mail view's message body shows. Distinct from
-   * `summary` (IIL's extraction) and `draft` (IIL's suggested reply):
+   * `summary` (Obligo's extraction) and `draft` (Obligo's suggested reply):
    * three different things this data used to blur into one. */
   receivedBody: string[];
   draft: string[];
@@ -1318,9 +1318,9 @@ export type Approval = {
 } & Partial<MailMetadata> & AgentSignals;
 
 export const approvals = {
-  // Final review: everything on this page is already fully prepared — IIL
+  // Final review: everything on this page is already fully prepared — Obligo
   // has drafted the reply and nothing is still pending from Alex. Distinct
-  // from Actions, where IIL is blocked waiting on something only he can
+  // from Actions, where Obligo is blocked waiting on something only he can
   // provide (see `actions.intro`). No shelf here should ever hold an item
   // that's still waiting on unresolved input — that belongs in Actions, and
   // no item should be a scheduled-send or a draft-only message either —
@@ -1328,7 +1328,7 @@ export const approvals = {
   // drafted replies) and don't belong duplicated here as a shelf of their
   // own; every item below is either still awaiting the human's final
   // decision or already resolved (see `completedAt`).
-  intro: 'IIL has finished preparing these — review the result and decide what happens next.',
+  intro: 'Obligo has finished preparing these — review the result and decide what happens next.',
   shelfOrder: ['Ready to send'],
   items: [
     {
@@ -1413,7 +1413,7 @@ export const approvals = {
       timing: 'no rush',
       recipient: 'lists@dept-newsletter.edu',
       // SUGGESTED REPLY, NO INSIGHT — deliberately. A one-line unsubscribe
-      // confirmation has nothing IIL could usefully add beyond the draft
+      // confirmation has nothing Obligo could usefully add beyond the draft
       // itself, so no insight is authored and no insight section renders.
       // Inventing one here ("this is an unsubscribe request") would be
       // narration, not insight.
@@ -1526,14 +1526,14 @@ export type SettingsRow = {
 };
 
 /** Reply Drafting's own scale — "Auto-send" is listed but intentionally
- * disabled for now (IIL never sends unattended, even in automatic mode). */
+ * disabled for now (Obligo never sends unattended, even in automatic mode). */
 export const REPLY_DRAFTING_OPTIONS = ["Don't draft", 'Draft for approval', 'Auto-send'];
 export const REPLY_DRAFTING_DISABLED = ['Auto-send'];
 /** Shared scale for Archiving — a lighter-weight action than replying, so it
  * gets a plain never/suggest/automatic ladder instead of Reply Drafting's
  * approval-gated one. */
 export const AUTOMATION_OPTIONS = ['Never', 'Suggest', 'Automatically'];
-/** Follow-ups is a plain on/off switch — see `FollowUpMode`. IIL either may
+/** Follow-ups is a plain on/off switch — see `FollowUpMode`. Obligo either may
  * or may not identify follow-up opportunities; there is no "automatic"
  * rung, since Follow-ups never sends anything on its own either way. */
 export const FOLLOWUP_OPTIONS = ['Off', 'On'];

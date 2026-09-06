@@ -2,7 +2,7 @@
  * The one interactive-row primitive every workspace page builds on —
  * Dashboard's decisions, Inbox's stream/rail, Actions' tiers, Opportunities'
  * cards, and whatever page comes next. It owns the ENGINE: a real `<button>`
- * (native keyboard focus/activation for free), the shared `.iil-action-row`
+ * (native keyboard focus/activation for free), the shared `.obligo-action-row`
  * hover/press/selected recipe, and the fixed 220ms timing/easing that recipe
  * uses everywhere.
  *
@@ -13,7 +13,7 @@
  * Same engine, different volume — never a forked copy of the hover logic
  * itself, which is what let Dashboard's old hand-rolled row carry a real
  * `border` animated alongside `transform` (the exact combination that clips
- * on hover — see `.iil-action-row` in index.css) instead of the box-shadow
+ * on hover — see `.obligo-action-row` in index.css) instead of the box-shadow
  * ring every other row already used.
  */
 import React, { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
@@ -76,7 +76,7 @@ export const InteractiveRow = forwardRef<
      * and responds to a mouse.
      *
      * The row keeps everything a button gave it — focusability, Enter/Space
-     * activation, the same `.iil-action-row` recipe — but the nested controls
+     * activation, the same `.obligo-action-row` recipe — but the nested controls
      * stay genuinely independent: activation keys are ignored unless the row
      * itself is the focused element, so pressing Enter on the star toggles
      * the star rather than also opening the mail underneath it.
@@ -91,7 +91,7 @@ export const InteractiveRow = forwardRef<
   ref,
 ) {
   const shared = {
-    className: `iil-action-row ${className}`.trim(),
+    className: `obligo-action-row ${className}`.trim(),
     'data-selected': selected,
     style: { ...rowVars(visual), ...style },
   };

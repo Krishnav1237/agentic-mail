@@ -1,5 +1,5 @@
 # Validation Results Report Template
-*IIL Validation Program — Stage 6 Cohort Outcome Report*
+*Obligo Validation Program — Stage 6 Cohort Outcome Report*
 *Fill out upon conclusion of a 14-day validation study.*
 
 ---

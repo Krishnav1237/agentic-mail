@@ -1,5 +1,5 @@
 # Validation Decision Rules
-*IIL Validation Program — Stage 6 Deterministic Go/No-Go Decision Engine*
+*Obligo Validation Program — Stage 6 Deterministic Go/No-Go Decision Engine*
 
 ---
 

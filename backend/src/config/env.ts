@@ -33,7 +33,7 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL is required')
-    .default('postgres://HP@localhost:5432/iil_test'),
+    .default('postgres://HP@localhost:5432/obligo_test'),
 
   REDIS_URL: z
     .string()
@@ -50,8 +50,8 @@ const envSchema = z.object({
     .min(32, 'AUTH_JWT_SECRET must be at least 32 characters')
     .default('development-jwt-secret-min-32-chars-long-key'),
 
-  AUTH_JWT_ISSUER: z.string().default('iil-api'),
-  AUTH_JWT_AUDIENCE: z.string().default('iil-app'),
+  AUTH_JWT_ISSUER: z.string().default('obligo-api'),
+  AUTH_JWT_AUDIENCE: z.string().default('obligo-app'),
 
   // Must decode to exactly 32 bytes (AES-256 requires 256-bit key)
   TOKEN_ENC_KEY: base64Bytes(32).default('MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE='),
@@ -125,7 +125,7 @@ export type Env = z.infer<typeof envSchema>;
 function parseEnv(): Env {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    console.error('[IIL] Environment configuration error:');
+    console.error('[Obligo] Environment configuration error:');
     for (const issue of result.error.issues) {
       console.error(`  ${issue.path.join('.')}: ${issue.message}`);
     }
@@ -152,7 +152,7 @@ function parseEnv(): Env {
       failures.push('TRUST_PROXY must be explicitly configured in production (e.g. TRUST_PROXY=1 for single-hop proxy topology)');
     }
     if (failures.length > 0) {
-      console.error('[IIL] Production environment check failed:');
+      console.error('[Obligo] Production environment check failed:');
       failures.forEach((f) => console.error(`  ${f}`));
       process.exit(1);
     }

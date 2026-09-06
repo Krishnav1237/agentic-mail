@@ -1,8 +1,8 @@
 /**
  * The one place Telegram integration state lives — kept distinct from
- * `settingsStore` (IIL preferences) and `userProfileStore` (account/auth),
+ * `settingsStore` (Obligo preferences) and `userProfileStore` (account/auth),
  * for the same reason `agentPreferences.ts` documents: an integration is
- * "how IIL connects to an external service", not "how IIL behaves" or "who
+ * "how Obligo connects to an external service", not "how Obligo behaves" or "who
  * the user is". See `telegramIntegration.ts` for the full split.
  *
  * Same shape as `settingsStore.ts` on purpose — a module-level external
@@ -32,7 +32,7 @@ import {
   type TelegramNotificationPreferences,
 } from './telegramIntegration';
 
-const STORAGE_KEY = 'iil-telegram-integration';
+const STORAGE_KEY = 'obligo-telegram-integration';
 
 /** Storage access can throw outright (Safari private browsing, blocked
  * cookies) — same guard `settingsStore`/`userProfileStore` use for the

@@ -2,11 +2,11 @@
  * Telegram — the one real V1 delivery-channel integration.
  *
  * Kept separate from `AgentPreferences`/`SettingsStore` (`agentPreferences.ts`):
- * those are IIL's own behavior — what counts as urgent, important, or a
+ * those are Obligo's own behavior — what counts as urgent, important, or a
  * follow-up. This file never decides any of that; it only carries how an
- * already-derived IIL event reaches the user through an external channel:
+ * already-derived Obligo event reaches the user through an external channel:
  *
- *   IIL event -> notification preferences -> delivery channel -> Telegram
+ *   Obligo event -> notification preferences -> delivery channel -> Telegram
  *
  * `provider`/`connected` sit at the top level of `TelegramIntegration` so a
  * second integration can be added later without reshaping this one — see
@@ -22,7 +22,7 @@ export type TelegramNotificationPreferences = {
   followUps: boolean;
 };
 
-/** How long before a deadline IIL should remind the user over Telegram. */
+/** How long before a deadline Obligo should remind the user over Telegram. */
 export type TelegramDeadlineReminder = '1h' | '3h' | '1d' | '2d' | '3d';
 
 export type TelegramDeliveryPreferences = {

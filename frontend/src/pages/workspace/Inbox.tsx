@@ -78,7 +78,7 @@ import { formatScheduled } from '../../lib/scheduling';
 /* --------------------------------- Search -------------------------------- */
 
 /** Matches the same fields a reader actually sees in the row: sender, address,
- * subject and the real content preview — never IIL insight text (Inbox has
+ * subject and the real content preview — never Obligo insight text (Inbox has
  * none of its own) and never a page-specific extra field, so "search inbox"
  * means the same thing on every mail-management view this page renders. */
 function matchesRowQuery(row: StoredMailRow, query: string): boolean {
@@ -203,7 +203,7 @@ function StreamRow({
         lift: 0,
         hoverShadow: 'none',
       }}
-      className="iil-stream-row"
+      className="obligo-stream-row"
       style={{
         position: 'relative',
         overflow: tinted ? 'hidden' : undefined,
@@ -222,13 +222,13 @@ function StreamRow({
           separate marks — see `AttentionDot`. The unread dot never takes an
           attention color, and neither is ever faded by list position. */}
       <AttentionDot
-        className="iil-stream-dot"
+        className="obligo-stream-dot"
         attention={attention}
         unread={row.unread}
       />
 
       <span
-        className="iil-stream-sender"
+        className="obligo-stream-sender"
         style={{
           ...TRUNCATE,
           font: `${row.unread ? 600 : attentionWeight(attention)} 12.5px Inter, sans-serif`,
@@ -239,7 +239,7 @@ function StreamRow({
       </span>
 
       <span
-        className="iil-stream-subject"
+        className="obligo-stream-subject"
         style={{
           ...TRUNCATE,
           font: `${row.unread ? 500 : 400} 12.5px Inter, sans-serif`,
@@ -251,12 +251,12 @@ function StreamRow({
 
       {/* The email's own preview — Inbox is deliberately kept Gmail-plain
           (Constitution: familiar ground for a new user), so this is always
-          real content, never IIL's own insight text, and never tinted by
+          real content, never Obligo's own insight text, and never tinted by
           attention: the rail and dot carry that, this stays plain readable
           body text. Always rendered, even for a completed row — a resolved
           item still had a real email. */}
       <span
-        className="iil-stream-insight"
+        className="obligo-stream-insight"
         style={{
           ...TRUNCATE,
           font: '400 12px Inter, sans-serif',
@@ -267,7 +267,7 @@ function StreamRow({
       </span>
 
       <span
-        className="iil-mono iil-stream-time"
+        className="obligo-mono obligo-stream-time"
         style={{
           font: '400 10.5px "JetBrains Mono", monospace',
           color: 'var(--text-muted)',
@@ -283,7 +283,7 @@ function StreamRow({
           thread underneath it. */}
       <button
         type="button"
-        className="iil-stream-star"
+        className="obligo-stream-star"
         aria-label={
           row.starred ? `Unstar ${row.subject}` : `Star ${row.subject}`
         }
@@ -527,7 +527,7 @@ function OutgoingRowView({
       </span>
       {scheduled && row.scheduledFor && (
         <span
-          className="iil-mono"
+          className="obligo-mono"
           style={{
             flex: 'none',
             font: '400 10px "JetBrains Mono", monospace',
@@ -548,7 +548,7 @@ function OutgoingRowView({
         >
           <button
             type="button"
-            className="iil-btn iil-btn--outline"
+            className="obligo-btn obligo-btn--outline"
             onClick={(e) => {
               // Stops the click from also bubbling up to the row's own
               // `onOpen` — these two buttons act on the row directly, they
@@ -562,7 +562,7 @@ function OutgoingRowView({
           </button>
           <button
             type="button"
-            className="iil-btn iil-btn--ghost"
+            className="obligo-btn obligo-btn--ghost"
             onClick={(e) => {
               e.stopPropagation();
               mailActions.cancelScheduled(row.id);
@@ -573,7 +573,7 @@ function OutgoingRowView({
         </span>
       ) : (
         <span
-          className="iil-mono"
+          className="obligo-mono"
           style={{
             flex: 'none',
             font: '400 10.5px "JetBrains Mono", monospace',
@@ -692,7 +692,7 @@ function OutgoingStream({
  * count — the one piece of a draft that is otherwise invisible until you
  * reopen it, and the one most worth knowing before you do.
  *
- * Laid out on the same container-query grid `.iil-stream-row` uses (see
+ * Laid out on the same container-query grid `.obligo-stream-row` uses (see
  * index.css) rather than the flex line Sent/Scheduled use: five pieces of
  * text that each have to truncate inside their own track, which is exactly
  * the problem that grid already solves on this page.
@@ -726,7 +726,7 @@ function DraftRowView({
         lift: 0,
         hoverShadow: 'none',
       }}
-      className="iil-draft-row"
+      className="obligo-draft-row"
       style={{
         minHeight: 48,
         paddingInline: 14,
@@ -735,7 +735,7 @@ function DraftRowView({
       }}
     >
       <span
-        className="iil-draft-recipient"
+        className="obligo-draft-recipient"
         style={{
           ...TRUNCATE,
           font: '500 12.5px Inter, sans-serif',
@@ -755,7 +755,7 @@ function DraftRowView({
       </span>
 
       <span
-        className="iil-draft-subject"
+        className="obligo-draft-subject"
         style={{
           ...TRUNCATE,
           font: '400 12.5px Inter, sans-serif',
@@ -766,7 +766,7 @@ function DraftRowView({
       </span>
 
       <span
-        className="iil-draft-preview"
+        className="obligo-draft-preview"
         style={{
           ...TRUNCATE,
           font: '400 12px Inter, sans-serif',
@@ -777,7 +777,7 @@ function DraftRowView({
       </span>
 
       <span
-        className="iil-draft-meta"
+        className="obligo-draft-meta"
         style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}
       >
         {draft.attachments.length > 0 && (
@@ -799,7 +799,7 @@ function DraftRowView({
             the same treatment (and the same helper) every other time on this
             page gets, never a stored "2 hours ago". */}
         <span
-          className="iil-mono"
+          className="obligo-mono"
           style={{
             font: '400 10.5px "JetBrains Mono", monospace',
             color: 'var(--text-faint)',
@@ -809,10 +809,10 @@ function DraftRowView({
         </span>
       </span>
 
-      <span className="iil-draft-actions" style={{ flex: 'none' }}>
+      <span className="obligo-draft-actions" style={{ flex: 'none' }}>
         <button
           type="button"
-          className="iil-btn iil-btn--ghost"
+          className="obligo-btn obligo-btn--ghost"
           onClick={(e) => {
             // Acts on the row directly — it must not also open it.
             e.stopPropagation();
@@ -1238,7 +1238,7 @@ export default function Inbox() {
                 <>
                   <button
                     type="button"
-                    className="iil-btn iil-btn--danger"
+                    className="obligo-btn obligo-btn--danger"
                     onClick={() => setConfirmDiscardOpenDraft(selected.id)}
                   >
                     <Trash2 size={13} strokeWidth={2} aria-hidden />
@@ -1378,7 +1378,7 @@ export default function Inbox() {
                         >
                           <button
                             type="button"
-                            className="iil-btn iil-btn--outline"
+                            className="obligo-btn obligo-btn--outline"
                             onClick={() => {
                               mailActions.sendScheduledNow(selected.id);
                               setOpenId(null);
@@ -1389,7 +1389,7 @@ export default function Inbox() {
                           </button>
                           <button
                             type="button"
-                            className="iil-btn iil-btn--ghost"
+                            className="obligo-btn obligo-btn--ghost"
                             onClick={() => {
                               mailActions.cancelScheduled(selected.id);
                               setOpenId(null);

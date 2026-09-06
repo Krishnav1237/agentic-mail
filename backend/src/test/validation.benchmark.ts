@@ -77,7 +77,7 @@ const THRESHOLD = {
 
 async function runBenchmark() {
   console.log('================================================================');
-  console.log('  IIL VALIDATION BENCHMARK — Synthetic Email Corpus v1');
+  console.log('  OBLIGO VALIDATION BENCHMARK — Synthetic Email Corpus v1');
   console.log(`  AI_PROVIDER: ${env.AI_PROVIDER}`);
   console.log(`  AI_FALLBACK_ENABLED: ${env.AI_FALLBACK_ENABLED}`);
   console.log('================================================================\n');

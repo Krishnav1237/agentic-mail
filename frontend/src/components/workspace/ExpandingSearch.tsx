@@ -90,7 +90,7 @@ export function ExpandingSearch({
       <button
         ref={toggleBtnRef}
         type="button"
-        className="iil-icon-btn iil-chip-btn"
+        className="obligo-icon-btn obligo-chip-btn"
         aria-label={open ? `Close search` : ariaLabel}
         onClick={() => (open ? close() : setOpen(true))}
         style={

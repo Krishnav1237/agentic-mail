@@ -10,7 +10,7 @@
  * Positioning/outside-click/portal plumbing reuses the exact same
  * `usePopoverPosition`/`useOutsideClose`/`getPortalRoot` trio
  * `ReplyComposer`'s own anchored popovers (`LinkDialog`, `SchedulePopover`)
- * already use — same "portal to `.iil-root`, not `document.body`, so
+ * already use — same "portal to `.obligo-root`, not `document.body`, so
  * `position: fixed` stays viewport-relative under the page's own transform"
  * reasoning applies here too.
  */
@@ -180,7 +180,7 @@ export function RecipientDisclosure({ meta }: { meta: MessageMeta }) {
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        className="iil-meta-trigger"
+        className="obligo-meta-trigger"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -211,7 +211,7 @@ export function RecipientDisclosure({ meta }: { meta: MessageMeta }) {
               ref={popoverRef}
               role="dialog"
               aria-label="Message details"
-              className="iil-menu"
+              className="obligo-menu"
               style={{
                 width: 360,
                 minWidth: 360,

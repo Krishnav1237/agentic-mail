@@ -13,7 +13,7 @@
  * WHICH TWO COLORS THOSE ARE IS A USER PREFERENCE, and deliberately the only
  * thing about this file that is. Settings → Advanced → Attention colors picks
  * one pigment per axis from a curated list; `AppShell` writes the choice onto
- * `.iil-root` as a data attribute and index.css resolves it into the
+ * `.obligo-root` as a data attribute and index.css resolves it into the
  * `--attention-*` tokens every function below returns. So the DEFAULTS are
  * still coral and gold, the two axes still map to exactly one hue each, and
  * the pairing below still holds — only the pigment those roles are drawn in
@@ -148,7 +148,7 @@ export function isTinted(attention: Attention): boolean {
 
 /**
  * Semantic color for *attention metadata* — a due label, a closing date,
- * IIL's insight line, a header count segment. This is the one place a
+ * Obligo's insight line, a header count segment. This is the one place a
  * coral/gold text color is allowed to come from, and it applies only to
  * metadata that is genuinely about attention.
  *

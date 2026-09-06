@@ -1,5 +1,5 @@
 # Validation Implementation Status
-*Inbox Intelligence Layer (IIL) Backend*
+*Obligo Backend*
 *Last Updated: 2026-07-23*
 
 ---

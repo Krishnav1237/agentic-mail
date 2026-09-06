@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'iil-atmosphere-visible';
-const CHANGE_EVENT = 'iil-atmosphere-visible-change';
+const STORAGE_KEY = 'obligo-atmosphere-visible';
+const CHANGE_EVENT = 'obligo-atmosphere-visible-change';
 
 /** Storage access itself can throw, not just its contents — Safari private
  * browsing and any "block third-party/all cookies" setting make even

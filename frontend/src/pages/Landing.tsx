@@ -932,7 +932,7 @@ export default function LandingPage() {
             )}
 
             <div className="mt-16 flex items-center gap-6 text-[9px] font-bold uppercase tracking-[0.2em] text-white/40 md:gap-12">
-              <span>IIL (c) 2026</span>
+              <span>Obligo (c) 2026</span>
             </div>
           </PageRail>
         </section>

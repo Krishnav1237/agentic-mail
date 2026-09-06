@@ -1,7 +1,7 @@
-# Handoff: IIL Workspace Environment — Final Selected Screens
+# Handoff: Obligo Workspace Environment — Final Selected Screens
 
 ## Overview
-This package covers the authenticated workspace of **IIL (Inbox Intelligence Layer)** — Dashboard, Actions, Inbox, Opportunities, Approvals, and Tuning (settings). Each page went through several rounds of exploration in a design canvas; this handoff contains **only the final, approved option(s) per page** — not the full exploration history.
+This package covers the authenticated workspace of **Obligo** — Dashboard, Actions, Inbox, Opportunities, Approvals, and Tuning (settings). Each page went through several rounds of exploration in a design canvas; this handoff contains **only the final, approved option(s) per page** — not the full exploration history.
 
 ## About the Design Files
 The files in this bundle are **design references built in HTML/CSS** — high-fidelity prototypes of look, layout, and copy. They are not production code to copy verbatim. Your task is to **recreate these screens in the target codebase's actual stack** (React/Vue/whatever is established there), using its existing component library, state management, and data layer — matching the HTML pixel-for-pixel in visual details (spacing, type, color) but implemented idiomatically.
@@ -12,18 +12,18 @@ The files in this bundle are **design references built in HTML/CSS** — high-fi
 **High-fidelity.** Colors, typography, spacing, and copy are final. Recreate pixel-perfectly using the codebase's existing UI primitives where they already match this language; introduce new primitives only where nothing existing fits.
 
 ## Shared Shell (every page)
-- Floating topbar (52px tall, 24px inset from viewport edges, rounded 14px): logo mark (`favicon.svg`) + "IIL" wordmark + "INBOX INTELLIGENCE LAYER" eyebrow on the left, two circular avatar/icon buttons on the right.
+- Floating topbar (52px tall, 24px inset from viewport edges, rounded 14px): logo mark (`favicon.svg`) + "Obligo" wordmark + "OBLIGO" eyebrow on the left, two circular avatar/icon buttons on the right.
 - Floating sidebar (156px wide, left-inset 24px): nav-only, one active pill (soft gradient fill + shadow, not a flat color block) floating behind the current item. Items: Dashboard, Inbox, Actions/Tasks, Opportunities, Approvals/Agent, Settings/Tuning (exact label set varies slightly by page version — use the labels shown in the final files).
 - Main canvas: rounded 20px panel, subtle gradient wash, occupies remaining space (top 88px, 24px insets elsewhere), internal padding ~28–34px.
 - **Dark theme**: near-black `#08090b` base, fine dot-grain texture overlay (`radial-gradient` dots, 9×9px, 8% opacity), soft drifting radial highlight top-right. Text on white-alpha scale (`rgba(255,255,255,X)`).
 - **Light theme**: warm paper `#f7f5f0` / `#f6f3ea` base, white `#fff` cards. Text on near-black-alpha scale (`rgba(20,18,14,X)`).
 - Type: Inter throughout (weights 300–600), JetBrains Mono for numeric/tabular values only. No emoji anywhere.
-- Accent/semantic color: warm gold (`#D4AF37` family, gradient `#FBF5B7 → #D4AF37 → #996515`) means "IIL surfaced this / earned attention" — reserved, never decorative. Overdue/urgent uses a separate warm rust/coral tone, never red, never gold (the two signals must stay visually distinct).
+- Accent/semantic color: warm gold (`#D4AF37` family, gradient `#FBF5B7 → #D4AF37 → #996515`) means "Obligo surfaced this / earned attention" — reserved, never decorative. Overdue/urgent uses a separate warm rust/coral tone, never red, never gold (the two signals must stay visually distinct).
 
 ## Screens
 
 ### Dashboard — `#5a`
-**Purpose**: Landing screen; gives relief (what IIL already handled) then surfaces what needs a decision.
+**Purpose**: Landing screen; gives relief (what Obligo already handled) then surfaces what needs a decision.
 **Layout**: Single scrolling column inside the canvas, top to bottom:
 1. **Relief line** — large (24px, weight 300) near-white sentence summarizing overnight activity, one smaller supporting line below, sits over a soft gold-tinted radial glow.
 2. Hairline divider.
@@ -37,8 +37,8 @@ The files in this bundle are **design references built in HTML/CSS** — high-fi
 **Light mode (`#8a`)** is a straight tonal inversion — same hierarchy, same gold hue family, only the paper/ink swap. No IA or layout differences from `#7a`.
 
 ### Inbox — `#11a` (dark, default stream), `#11b` (light, default stream), `#11c` (dark, thread open)
-**Purpose**: Raw mail stream — familiar enough to land in immediately, still quiet/IIL-flavored.
-**Layout**: Continuous single stream (no Familiar/Clean mode toggle — that idea was tried and dropped). A quiet chip row above the stream carries provider category (Primary/Updates/Promotions) as plain low-emphasis text, never color-coded. IIL involvement shows as an **earned gold dot + occasional gold-tinted trace snippet** — sparse, not on every row.
+**Purpose**: Raw mail stream — familiar enough to land in immediately, still quiet/Obligo-flavored.
+**Layout**: Continuous single stream (no Familiar/Clean mode toggle — that idea was tried and dropped). A quiet chip row above the stream carries provider category (Primary/Updates/Promotions) as plain low-emphasis text, never color-coded. Obligo involvement shows as an **earned gold dot + occasional gold-tinted trace snippet** — sparse, not on every row.
 `#11c` shows the **thread-open state**: opening a message compresses the stream into a slim left rail and opens a reading pane beside it (not a modal, not full navigation away).
 `#11b` is the light-mode equivalent of `#11a` — same structure, warm paper surface.
 
@@ -54,22 +54,22 @@ Row anatomy: title (heaviest), source + timing as quiet metadata on one line, on
 - `#14f` — light-mode equivalents of the above: warm off-white surface, shelf headings become near-black semibold, gold keeps its hue but adjusts for contrast on light paper.
 
 ### Approvals — `#16a`, `#16b` (dark), `#17a`, `#17b` (light)
-**Purpose**: Review/approve queue for anything IIL drafted (currently scoped to email replies).
+**Purpose**: Review/approve queue for anything Obligo drafted (currently scoped to email replies).
 **Layout**: Two views of the same feature:
 - `#16a` / `#17a` — **list page**: header band carries the page-level gold treatment (a hairline gold divider + light gold wash on the band itself); the shelf/row list below is otherwise ungolded — gold is intentionally consolidated to one place at the top rather than repeated per row.
-- `#16b` / `#17b` — **review surface**: opened from a row; a slim list rail stays on the left (spatial continuity, so you don't lose your place) with a document-style draft on the right — no gold here at all, reads like a plain document, not a "special" IIL moment. One filled primary action ("Approve & send"); everything else is outlined or plain text so hierarchy comes from that one button alone.
+- `#16b` / `#17b` — **review surface**: opened from a row; a slim list rail stays on the left (spatial continuity, so you don't lose your place) with a document-style draft on the right — no gold here at all, reads like a plain document, not a "special" Obligo moment. One filled primary action ("Approve & send"); everything else is outlined or plain text so hierarchy comes from that one button alone.
 - `#17a` / `#17b` are the direct light-mode tonal inversion of `#16a` / `#16b` — identical structure, gold family kept but re-tuned for contrast (~`#8a6a1a`-range on light paper), no layout changes.
 
 ### Tuning (Settings) — `#21a` (dark), `#21b` (light)
-**Purpose**: How-IIL-behaves controls plus account-level settings.
+**Purpose**: How-Obligo-behaves controls plus account-level settings.
 **Layout**, top to bottom:
-1. Page title "Tuning" + small uppercase eyebrow "How IIL behaves today" + one supporting sentence.
+1. Page title "Tuning" + small uppercase eyebrow "How Obligo behaves today" + one supporting sentence.
 2. **"How I Help"** — a simple two-column table/list: label left, current behavior value right (e.g. "Draft for approval", "Neutral"), each row expandable (chevron). Rows: Reply Drafting, Archiving, Labeling, Follow-ups, Reply Tone.
 3. **Priorities** — helper sentence: *"Everything is equal right now — move categories between the two groups to change that."* (only shown before the user customizes anything). Two side-by-side lists — **High Priority** (Career, Academic, Finance, Networking, Health) and **Lower Priority** (Shopping, Travel) — each row has a single arrow affordance (→ to demote, ← to promote) to move it to the other list. No drag-and-drop, no numeric ranking.
 4. **Inbox Cleanup** — same table pattern as "How I Help": category name left, current handling ("Keep") right, expandable. Rows: Promotions, Newsletters, Marketing, Banking.
 5. **Advanced** — visually the quietest section on the page (smaller/dimmer heading, weight 500 vs. 600 used above) — meant to feel opt-in, not a primary destination:
    - **Priority Weights**: one-sentence explainer, then a table of horizontal range sliders (1–10, default 5, numeric value shown at the far right of each slider) for: Career, Academic, Finance, Personal, Health, Networking, Travel, Shopping. These map directly to backend ranking weights.
-   - **Beta Features**: single row, toggle switch (default off), supporting text *"Receive upcoming IIL features before public release."*
+   - **Beta Features**: single row, toggle switch (default off), supporting text *"Receive upcoming Obligo features before public release."*
    - **Reset Tuning**: single row, neutral/outlined button labeled **"Reset to defaults"** — no destructive color. Must trigger a confirmation step before actually resetting (confirmation UI itself not yet designed).
    - **Delete Account**: last item on the page, separated by generous whitespace (~48px) from everything above. Plain text button, no red, no warning iconography. Must trigger a confirmation flow before actually deleting (confirmation UI itself not yet designed).
 6. `#21b` is the light-mode equivalent of `#21a` — identical structure and hierarchy, warm-paper palette.

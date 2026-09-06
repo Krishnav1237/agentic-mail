@@ -17,9 +17,9 @@ type ErrorBoundaryState = {
  * markup below:
  *
  *   · The workspace's design tokens (`--ink`, `--paper`, `--text-*`,
- *     `--surface`, …) are scoped to `.iil-root[data-theme]`, which is
+ *     `--surface`, …) are scoped to `.obligo-root[data-theme]`, which is
  *     rendered by `AppShell` — the component that just failed. So this
- *     fallback opens its own `.iil-root` and stamps `data-theme` itself,
+ *     fallback opens its own `.obligo-root` and stamps `data-theme` itself,
  *     reading the same `html.light` class the boot script in `index.html`
  *     and `useWorkspaceTheme` both key off. Without that, every token below
  *     would resolve to nothing.
@@ -47,9 +47,9 @@ export default class ErrorBoundary extends Component<
 
     // Opt this fallback out of the page-wide light-mode invert filter.
     //
-    // In light mode `html.light:not(.iil-workspace)` inverts the ENTIRE
+    // In light mode `html.light:not(.obligo-workspace)` inverts the ENTIRE
     // document — that's how the Landing page gets its light theme. The
-    // workspace opts out by having `useWorkspaceTheme` stamp `.iil-workspace`
+    // workspace opts out by having `useWorkspaceTheme` stamp `.obligo-workspace`
     // on <html> while it's mounted, because the workspace ships real light
     // tokens instead. But that hook lives in `AppShell`, which is precisely
     // what has just failed: on a crash during the first render it never
@@ -61,7 +61,7 @@ export default class ErrorBoundary extends Component<
     // Runs here rather than during render (which must stay side-effect free);
     // `componentDidCatch` fires in the same commit, before paint, so there's
     // no flash of the inverted state.
-    document.documentElement.classList.add('iil-workspace');
+    document.documentElement.classList.add('obligo-workspace');
   }
 
   render() {
@@ -75,7 +75,7 @@ export default class ErrorBoundary extends Component<
 
     return (
       <div
-        className="iil-root"
+        className="obligo-root"
         data-theme={theme}
         style={{
           minHeight: '100vh',
@@ -99,7 +99,7 @@ export default class ErrorBoundary extends Component<
             boxShadow: 'var(--elev-shadow), inset 0 1px 0 var(--inset-hi)',
           }}
         >
-          <span className="iil-eyebrow">Something went wrong</span>
+          <span className="obligo-eyebrow">Something went wrong</span>
           <h1
             style={{
               margin: '12px 0 0',
@@ -124,7 +124,7 @@ export default class ErrorBoundary extends Component<
           <div style={{ marginTop: 22 }}>
             <button
               type="button"
-              className="iil-btn iil-btn--outline"
+              className="obligo-btn obligo-btn--outline"
               onClick={() => window.location.reload()}
             >
               Reload

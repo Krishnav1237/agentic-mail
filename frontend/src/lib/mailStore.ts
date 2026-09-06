@@ -12,7 +12,7 @@
  * uses — exposed via `useSyncExternalStore` so every consumer re-renders on
  * any mutation.
  *
- * `rows` is seeded from every source IIL has processed — Inbox's own mail
+ * `rows` is seeded from every source Obligo has processed — Inbox's own mail
  * plus Approvals/demo-mail/Opportunities, each adapted into the same
  * `StoredMailRow` shape — so Inbox is the literal superset of what the
  * other pages show, not a separate six-message demo set. Approvals/Actions/
@@ -81,26 +81,26 @@ import type {
 export type MailStatus = 'inbox' | 'archived' | 'trash' | 'spam' | 'snoozed';
 
 /**
- * THE single authoritative rule for whether IIL may generate or show
+ * THE single authoritative rule for whether Obligo may generate or show
  * anything new about a thread — its Insight, its Suggested Reply. One
  * boolean, one call site (`getThreadDetail`, below), rather than each
  * surface re-deciding "should I show this" after the fact.
  *
  * A completed thread fails this check. Finishing a thread's workflow is the
  * one signal in this model that unambiguously means "there is nothing left
- * for IIL to assist with here" — continuing to process it would mean
+ * for Obligo to assist with here" — continuing to process it would mean
  * spending real inference on a thread nobody is going to read new AI text
  * about, and displaying stale insight/draft text on an already-resolved
  * thread previously did happen (see `mailActions.complete`'s own history):
  * a thread could be marked done on one page while its opened-mail view, on
- * another, still showed IIL urging a reply to it.
+ * another, still showed Obligo urging a reply to it.
  *
  * Reactivating a thread (`mailActions.reactivate`) clears `completedAt`,
  * which makes this true again on the very next read — there is no separate
  * flag to flip back, because eligibility was never a fact stored anywhere
  * other than completion status itself.
  */
-export function isIILEligible(row: StoredMailRow): boolean {
+export function isObligoEligible(row: StoredMailRow): boolean {
   return !row.completedAt;
 }
 
@@ -333,7 +333,7 @@ export type DraftRow = {
 };
 
 type State = {
-  /** Every mail IIL knows about — Inbox's own rows plus Approvals/demo-mail/
+  /** Every mail Obligo knows about — Inbox's own rows plus Approvals/demo-mail/
    * Opportunities, all adapted into the same shape — one array so
    * `toggleStar`/`markRead`/`markUnread` stay one code path and every page
    * agrees on the same underlying state. */
@@ -354,9 +354,9 @@ type State = {
 /** An Approval reviewed/sent through Approvals is still, underneath, just an
  * email with a suggested reply — same shape Inbox's own rows use. Three
  * separate things stay separate through this adapter: `receivedBody` is the
- * actual email (goes in the body and the row snippet), `summary` is IIL's
+ * actual email (goes in the body and the row snippet), `summary` is Obligo's
  * insight (goes in `ThreadDetail.insight`, never the body), and `draft` is
- * IIL's suggested reply (goes in `draftPreview`, never either of the other
+ * Obligo's suggested reply (goes in `draftPreview`, never either of the other
  * two). */
 function approvalToRow(a: Approval): AdaptedMailRow {
   const { name, email } = parseRecipient(a.recipient);
@@ -368,7 +368,7 @@ function approvalToRow(a: Approval): AdaptedMailRow {
     subject: a.subject,
     // Inbox stays Gmail-plain: the row's snippet is always the real received
     // email's own opening line. It deliberately does NOT fall back to
-    // `summary` (IIL's insight) when a body is missing — an AI sentence in the
+    // `summary` (Obligo's insight) when a body is missing — an AI sentence in the
     // slot every other row uses for the sender's own words is precisely the
     // blur this data model exists to prevent, so an approval with no body
     // shows an empty preview rather than a plausible-looking wrong one.
@@ -407,7 +407,7 @@ function approvalToRow(a: Approval): AdaptedMailRow {
 function approvalToThreadDetail(a: Approval): ThreadDetail {
   const { name, email } = parseRecipient(a.recipient);
   return {
-    // IIL's insight about this approval — never `receivedBody` (the email)
+    // Obligo's insight about this approval — never `receivedBody` (the email)
     // and never `draft` (the suggested reply), both of which live in their
     // own fields below.
     insight: a.summary ?? '',
@@ -447,7 +447,7 @@ function demoMailToRow(m: DemoMail): AdaptedMailRow {
     senderEmail: m.senderEmail,
     subject: m.subject,
     // Inbox stays Gmail-plain: always the real email's own opening line,
-    // never `m.insight` (IIL's own words) — that belongs to the opened
+    // never `m.insight` (Obligo's own words) — that belongs to the opened
     // thread view's dedicated Insight section, not the shared row list.
     snippet: m.body[0] ?? '',
     unread: !done,
@@ -517,7 +517,7 @@ function opportunityToRow(o: Opportunity): AdaptedMailRow {
     sender: senderFromSource(o.source),
     senderEmail: o.senderEmail,
     subject: o.title,
-    // Real content preview, not `why` (IIL's reasoning) — same rule as
+    // Real content preview, not `why` (Obligo's reasoning) — same rule as
     // `demoMailToRow`: the row's snippet is the email's own opening line,
     // and `why` belongs in the dedicated insight position instead.
     //
@@ -564,7 +564,7 @@ function opportunityToRow(o: Opportunity): AdaptedMailRow {
 function opportunityToThreadDetail(o: Opportunity): ThreadDetail {
   const sender = senderFromSource(o.source);
   return {
-    // IIL's reasoning about this opportunity — the one place it belongs.
+    // Obligo's reasoning about this opportunity — the one place it belongs.
     // Never the message body: that's `o.body`, the real forwarded message.
     insight: o.why,
     messages: [
@@ -781,7 +781,7 @@ export function getOutgoingThreadDetail(
   }
 
   return {
-    // A scheduled reply hasn't gone out yet, so whatever IIL had to say about
+    // A scheduled reply hasn't gone out yet, so whatever Obligo had to say about
     // this thread still stands — unlike the already-sent case above, which
     // clears it (see `mergeSentReplyIntoThread`).
     insight: state.threadDetails[row.threadId]?.insight ?? '',
@@ -1355,8 +1355,8 @@ export const mailActions = {
    * row's preserved `baseAttention` against the current prefs and clock —
    * the same derivation every other row's attention goes through, rather
    * than leaving it at the flattened `NORMAL_ATTENTION` `complete` set. That
-   * derivation is also what makes the thread IIL-eligible again
-   * (`isIILEligible` reads `completedAt` alone) and restores whichever
+   * derivation is also what makes the thread Obligo-eligible again
+   * (`isObligoEligible` reads `completedAt` alone) and restores whichever
    * workflow page(s) it belongs to, since those pages already gate on this
    * same row's `completedAt` — there is no second "which page" decision to
    * make here. `notifyReactivated` is what lets `workflowStore` also clear
@@ -1607,7 +1607,7 @@ export const mailActions = {
    * correct.
    *
    * The same reasoning governs a COMPLETED thread's insight and draft — see
-   * `isIILEligible`: a finished thread gets neither, projected off here
+   * `isObligoEligible`: a finished thread gets neither, projected off here
    * rather than generated and hidden downstream, so every caller (rail
    * previews, `hasDraft`, `insight`) sees the same "nothing to show" answer
    * without separately having to know the thread is done.
@@ -1621,7 +1621,7 @@ export const mailActions = {
     const detail = state.threadDetails[id];
     if (!detail) return undefined;
     const row = state.rows.find((r) => r.id === id);
-    if (row && !isIILEligible(row)) {
+    if (row && !isObligoEligible(row)) {
       return { ...detail, insight: '', draftPreview: '' };
     }
     return shouldGenerateDrafts(getAgentPreferences())
@@ -1629,7 +1629,7 @@ export const mailActions = {
       : { ...detail, draftPreview: '' };
   },
   /**
-   * Whether IIL should identify this thread as a follow-up opportunity.
+   * Whether Obligo should identify this thread as a follow-up opportunity.
    *
    * A suggestion only, gated by `isFollowUpCandidate`/the Follow-ups
    * setting — this never sends anything. Reads the REAL canonical thread
@@ -1644,12 +1644,12 @@ export const mailActions = {
    * this one check.
    *
    * A completed thread never reaches `isFollowUpCandidate` at all — gated
-   * here by the same `isIILEligible` every other IIL output already reads,
+   * here by the same `isObligoEligible` every other Obligo output already reads,
    * not a second completion check invented for this one feature.
    */
   getFollowUpSuggestion(id: string): boolean {
     const row = state.rows.find((r) => r.id === id);
-    if (!row || !isIILEligible(row)) return false;
+    if (!row || !isObligoEligible(row)) return false;
     const messages = state.threadDetails[id]?.messages;
     const last = messages?.[messages.length - 1];
     const lastMessageFromUser = Boolean(last && last.senderEmail === CURRENT_USER_EMAIL);

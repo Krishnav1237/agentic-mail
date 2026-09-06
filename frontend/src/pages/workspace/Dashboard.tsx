@@ -29,7 +29,7 @@ import { isOverdueByDeadline } from '../../lib/deadlineGroups';
 
 /**
  * Dashboard — the briefing (Design Constitution §14). It opens with relief (what
- * IIL already handled overnight), surfaces only what needs a decision, then
+ * Obligo already handled overnight), surfaces only what needs a decision, then
  * quiets into awareness and background work. Built entirely on the frozen
  * foundation: the star-lit room shows through every surface, gold is spent once
  * on the single most-valuable decision, and the sections settle in as the page
@@ -45,7 +45,7 @@ import { isOverdueByDeadline } from '../../lib/deadlineGroups';
  * neutral palette, never `unread` standing in for attention.
  */
 
-/** One surfaced mail — a real row from the canonical store, plus the IIL
+/** One surfaced mail — a real row from the canonical store, plus the Obligo
  * insight explaining why it's here (truncated for display by the rows below),
  * plus which page owns it (where a click should land).
  *
@@ -201,7 +201,7 @@ function MailAttentionRow({
           </span>
           {deadline && (
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{
                 flex: 'none',
                 marginLeft: 'auto',
@@ -310,7 +310,7 @@ function CompactMailRow({
       </span>
       {deadline && (
         <span
-          className="iil-mono"
+          className="obligo-mono"
           style={{
             flex: 'none',
             marginLeft: 'auto',
@@ -454,9 +454,9 @@ export default function Dashboard() {
   //
   // `totalProcessed` IS `needAttention + handled.length` — a genuine
   // two-way partition, not a superset with a silent third bucket. "Processed
-  // overnight" means the mail IIL actually DID something with: flagged it
+  // overnight" means the mail Obligo actually DID something with: flagged it
   // for a decision, or resolved it outright. The much larger pile of mail
-  // sitting in the store that IIL never flagged and nobody has completed —
+  // sitting in the store that Obligo never flagged and nobody has completed —
   // ordinary inbox traffic nothing here has an opinion about — was never
   // "processed" in the sense this headline is making a claim about, so it
   // isn't counted in it.
@@ -469,7 +469,7 @@ export default function Dashboard() {
   // checks Y + Z against X, because that's the only reading the three
   // numbers sitting next to each other on one screen invite. Headlining
   // `store.rows.length` (every row that exists, most of it never evaluated
-  // by IIL at all) could never satisfy that check no matter how it was
+  // by Obligo at all) could never satisfy that check no matter how it was
   // worded. Defining `totalProcessed` as the sum instead — rather than
   // independently filtering a third dataset — is what makes the identity
   // hold BY CONSTRUCTION, not by coincidence of today's demo data: it can't
@@ -496,7 +496,7 @@ export default function Dashboard() {
     navigate('/actions', { state: { openMailId: id } });
 
   return (
-    <WorkspacePage scale={1.1} className="iil-dashboard-shell">
+    <WorkspacePage scale={1.1} className="obligo-dashboard-shell">
       <Stagger style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Relief — the arrival. A luminous sentence over a soft gold glow. */}
         <Reveal>
@@ -551,7 +551,7 @@ export default function Dashboard() {
             narrower right column so weight is distributed across the
             workspace rather than concentrated in one vertical column. */}
         <Reveal>
-          <div className="iil-dashboard-columns">
+          <div className="obligo-dashboard-columns">
             <PageSection eyebrow={<SectionEyebrow>Approvals</SectionEyebrow>}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {approvalMails.length > 0 ? (
@@ -660,7 +660,7 @@ export default function Dashboard() {
                 }}
               />
               <span
-                className="iil-eyebrow"
+                className="obligo-eyebrow"
                 style={{ color: 'var(--gold-ink)' }}
               >
                 including {highlightedHandled.completedNote}
@@ -669,7 +669,7 @@ export default function Dashboard() {
           )}
           <button
             type="button"
-            className="iil-icon-btn iil-chip-btn"
+            className="obligo-icon-btn obligo-chip-btn"
             onClick={() => navigate('/inbox')}
             style={
               {

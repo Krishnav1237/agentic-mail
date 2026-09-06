@@ -6,7 +6,7 @@ Version: 1.0
 
 # Purpose
 
-This document defines the implementation philosophy for IIL.
+This document defines the implementation philosophy for Obligo.
 
 The Design Constitution defines the vision.
 

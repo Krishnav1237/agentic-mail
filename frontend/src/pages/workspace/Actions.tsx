@@ -110,8 +110,8 @@ import {
  * function of list index.
  *
  * Interaction, search and filtering reuse the shared Foundation system end to
- * end: rows are real buttons carrying the `.iil-action-row` token recipe, and
- * the filter popover reuses the `.iil-menu`/`.iil-option` pattern.
+ * end: rows are real buttons carrying the `.obligo-action-row` token recipe, and
+ * the filter popover reuses the `.obligo-menu`/`.obligo-option` pattern.
  */
 
 const TRUNCATE: CSSProperties = {
@@ -157,7 +157,7 @@ const EMPTY_FILTERS = (): Filters => ({
 
 /** Everything this page's search contract covers, each resolved against the
  * ONE canonical source for that field rather than a page-local copy: the
- * item's own title, the backing mail's IIL insight (its "description" — the
+ * item's own title, the backing mail's Obligo insight (its "description" — the
  * same text the row previews and the opened mail shows in full), and the
  * mail's real sender/address/subject as its source.
  *
@@ -200,27 +200,27 @@ function passesFilters(
   return true;
 }
 
-/** Shown in the insight slot when IIL genuinely has nothing to say about an
+/** Shown in the insight slot when Obligo genuinely has nothing to say about an
  * item — distinguished by *italic*, not by being faded into invisibility, so
  * it reads as "checked, nothing found" while staying legible. */
 const NO_INSIGHT_TEXT = 'no insight for this one';
 
 /**
  * The shared preview/insight line every mail-backed row uses — real email
- * content on the left, IIL's insight in its own slot on the right. Every tier
+ * content on the left, Obligo's insight in its own slot on the right. Every tier
  * (`ContextRow`/`CompactRow`/`MinimalRow`) goes through this one component so
  * "This Week" and "Later" can't silently drop the structure just because
  * they're visually quieter than Overdue/Today.
  *
  * THE INSIGHT HERE IS A PREVIEW, NOT THE ONLY COPY. It is the backing mail's
  * one canonical insight (`ThreadDetail.insight`), truncated — the same text
- * the opened mail shows in full in its own IIL Insight section. This slot used
+ * the opened mail shows in full in its own Obligo Insight section. This slot used
  * to show a second, Action-only `reason` string instead, which is how a reader
- * could see IIL's take on a row here and then find nothing at all after
+ * could see Obligo's take on a row here and then find nothing at all after
  * opening it.
  *
  * A mail with no insight still gets `NO_INSIGHT_TEXT` in its slot rather than
- * an empty gap — that's a real, distinctly-styled signal that IIL evaluated
+ * an empty gap — that's a real, distinctly-styled signal that Obligo evaluated
  * the item and found nothing worth surfacing, not a fabricated insight and not
  * a silent hole where one might belong. (The opened mail makes the opposite
  * choice for the same fact — it renders no section at all — because a list
@@ -251,7 +251,7 @@ function DetailLine({
   if (!preview && !insight) return null;
   return (
     // Fixed thirds: preview gets half the row, a quiet quarter of breathing
-    // room, then IIL's insight (or its placeholder) in the last quarter.
+    // room, then Obligo's insight (or its placeholder) in the last quarter.
     <div style={{ display: 'flex', alignItems: 'baseline', marginTop }}>
       {preview && (
         <span
@@ -287,7 +287,7 @@ function DetailLine({
 
 /** Real email content preview for a row's backing message, if it has one —
  * the actual last message body from the canonical thread, never `row.snippet`
- * and never the mail's insight (IIL's words, not the sender's). */
+ * and never the mail's insight (Obligo's words, not the sender's). */
 function previewFor(row: StoredMailRow | undefined): string | undefined {
   const detail = row ? mailActions.getThreadDetail(row.id) : undefined;
   const body = detail?.messages[detail.messages.length - 1]?.body;
@@ -296,10 +296,10 @@ function previewFor(row: StoredMailRow | undefined): string | undefined {
   return body === undefined ? undefined : toBodyContent(body).text;
 }
 
-/** The backing mail's ONE canonical IIL insight — the same lookup, and so the
+/** The backing mail's ONE canonical Obligo insight — the same lookup, and so the
  * same text, the opened mail renders in full. An Action no more carries an
  * insight of its own than it carries an attention of its own: both belong to
- * the mail behind it. Empty when IIL has nothing to say about that mail. */
+ * the mail behind it. Empty when Obligo has nothing to say about that mail. */
 function insightFor(row: StoredMailRow | undefined): string {
   return (row ? mailActions.getThreadDetail(row.id)?.insight : '') ?? '';
 }
@@ -414,7 +414,7 @@ function ContextRow({
               there's no other bucket to exclude. */}
           {dueLabel && dueBucket === 'overdue' && (
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{
                 flex: 'none',
                 marginLeft: 'auto',
@@ -522,7 +522,7 @@ function CompactRow({
           </span>
           {dueLabel && (
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{
                 flex: 'none',
                 marginLeft: 'auto',
@@ -631,7 +631,7 @@ function MinimalRow({
           </span>
           {dueLabel && (
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{
                 flex: 'none',
                 marginLeft: 'auto',
@@ -683,7 +683,7 @@ function FacetGroup({ label }: { label: string }) {
   );
 }
 
-/** One checkable row inside the filter popover — reuses `.iil-option`'s hover
+/** One checkable row inside the filter popover — reuses `.obligo-option`'s hover
  * treatment; the check mirrors Select's own "value is active" indicator. */
 function FilterOption({
   label,
@@ -703,7 +703,7 @@ function FilterOption({
   return (
     <button
       type="button"
-      className="iil-option"
+      className="obligo-option"
       role="menuitemcheckbox"
       aria-checked={active}
       data-selected={active}
@@ -793,11 +793,11 @@ function FilterMenu({
   }
 
   return (
-    <div className="iil-select">
+    <div className="obligo-select">
       <button
         ref={triggerRef}
         type="button"
-        className="iil-icon-btn iil-chip-btn"
+        className="obligo-icon-btn obligo-chip-btn"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -838,7 +838,7 @@ function FilterMenu({
               ref={popoverRef}
               role="menu"
               aria-label="Filter actions"
-              className="iil-menu"
+              className="obligo-menu"
               style={{ width: 200, minWidth: 200, zIndex: 70, ...position }}
               initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -857,7 +857,7 @@ function FilterMenu({
                 {activeCount > 0 && (
                   <button
                     type="button"
-                    className="iil-icon-btn iil-chip-btn"
+                    className="obligo-icon-btn obligo-chip-btn"
                     onClick={() => onChange(EMPTY_FILTERS())}
                     style={
                       {
@@ -1199,7 +1199,7 @@ export default function Actions() {
               if (done) {
                 return (
                   <span
-                    className="iil-eyebrow"
+                    className="obligo-eyebrow"
                     style={{ marginLeft: 'auto', color: 'var(--text-faint)' }}
                   >
                     {item.completedNote ?? 'Completed'}
@@ -1217,7 +1217,7 @@ export default function Actions() {
                 >
                   <button
                     type="button"
-                    className="iil-btn iil-btn--outline"
+                    className="obligo-btn obligo-btn--outline"
                     onClick={() => {
                       workflowActions.completeAction(item.id);
                       setOpenMailId(null);
@@ -1305,7 +1305,7 @@ export default function Actions() {
                 <Reveal style={{ marginTop: 32 }}>
                   <EmptyState
                     title={emptyTitle}
-                    description="IIL didn't find anything in this view — the rest of your actions are still tracked, just outside these criteria."
+                    description="Obligo didn't find anything in this view — the rest of your actions are still tracked, just outside these criteria."
                     action={
                       <Button variant="outline" onClick={clearAll}>
                         Clear filters

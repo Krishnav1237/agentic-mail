@@ -85,38 +85,12 @@ export const BrandLogo = () => {
   return (
     <div className="relative flex items-center justify-start overflow-visible">
       <div className="flex items-center gap-2 sm:gap-3 relative">
-        {/* LEFT SECTION (IIL | Inbox) - Reveals RTL */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <StaggeredText
-            text="IIL"
-            delay={textDelay + (5 + 1) * stagger}
-            stagger={stagger}
-            mode="rtl"
-            className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
-          />
-
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.01, delay: textDelay + 5 * stagger }}
-            className="whitespace-nowrap text-[10px] font-bold text-white/22 sm:text-[11px] md:text-[12px]"
-          >
-            |
-          </motion.span>
-
-          {/* ORIGINAL REPO STRUCTURE: flex flex-col leading-[1.1] text-left */}
+          {/* Icon-split reveal followed by the "Obligo" wordmark */}
           <div className="flex flex-col leading-[1.1] text-left relative">
-            <div className="flex items-center whitespace-nowrap">
-              <StaggeredText
-                text="Inbox"
-                delay={textDelay}
-                stagger={stagger}
-                mode="rtl"
-                className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
-              />
-
-              {/* THE ANIMATION ANCHOR: Natural gap in "Inbox Intelligence" */}
-              <div className="relative w-[0.3em] sm:w-[0.5em] flex items-center justify-center pointer-events-none">
+            <div className="relative flex items-center whitespace-nowrap">
+              {/* THE ANIMATION ANCHOR: icon split reveals "Obligo", centered over the word */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <AnimatePresence>
                   {stage !== 'final' && (
                     <motion.div
@@ -166,22 +140,23 @@ export const BrandLogo = () => {
                 </AnimatePresence>
               </div>
 
-              <StaggeredText
-                text="Intelligence"
-                delay={textDelay}
-                stagger={stagger}
-                mode="ltr"
-                className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
-              />
+              <span className="whitespace-nowrap flex">
+                <StaggeredText
+                  text="Obl"
+                  delay={textDelay}
+                  stagger={stagger}
+                  mode="rtl"
+                  className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
+                />
+                <StaggeredText
+                  text="igo"
+                  delay={textDelay}
+                  stagger={stagger}
+                  mode="ltr"
+                  className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
+                />
+              </span>
             </div>
-
-            <StaggeredText
-              text="Layer"
-              delay={textDelay}
-              stagger={stagger}
-              mode="rtl"
-              className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 [text-shadow:0_0_20px_rgba(255,255,255,0.15)] sm:text-[11px] sm:tracking-[0.3em] md:text-[12px]"
-            />
           </div>
         </div>
       </div>

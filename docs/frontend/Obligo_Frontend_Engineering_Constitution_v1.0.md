@@ -1,4 +1,4 @@
-# IIL (Inbox Intelligence Layer)
+# Obligo
 # Frontend Architecture & Engineering Constitution
 Version: 1.0
 Status: Draft
@@ -9,13 +9,13 @@ Last Updated: Sprint 1 Frontend Freeze
 
 # Introduction
 
-This document defines how the IIL frontend is engineered.
+This document defines how the Obligo frontend is engineered.
 
 Unlike the Design Constitution, which explains **what the product should feel like**, this document explains **how that feeling is implemented**.
 
-Its purpose is to ensure that every engineer implementing IIL produces interfaces that are visually, structurally and behaviorally consistent with the existing product.
+Its purpose is to ensure that every engineer implementing Obligo produces interfaces that are visually, structurally and behaviorally consistent with the existing product.
 
-The Landing Page is considered the reference implementation of the IIL design language.
+The Landing Page is considered the reference implementation of the Obligo design language.
 
 Future workspace pages inherit from that implementation instead of reinventing it.
 
@@ -59,7 +59,7 @@ The Engineering Constitution defines:
 
 The Design Constitution answers:
 
-> Why does IIL behave this way?
+> Why does Obligo behave this way?
 
 The Engineering Constitution answers:
 
@@ -73,7 +73,7 @@ Both documents are required before implementing new features.
 
 # Product Engineering Philosophy
 
-The following principles govern every engineering decision inside IIL.
+The following principles govern every engineering decision inside Obligo.
 
 These principles rarely change and should survive multiple frontend rewrites.
 
@@ -81,9 +81,9 @@ Whenever implementation decisions become ambiguous, these principles take preced
 
 ---
 
-# 1. IIL is an Intelligence Layer
+# 1. Obligo is an Intelligence Layer
 
-IIL is not an email client.
+Obligo is not an email client.
 
 It is an Intelligence Layer built above email.
 
@@ -91,7 +91,7 @@ The frontend should always reinforce this distinction.
 
 The application exists to reduce work rather than encourage interaction.
 
-Time spent inside IIL should decrease as the system becomes more intelligent.
+Time spent inside Obligo should decrease as the system becomes more intelligent.
 
 Every engineering decision should support this objective.
 
@@ -123,7 +123,7 @@ The Landing experience and the Workspace experience are not separate products.
 
 They are different parts of one continuous experience.
 
-The Landing Page introduces IIL.
+The Landing Page introduces Obligo.
 
 The Workspace continues it.
 
@@ -349,7 +349,7 @@ Whenever two implementation choices appear equally valid, choose the option that
 
 # Frontend Architecture
 
-This section defines how the IIL frontend is physically constructed.
+This section defines how the Obligo frontend is physically constructed.
 
 Unlike the previous section, which explains engineering philosophy, this section defines the application's architecture and the responsibilities of every architectural layer.
 
@@ -435,7 +435,7 @@ Skipping architectural layers introduces duplication and inconsistency.
 
 # 10. React Application
 
-The React Application is responsible for bootstrapping IIL.
+The React Application is responsible for bootstrapping Obligo.
 
 Responsibilities include:
 
@@ -513,7 +513,7 @@ AppShell is the single most important frontend component.
 
 Every workspace page exists inside AppShell.
 
-AppShell establishes the identity of IIL before any page content appears.
+AppShell establishes the identity of Obligo before any page content appears.
 
 It owns:
 
@@ -549,7 +549,7 @@ Pages are temporary.
 
 Immediately inside AppShell exists the Atmosphere Layer.
 
-The Atmosphere Layer creates the environmental identity of IIL.
+The Atmosphere Layer creates the environmental identity of Obligo.
 
 It is composed of shared visual systems including:
 
@@ -642,7 +642,7 @@ Instead, it delegates layout responsibility to the Page Template.
 
 Every workspace page begins from the same Page Template.
 
-The Page Template is one of the most important reusable systems in IIL.
+The Page Template is one of the most important reusable systems in Obligo.
 
 It exists to ensure every page inherits identical structural behavior.
 
@@ -968,7 +968,7 @@ If any of the above conditions are violated, the implementation should be recons
 
 # Design Token System & Visual Language
 
-This section defines the visual language of IIL from an engineering perspective.
+This section defines the visual language of Obligo from an engineering perspective.
 
 Unlike the Design Constitution, which describes the desired visual identity, this section documents the actual engineering systems responsible for producing that identity.
 
@@ -982,7 +982,7 @@ They do not redefine them.
 
 # 25. Design Token Philosophy
 
-Every visual decision inside IIL should originate from a shared design token.
+Every visual decision inside Obligo should originate from a shared design token.
 
 A component should never decide:
 
@@ -1008,7 +1008,7 @@ Color, elevation, shadow, blur, glow and gold each have their own established
 token family (§29-38). Spacing, radius and typography now do too:
 `--space-micro/component/section/page`, `--radius-component/panel/surface`,
 and six `--type-*` role tokens (`page-title`, `section-title`, `body`,
-`caption`, `metadata`, `label`), all defined once in `.iil-root` alongside
+`caption`, `metadata`, `label`), all defined once in `.obligo-root` alongside
 the others. New and touched code should reach for these first, the same way
 it already reaches for `--panel`/`--gold-2`/etc. — see §46 (Forbidden
 Practices) for what this replaces.
@@ -1031,7 +1031,7 @@ Every component should inherit the update automatically.
 
 # 27. Theme System
 
-IIL supports two themes.
+Obligo supports two themes.
 
 Dark
 
@@ -1325,7 +1325,7 @@ Three tokens cover the values a new component reaches for first —
 `--radius-component` (8px: buttons, controls, small chips), `--radius-panel`
 (10px: rows, cards, panels), `--radius-surface` (22px: large reading
 surfaces like the thread pane). Existing, already-established component
-classes (`.iil-panel`, `.iil-btn`, etc.) keep their own long-standing values
+classes (`.obligo-panel`, `.obligo-btn`, etc.) keep their own long-standing values
 rather than being retrofitted onto these — the tokens exist to stop new
 divergence, not to force a retroactive rewrite of values already consistent
 with each other.
@@ -1382,7 +1382,7 @@ Not the page.
 
 # 38. Lighting System
 
-Lighting contributes to the premium appearance of IIL.
+Lighting contributes to the premium appearance of Obligo.
 
 It should remain subtle.
 
@@ -1622,7 +1622,7 @@ Only after all requirements are satisfied should visual implementation be consid
 
 # Motion, Interaction & Responsive Engineering
 
-The purpose of this section is to define **how IIL behaves**, not simply how it looks.
+The purpose of this section is to define **how Obligo behaves**, not simply how it looks.
 
 Motion is treated as part of the product's communication system.
 
@@ -1644,7 +1644,7 @@ Motion exists to communicate.
 
 Never to entertain.
 
-Every animation inside IIL must satisfy at least one of the following purposes.
+Every animation inside Obligo must satisfy at least one of the following purposes.
 
 • Explain a state change
 
@@ -1664,7 +1664,7 @@ it should not exist.
 
 # 48. Motion Consistency
 
-Every motion inside IIL belongs to one shared motion language.
+Every motion inside Obligo belongs to one shared motion language.
 
 The application should feel like one continuous physical environment.
 
@@ -2128,7 +2128,7 @@ and interaction may adapt.
 
 The product identity should not.
 
-The experience should remain unmistakably IIL.
+The experience should remain unmistakably Obligo.
 
 ---
 
@@ -2220,7 +2220,7 @@ Only after every item has been satisfied should motion and responsiveness be con
 
 # Component System & Engineering Standards
 
-This section defines how reusable components are designed, organized and evolved throughout IIL.
+This section defines how reusable components are designed, organized and evolved throughout Obligo.
 
 The objective of the component system is not simply code reuse.
 
@@ -2870,13 +2870,13 @@ Only after satisfying every requirement should a component become part of the sh
 
 # State Management, Data Flow & Backend Integration
 
-This section defines how information moves throughout IIL.
+This section defines how information moves throughout Obligo.
 
 The frontend is responsible for presenting information.
 
 The backend is responsible for understanding information.
 
-This separation is fundamental to the architecture of IIL.
+This separation is fundamental to the architecture of Obligo.
 
 Business intelligence should never migrate into frontend code.
 
@@ -3535,7 +3535,7 @@ Only after satisfying every requirement should a new feature be considered archi
 
 # Project Organization, Code Standards & Developer Experience
 
-This section defines how the IIL frontend codebase is organized.
+This section defines how the Obligo frontend codebase is organized.
 
 A clean architecture is only sustainable if the codebase itself remains understandable.
 
@@ -4529,7 +4529,7 @@ Claude Code is an implementation tool.
 
 Not a design tool.
 
-Its responsibility is to reproduce IIL faithfully.
+Its responsibility is to reproduce Obligo faithfully.
 
 It should extend existing systems.
 
@@ -4827,7 +4827,7 @@ Every production-ready implementation must satisfy the following.
 
 ---
 
-An implementation that satisfies every requirement above should be considered consistent with the engineering philosophy of IIL and suitable for production.
+An implementation that satisfies every requirement above should be considered consistent with the engineering philosophy of Obligo and suitable for production.
 
 ---
 
@@ -4835,7 +4835,7 @@ An implementation that satisfies every requirement above should be considered co
 
 # Frontend Implementation Playbook
 
-This appendix defines the standard engineering workflow for implementing any new feature inside IIL.
+This appendix defines the standard engineering workflow for implementing any new feature inside Obligo.
 
 Unlike the previous sections, which describe architecture and engineering philosophy, this appendix describes the practical sequence every engineer (human or AI) should follow.
 
@@ -5189,7 +5189,7 @@ The objective is consistency.
 
 # Claude Code Operational Guide
 
-This appendix defines how Claude Code should approach every engineering task inside IIL.
+This appendix defines how Claude Code should approach every engineering task inside Obligo.
 
 These rules intentionally prioritize consistency over interpretation.
 
@@ -5307,7 +5307,7 @@ Reuse whenever possible.
 
 # B.5 Preserve the Design Language
 
-Every implementation should visually belong to IIL.
+Every implementation should visually belong to Obligo.
 
 A new page should feel as though it has always existed within the product.
 
@@ -5417,7 +5417,7 @@ The codebase is cleaner than before implementation.
 
 The purpose of this Engineering Constitution is not merely to standardize code.
 
-Its purpose is to preserve the identity of IIL as the product grows.
+Its purpose is to preserve the identity of Obligo as the product grows.
 
 Every engineer contributing to the project inherits the responsibility of strengthening that identity rather than diluting it.
 
@@ -5425,4 +5425,4 @@ Good engineering should make future development easier than present development.
 
 Every implementation should leave the frontend more unified, more understandable and more maintainable than it was before.
 
-If this document is consistently followed, IIL should continue feeling like one carefully engineered product regardless of how many features, pages or contributors it gains over time.
+If this document is consistently followed, Obligo should continue feeling like one carefully engineered product regardless of how many features, pages or contributors it gains over time.

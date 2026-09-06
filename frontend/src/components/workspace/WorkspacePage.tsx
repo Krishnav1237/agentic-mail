@@ -75,7 +75,7 @@ export function WorkspacePage({
    * and proportionally, the way Ctrl/Cmd+Plus would, without touching the
    * shell (topbar/sidebar/canvas) or the page's own outer position. Defaults
    * to `1` (no-op) so pages that don't opt in render exactly as before. See
-   * `.iil-page` in index.css for how this composes with `--rail-max`.
+   * `.obligo-page` in index.css for how this composes with `--rail-max`.
    */
   scale = 1,
   /**
@@ -104,12 +104,12 @@ export function WorkspacePage({
   } as CSSProperties;
 
   return (
-    <div className="iil-scroll">
+    <div className="obligo-scroll">
       <motion.div
         variants={pageStagger}
         initial="hidden"
         animate="show"
-        className={`iil-page ${className}`.trim()}
+        className={`obligo-page ${className}`.trim()}
         style={{ ...railStyle, ...style }}
       >
         {children}
@@ -151,13 +151,13 @@ export function PageHeader({
       <div style={{ minWidth: 0, maxWidth: '60ch' }}>
         {eyebrow && (
           <span
-            className="iil-eyebrow"
+            className="obligo-eyebrow"
             style={{ display: 'block', marginBottom: 10 }}
           >
             {eyebrow}
           </span>
         )}
-        <h1 className={accent ? 'iil-title iil-title--accent' : 'iil-title'}>
+        <h1 className={accent ? 'obligo-title obligo-title--accent' : 'obligo-title'}>
           {title}
         </h1>
         {description && (
@@ -236,7 +236,7 @@ export function PageSection({
           }}
         >
           <div style={{ minWidth: 0 }}>
-            {eyebrow && <span className="iil-eyebrow">{eyebrow}</span>}
+            {eyebrow && <span className="obligo-eyebrow">{eyebrow}</span>}
             {heading && (
               <h2
                 id={headingId}

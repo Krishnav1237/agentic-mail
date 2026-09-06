@@ -1,5 +1,5 @@
 # System Architecture & Component Design
-*Inbox Intelligence Layer (IIL) Backend — Implementation Reference*
+*Obligo Backend — Implementation Reference*
 
 ---
 
@@ -9,7 +9,7 @@
 
 ## 1. Subsystem Architecture Overview
 
-The Inbox Intelligence Layer backend is an **execution layer built on top of communication**. In Phases 1–4, the architecture focuses strictly on read-only inbox synchronization, MIME parsing, structured AI extraction, candidate entity materialization, shadow-mode noise scoring, and internal validation program infrastructure.
+The Obligo backend is an **execution layer built on top of communication**. In Phases 1–4, the architecture focuses strictly on read-only inbox synchronization, MIME parsing, structured AI extraction, candidate entity materialization, shadow-mode noise scoring, and internal validation program infrastructure.
 
 ```mermaid
 graph TD
@@ -57,8 +57,8 @@ graph TD
 - Immutable audit trail (`audit_events`) enforced via PostgreSQL trigger rejecting `UPDATE` and `DELETE`.
 
 ### 2.4 Cache & Locking Layer (Redis 7)
-- Distributed Lua locks (`iil:lock:sync:<userId>`, `iil:lock:extract:<emailId>`) for atomic state operations, renewal, and compare-and-DEL release.
-- Rate-limiting window storage (`iil:ratelimit:<route>:<ip>`).
+- Distributed Lua locks (`obligo:lock:sync:<userId>`, `obligo:lock:extract:<emailId>`) for atomic state operations, renewal, and compare-and-DEL release.
+- Rate-limiting window storage (`obligo:ratelimit:<route>:<ip>`).
 - Atomic OAuth state consumption via `GETDEL`.
 
 ### 2.5 Structured AI Service (`backend/src/ai/structuredAiService.ts`)

@@ -1,6 +1,6 @@
-# Inbox Intelligence Layer (IIL) Documentation Index
+# Obligo Documentation Index
 
-Welcome to the Inbox Intelligence Layer (IIL) documentation repository.
+Welcome to the Obligo documentation repository.
 
 ---
 

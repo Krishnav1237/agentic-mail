@@ -33,7 +33,7 @@ const navItems: { label: string; to: string; icon: LucideIcon }[] = [
 ];
 
 /**
- * The IIL workspace shell: floating topbar + nav-only sidebar + rounded canvas.
+ * The Obligo workspace shell: floating topbar + nav-only sidebar + rounded canvas.
  * Formerly the (dead) dashboard shell — rewritten to the Sprint 1 design.
  */
 export default function AppShell() {
@@ -61,7 +61,7 @@ export default function AppShell() {
     // next frame — no reload, no prop threading, and no component that has to
     // know a preference exists in order to honour it.
     <div
-      className="iil-root"
+      className="obligo-root"
       data-theme={theme}
       data-urgency={prefs.urgencyColor}
       data-importance={prefs.importanceColor}
@@ -83,21 +83,21 @@ export default function AppShell() {
 
       {/* Experiment 1: Atmospheric Perspective — purely a depth cue for the
           beam where it passes behind the main workspace canvas; see the
-          `.iil-depth-veil` rule in index.css for how it composes with the
+          `.obligo-depth-veil` rule in index.css for how it composes with the
           atmosphere and the canvas. Gated the same as `<Atmosphere>` since it
           has nothing to show when the atmosphere itself is hidden. */}
       {atmosphereVisible && (
-        <div className="iil-depth-veil" aria-hidden="true" />
+        <div className="obligo-depth-veil" aria-hidden="true" />
       )}
 
       {/* Topbar: brand left, theme + profile right (Constitution §8). */}
-      <header className="iil-topbar">
+      <header className="obligo-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <img
             src="/favicon.svg"
             width={22}
             height={22}
-            alt="IIL"
+            alt="Obligo"
             style={{
               width: 'calc(var(--ui-scale) * 22px)',
               height: 'calc(var(--ui-scale) * 22px)',
@@ -108,32 +108,12 @@ export default function AppShell() {
           <span
             style={{
               font: '600 calc(var(--ui-scale) * 14px)/1 Inter, sans-serif',
-              letterSpacing: '-0px',
-              color: 'rgb(var(--ink) / 0.94)',
-            }}
-          >
-            IIL
-          </span>
-          {/* Hidden at exactly the same breakpoint as the wordmark it
-              separates — on its own it read as a rule with nothing after it. */}
-          <span
-            className="hidden sm:inline"
-            style={{
-              width: 1,
-              height: 'calc(var(--ui-scale) * 14px)',
-              background: 'rgb(var(--ink) / 0.14)',
-            }}
-          />
-          <span
-            className="hidden sm:inline"
-            style={{
-              font: '450 calc(var(--ui-scale) * 14px)/1 Inter, sans-serif',
               letterSpacing: 'calc(var(--ui-scale) * 1.5px)',
               whiteSpace: 'nowrap',
               color: 'rgb(var(--ink) / 0.94)',
             }}
           >
-            INBOX INTELLIGENCE LAYER
+            OBLIGO
           </span>
         </div>
 
@@ -144,23 +124,23 @@ export default function AppShell() {
       </header>
 
       {/* Sidebar: navigation only (Constitution §8), floating active pill. */}
-      <aside className="iil-sidebar">
-        <nav className="iil-nav">
+      <aside className="obligo-sidebar">
+        <nav className="obligo-nav">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <NavLink key={item.to} to={item.to} end className="iil-nav-item">
+              <NavLink key={item.to} to={item.to} end className="obligo-nav-item">
                 {({ isActive }) => (
                   <>
                     {isActive && (
                       <motion.span
-                        layoutId="iil-nav-pill"
-                        className="iil-pill"
+                        layoutId="obligo-nav-pill"
+                        className="obligo-pill"
                         transition={SPRING_PILL}
                       />
                     )}
                     <span
-                      className="iil-nav-icon"
+                      className="obligo-nav-icon"
                       style={{ color: isActive ? 'var(--text)' : undefined }}
                     >
                       {/* Lucide's `size` sets a raw SVG width/height attribute,
@@ -206,7 +186,7 @@ export default function AppShell() {
                 reader, so the pair stays coherent in both states. */}
             <button
               type="button"
-              className="iil-quick-access-toggle"
+              className="obligo-quick-access-toggle"
               aria-expanded={quickAccessOpen}
               aria-controls={quickAccessListId}
               onClick={() =>
@@ -249,7 +229,7 @@ export default function AppShell() {
                   transition={{ duration: DURATION.micro, ease: EASE }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <nav className="iil-nav" style={{ paddingTop: 6 }}>
+                  <nav className="obligo-nav" style={{ paddingTop: 6 }}>
                     {quickAccessViews.map((item) => {
                       const Icon = item.icon;
                       return (
@@ -257,19 +237,19 @@ export default function AppShell() {
                           key={item.id}
                           to={item.path}
                           end
-                          className="iil-nav-item"
+                          className="obligo-nav-item"
                         >
                           {({ isActive }) => (
                             <>
                               {isActive && (
                                 <motion.span
-                                  layoutId="iil-quickaccess-pill"
-                                  className="iil-pill"
+                                  layoutId="obligo-quickaccess-pill"
+                                  className="obligo-pill"
                                   transition={SPRING_PILL}
                                 />
                               )}
                               <span
-                                className="iil-nav-icon"
+                                className="obligo-nav-icon"
                                 style={{
                                   color: isActive ? 'var(--text)' : undefined,
                                 }}
@@ -309,7 +289,7 @@ export default function AppShell() {
           transition (Reference §53); each page owns its internal scroll/padding.
           `useOutlet` + a pathname key lets AnimatePresence cross-fade routes
           while the shell itself stays permanent. */}
-      <main className="iil-canvas">
+      <main className="obligo-canvas">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}

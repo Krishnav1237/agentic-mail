@@ -1,12 +1,12 @@
 /**
  * Account identity: display name, avatar and email-change state.
  *
- * Deliberately separate from `AgentPreferences` (IIL behavior configuration)
+ * Deliberately separate from `AgentPreferences` (Obligo behavior configuration)
  * and from `mailAdapters`' `CURRENT_USER_NAME`/`CURRENT_USER_EMAIL` (the
  * canonical mailbox identity every "is this me?" check in the mail system
  * reads). This file is the fourth, distinct concern: Account/Auth, alongside
  * Settings, Mail and Workflow — a user can rename their display name or swap
- * their avatar without touching anything mail-identity or IIL-behavior
+ * their avatar without touching anything mail-identity or Obligo-behavior
  * related.
  *
  * Same split as `agentPreferences.ts`: pure types, defaults and a

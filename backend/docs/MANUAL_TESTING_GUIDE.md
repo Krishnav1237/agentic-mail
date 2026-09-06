@@ -1,5 +1,5 @@
 # Manual Backend Testing Guide & Lifecycle Testing Runbook
-*Inbox Intelligence Layer (IIL) Backend — Owner-Led Verification Manual*
+*Obligo Backend — Owner-Led Verification Manual*
 
 ---
 

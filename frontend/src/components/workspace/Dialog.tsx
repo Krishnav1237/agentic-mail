@@ -5,8 +5,8 @@
  * integration manager, Help & Feedback) doesn't re-solve the same overlay
  * positioning and keyboard behavior a third time.
  *
- * Portalled to `.iil-root` for the same reason `ConfirmDialogPortal` is: any
- * workspace page renders inside `.iil-page`'s own `transform: scale(...)`
+ * Portalled to `.obligo-root` for the same reason `ConfirmDialogPortal` is: any
+ * workspace page renders inside `.obligo-page`'s own `transform: scale(...)`
  * content zoom, which gives `position: fixed` a new (transformed, scrolled)
  * containing block — without the portal this would center on the page's
  * transformed box instead of the real viewport.

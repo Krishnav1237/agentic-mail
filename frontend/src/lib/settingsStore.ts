@@ -26,7 +26,7 @@ import {
   type AgentPreferences,
 } from './agentPreferences';
 
-const STORAGE_KEY = 'iil-agent-preferences';
+const STORAGE_KEY = 'obligo-agent-preferences';
 
 /** Storage access can throw outright, not just return junk — Safari private
  * browsing and blocked-cookie settings both do. This runs during render (the

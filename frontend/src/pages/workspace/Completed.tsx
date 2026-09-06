@@ -30,7 +30,7 @@ import { formatFullDateTime, formatRelativeMailTime, truncatePreview } from '../
  * Opportunities) — is the single fact this page reads. It does not
  * cross-reference `workflowStore`'s three collections: there is no fixed,
  * mandatory pipeline a thread progresses through (Opportunity/Action/
- * Approval/Completed are possible CURRENT states IIL can classify a thread
+ * Approval/Completed are possible CURRENT states Obligo can classify a thread
  * as, not required stages — see `workflowStateFor`), so a thread may have
  * been an Opportunity, an Action, an Approval, more than one of those, or
  * none, in whatever order its own evidence actually called for, before
@@ -106,7 +106,7 @@ function CompletedRow({
           </span>
           {completedLabel && (
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{
                 flex: 'none',
                 font: '400 calc(var(--type-scale, 1) * 9.5px) "JetBrains Mono", monospace',
@@ -217,7 +217,7 @@ export default function Completed() {
                   }}
                 >
                   <span
-                    className="iil-eyebrow"
+                    className="obligo-eyebrow"
                     style={{ color: 'var(--text-faint)' }}
                   >
                     {selected.completedNote ?? 'Completed'}
@@ -235,7 +235,7 @@ export default function Completed() {
                     {parked || snoozed ? (
                       <button
                         type="button"
-                        className="iil-btn iil-btn--outline"
+                        className="obligo-btn obligo-btn--outline"
                         onClick={() => mailActions.restoreToInbox(selected.id)}
                       >
                         <InboxIcon size={13} strokeWidth={2} aria-hidden />
@@ -245,7 +245,7 @@ export default function Completed() {
                       <>
                         <button
                           type="button"
-                          className="iil-btn iil-btn--danger"
+                          className="obligo-btn obligo-btn--danger"
                           onClick={() => mailActions.trash(selected.id)}
                         >
                           <Trash2 size={13} strokeWidth={2} aria-hidden />
@@ -253,7 +253,7 @@ export default function Completed() {
                         </button>
                         <button
                           type="button"
-                          className="iil-btn iil-btn--outline"
+                          className="obligo-btn obligo-btn--outline"
                           onClick={() => mailActions.archive(selected.id)}
                         >
                           <Archive size={13} strokeWidth={2} aria-hidden />
@@ -261,7 +261,7 @@ export default function Completed() {
                         </button>
                         <button
                           type="button"
-                          className="iil-btn iil-btn--outline"
+                          className="obligo-btn obligo-btn--outline"
                           onClick={() =>
                             selected.unread
                               ? mailActions.markRead(selected.id)

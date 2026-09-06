@@ -114,7 +114,7 @@ export function createApp() {
       status = (err as any).status;
     }
 
-    console.error('[IIL Error]', {
+    console.error('[Obligo Error]', {
       requestId,
       method: req.method,
       path: req.path,

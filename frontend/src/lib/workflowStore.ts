@@ -237,7 +237,7 @@ export function getWorkflowSnapshot(): Readonly<State> {
  * thread can go Opportunity → Completed directly, Approval → Action,
  * Completed → Action (via `mailActions.reactivate`, see below), or land on
  * any state with no prior state at all — whatever the current evidence
- * actually calls for. This function answers "what does IIL currently think
+ * actually calls for. This function answers "what does Obligo currently think
  * this thread needs," fresh, every time it's called; it is the seam a
  * backend/AI evaluation is meant to drive (via `hydrate` and the mutations
  * above), not a position to be advanced through.

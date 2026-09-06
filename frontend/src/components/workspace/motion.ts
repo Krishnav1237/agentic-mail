@@ -1,7 +1,7 @@
 /**
  * Workspace motion vocabulary.
  *
- * The Landing page (`pages/Landing.tsx`) is the canonical source of IIL's motion
+ * The Landing page (`pages/Landing.tsx`) is the canonical source of Obligo's motion
  * language; this module restates its exact values so every workspace surface
  * *inherits* that language instead of inventing a competing one (Engineering
  * Constitution §48, Reference §11/§27-35). Landing remains the source of truth —

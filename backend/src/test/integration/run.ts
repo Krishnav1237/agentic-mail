@@ -14,7 +14,7 @@ import { runValidationProgramTest } from './12_validationProgram.test.js';
 
 async function main() {
   console.log('================================================================');
-  console.log('  INBOX INTELLIGENCE LAYER (IIL) INTEGRATION TEST GATE (PHASES 1–4 + VALIDATION)');
+  console.log('  OBLIGO INTEGRATION TEST GATE (PHASES 1–4 + VALIDATION)');
   console.log('  Running against real PostgreSQL and real Redis...');
   console.log('================================================================\n');
 

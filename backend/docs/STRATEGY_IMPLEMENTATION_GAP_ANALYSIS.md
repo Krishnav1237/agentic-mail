@@ -1,5 +1,5 @@
 # Strategy Implementation Gap Analysis
-*IIL Backend — Stage 0 Audit*
+*Obligo Backend — Stage 0 Audit*
 *Generated: 2026-07-23 — Verified against actual source, not documentation summaries.*
 
 ---
@@ -152,7 +152,7 @@ All of the following are entirely absent from the repository:
 
 ## 7. Proposed Experiments Not Yet Implemented
 
-From the IIL Strategic Hypotheses document:
+From the Obligo Strategic Hypotheses document:
 
 | Proposed Experiment | Status |
 |---|---|

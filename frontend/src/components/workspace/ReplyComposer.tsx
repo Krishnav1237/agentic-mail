@@ -1,5 +1,5 @@
 /**
- * IIL Suggested Reply — the opened-email view's reply composer.
+ * Obligo Suggested Reply — the opened-email view's reply composer.
  *
  * Owns its own state machine (preview → editing → scheduled/sent) so that
  * switching threads (`key={openId}` at the call site) resets it cleanly.
@@ -175,7 +175,7 @@ function daysInMonth(year: number, monthIndex: number) {
 
 /**
  * Viewport-aware anchoring for the schedule-send popover. Fixed positioning
- * (not the `.iil-menu` class default of absolute-inside-the-trigger) so the
+ * (not the `.obligo-menu` class default of absolute-inside-the-trigger) so the
  * popover can never be clipped by an ancestor, then flips above/below and
  * clamps horizontally based on the anchor's actual position — no hardcoded
  * offset, so it holds up at any viewport size or scroll position. Runs a
@@ -294,7 +294,7 @@ export function useOutsideClose<T extends HTMLElement>(
 const POPOVER_TRANSITION = { duration: 0.16, ease: EASE };
 
 /**
- * `.iil-root` is the theme-token scope (`--text`, `--ink`, `--overlay`, …)
+ * `.obligo-root` is the theme-token scope (`--text`, `--ink`, `--overlay`, …)
  * and — unlike the `<article>` reading pane, which sets `backdrop-filter` —
  * has no transform/filter/backdrop-filter of its own, so it isn't a
  * containing block for `position: fixed` descendants. Portalling here (not
@@ -302,7 +302,7 @@ const POPOVER_TRANSITION = { duration: 0.16, ease: EASE };
  * while keeping every CSS variable the popover renders with in scope.
  */
 export function getPortalRoot(): Element {
-  return document.querySelector('.iil-root') ?? document.body;
+  return document.querySelector('.obligo-root') ?? document.body;
 }
 
 /* ------------------------------- toolbar ui ------------------------------- */
@@ -390,7 +390,7 @@ function ToolbarPopoverMenu({
               ref={popoverRef}
               role="menu"
               aria-label={label}
-              className="iil-menu"
+              className="obligo-menu"
               style={{
                 margin: 0,
                 listStyle: 'none',
@@ -407,7 +407,7 @@ function ToolbarPopoverMenu({
                 <li key={it.value}>
                   <button
                     type="button"
-                    className="iil-option"
+                    className="obligo-option"
                     style={{ width: '100%' }}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
@@ -472,7 +472,7 @@ function ColorPopoverButton({
               ref={popoverRef}
               role="menu"
               aria-label="Text color"
-              className="iil-menu"
+              className="obligo-menu"
               style={{
                 display: 'flex',
                 gap: 6,
@@ -571,13 +571,13 @@ function LinkDialog({
       ref={popoverRef}
       role="dialog"
       aria-label="Insert link"
-      className="iil-menu"
+      className="obligo-menu"
       style={{
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
         padding: 12,
-        // `.iil-menu`'s own `min-width: 100%` is written for its usual
+        // `.obligo-menu`'s own `min-width: 100%` is written for its usual
         // absolute-inside-a-trigger use — resolved against the trigger's
         // own width there, but against the *viewport* for a portalled,
         // fixed-position popover like this one. Without an explicit
@@ -645,14 +645,14 @@ function LinkDialog({
       >
         <button
           type="button"
-          className="iil-btn iil-btn--ghost"
+          className="obligo-btn obligo-btn--ghost"
           onClick={onCancel}
         >
           Cancel
         </button>
         <button
           type="button"
-          className="iil-btn iil-btn--primary"
+          className="obligo-btn obligo-btn--primary"
           disabled={!url.trim()}
           onClick={onApply}
         >
@@ -888,7 +888,7 @@ function AnalogClock({
           gesture edits; AM/PM is its own explicit toggle. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div
-          className="iil-mono"
+          className="obligo-mono"
           style={{
             display: 'flex',
             alignItems: 'baseline',
@@ -1153,7 +1153,7 @@ function WheelColumn({
   return (
     <div
       ref={ref}
-      className="iil-wheel-col"
+      className="obligo-wheel-col"
       role="listbox"
       aria-label="Select value"
       onScroll={onScroll}
@@ -1478,7 +1478,7 @@ function SchedulePopover({
       ref={popoverRef}
       role="dialog"
       aria-label="Schedule send"
-      className="iil-menu"
+      className="obligo-menu"
       style={{
         width: customOpen ? 320 : 260,
         minWidth: 260,
@@ -1512,7 +1512,7 @@ function SchedulePopover({
           <button
             key={p.key}
             type="button"
-            className="iil-option"
+            className="obligo-option"
             style={{ width: '100%' }}
             onClick={() => onSchedule(computePresetDate(p.key, new Date()))}
           >
@@ -1521,7 +1521,7 @@ function SchedulePopover({
         ))}
         <button
           type="button"
-          className="iil-option"
+          className="obligo-option"
           aria-pressed={customOpen}
           data-selected={customOpen ? 'true' : undefined}
           style={{ width: '100%' }}
@@ -1587,7 +1587,7 @@ function SchedulePopover({
                 }}
               >
                 <span
-                  className="iil-eyebrow"
+                  className="obligo-eyebrow"
                   style={{ color: 'var(--text-faint)' }}
                 >
                   Schedule for
@@ -1651,7 +1651,7 @@ function SchedulePopover({
       >
         <button
           type="button"
-          className="iil-btn iil-btn--ghost"
+          className="obligo-btn obligo-btn--ghost"
           onClick={onCancel}
         >
           Cancel
@@ -1659,7 +1659,7 @@ function SchedulePopover({
         {customOpen && (
           <button
             type="button"
-            className="iil-btn iil-btn--primary"
+            className="obligo-btn obligo-btn--primary"
             disabled={customInPast}
             onClick={commitCustomSchedule}
           >
@@ -1961,7 +1961,7 @@ function DiscardPromptPortal({
           <button
             ref={cancelRef}
             type="button"
-            className="iil-btn iil-btn--ghost"
+            className="obligo-btn obligo-btn--ghost"
             onClick={onCancel}
             disabled={saving}
           >
@@ -1969,7 +1969,7 @@ function DiscardPromptPortal({
           </button>
           <button
             type="button"
-            className="iil-btn iil-btn--outline"
+            className="obligo-btn obligo-btn--outline"
             onClick={onDiscard}
             disabled={saving}
           >
@@ -1978,7 +1978,7 @@ function DiscardPromptPortal({
           {canSaveDraft && (
             <button
               type="button"
-              className="iil-btn iil-btn--primary"
+              className="obligo-btn obligo-btn--primary"
               onClick={onSaveDraft}
               disabled={saving}
             >
@@ -1999,7 +1999,7 @@ export function ReplyComposer({
   initialTo = [],
   initialCc = [],
   initialAttachments,
-  eyebrow = 'IIL suggested reply',
+  eyebrow = 'Obligo suggested reply',
   sendLabel = 'Send',
   onDiscard,
   onSend,
@@ -2015,7 +2015,7 @@ export function ReplyComposer({
   /** Files already attached to a resumed draft. */
   initialAttachments?: Attachment[];
   /** Label on the small eyebrow row up top — lets the same composer read as
-   * either "IIL suggested reply" (AI draft) or "Reply" (manual, blank)
+   * either "Obligo suggested reply" (AI draft) or "Reply" (manual, blank)
    * depending on which flow mounted it, without forking the component. */
   eyebrow?: string;
   /** Label on the primary send button — e.g. "Approve & send" for an
@@ -2351,7 +2351,7 @@ export function ReplyComposer({
   };
 
   // Only the label used by `ThreadView`'s manual-reply instance — cosmetic
-  // (a neutral dot instead of the gold "IIL" one), not a second component
+  // (a neutral dot instead of the gold "Obligo" one), not a second component
   // fork.
   const isManual = eyebrow.trim().toLowerCase() === 'reply';
 
@@ -2382,7 +2382,7 @@ export function ReplyComposer({
         // region above does this engage — scrolling within the composer
         // itself, right where the user is looking, instead of forcing them
         // to find the scroll on the shared region two levels up. Popovers
-        // (Insert Link, Schedule send) are portalled to `.iil-root`, so
+        // (Insert Link, Schedule send) are portalled to `.obligo-root`, so
         // they're never affected by this.
         overflowY: growWhileEditing ? 'auto' : 'visible',
       }}
@@ -2422,7 +2422,7 @@ export function ReplyComposer({
           <GoldDot size={6} />
         )}
         <span
-          className="iil-eyebrow"
+          className="obligo-eyebrow"
           style={{ color: isManual ? 'var(--text-faint)' : 'var(--gold-ink)' }}
         >
           {eyebrow}
@@ -2432,7 +2432,7 @@ export function ReplyComposer({
             the button had when it did nothing at all. */}
         {draftSavedAt && (
           <span
-            className="iil-eyebrow"
+            className="obligo-eyebrow"
             style={{ color: 'var(--text-faint)', marginLeft: 4 }}
           >
             · draft saved
@@ -2442,9 +2442,9 @@ export function ReplyComposer({
           <button
             type="button"
             aria-label={
-              isManual ? 'Discard reply' : 'Collapse IIL suggested reply'
+              isManual ? 'Discard reply' : 'Collapse Obligo suggested reply'
             }
-            className="iil-icon-btn"
+            className="obligo-icon-btn"
             onClick={handleDiscardClick}
             style={{
               marginLeft: 'auto',
@@ -2686,7 +2686,7 @@ export function ReplyComposer({
             dangerouslySetInnerHTML={{ __html: preEditContent }}
             onInput={(e) => setContent(e.currentTarget.innerHTML)}
             onClick={handleEditorLinkClick}
-            className={`iil-reply-content${linkModifierHeld ? ' iil-link-armed' : ''}`}
+            className={`obligo-reply-content${linkModifierHeld ? ' obligo-link-armed' : ''}`}
             style={{
               // Fills the same width as the To/Cc fields above (both sit
               // under the same `padding: '10px 16px 0'` wrapper) — the old
@@ -2712,11 +2712,11 @@ export function ReplyComposer({
           />
         ) : (
           <div
-            className="iil-reply-content"
+            className="obligo-reply-content"
             dangerouslySetInnerHTML={{ __html: content }}
             style={{
               // The shared mail reading measure (see `--measure-mail`) — the
-              // same one the message body and IIL's insight use, so a draft
+              // same one the message body and Obligo's insight use, so a draft
               // being previewed sits in the same column as the mail it
               // answers. The editing branch above stays at a full-width 100%
               // for the reason its own note gives.
@@ -2795,7 +2795,7 @@ export function ReplyComposer({
                   {a.name}
                 </span>
                 <span
-                  className="iil-mono"
+                  className="obligo-mono"
                   style={{ fontSize: 9.5, color: 'var(--text-faint)' }}
                 >
                   {formatAttachmentSize(a.size)}
@@ -2853,7 +2853,7 @@ export function ReplyComposer({
             )}
             <button
               type="button"
-              className="iil-btn iil-btn--ghost"
+              className="obligo-btn obligo-btn--ghost"
               onClick={openFilePicker}
             >
               <Paperclip size={13} strokeWidth={2} aria-hidden />
@@ -2861,7 +2861,7 @@ export function ReplyComposer({
             </button>
             <button
               type="button"
-              className="iil-btn iil-btn--outline"
+              className="obligo-btn obligo-btn--outline"
               onClick={startEditing}
             >
               <Pencil size={13} strokeWidth={2} aria-hidden />
@@ -2873,7 +2873,7 @@ export function ReplyComposer({
             >
               <button
                 type="button"
-                className="iil-btn iil-btn--primary"
+                className="obligo-btn obligo-btn--primary"
                 aria-disabled={!hasValidRecipient}
                 disabled={!hasValidRecipient}
                 title={
@@ -2904,7 +2904,7 @@ export function ReplyComposer({
                     ? undefined
                     : 'Add at least one recipient before sending'
                 }
-                className="iil-btn iil-btn--primary"
+                className="obligo-btn obligo-btn--primary"
                 style={{
                   borderTopLeftRadius: 0,
                   borderBottomLeftRadius: 0,
@@ -2924,7 +2924,7 @@ export function ReplyComposer({
                       ref={sendMenuPopoverRef}
                       role="menu"
                       aria-label="Send options"
-                      className="iil-menu"
+                      className="obligo-menu"
                       style={{
                         margin: 0,
                         listStyle: 'none',
@@ -2941,7 +2941,7 @@ export function ReplyComposer({
                         <button
                           type="button"
                           role="menuitem"
-                          className="iil-option"
+                          className="obligo-option"
                           style={{ width: '100%' }}
                           onClick={() => {
                             setSendMenuOpen(false);
@@ -2974,7 +2974,7 @@ export function ReplyComposer({
           <>
             <button
               type="button"
-              className="iil-btn iil-btn--ghost"
+              className="obligo-btn obligo-btn--ghost"
               onClick={handleDiscardClick}
             >
               <XIcon size={13} strokeWidth={2} aria-hidden />
@@ -2988,7 +2988,7 @@ export function ReplyComposer({
             {onSaveDraft && (
               <button
                 type="button"
-                className="iil-btn iil-btn--outline"
+                className="obligo-btn obligo-btn--outline"
                 onClick={() => {
                   onSaveDraft(currentPayload());
                   setSavedBaseline({ content, to, cc, attachments });
@@ -3001,7 +3001,7 @@ export function ReplyComposer({
             )}
             <button
               type="button"
-              className="iil-btn iil-btn--primary"
+              className="obligo-btn obligo-btn--primary"
               onClick={saveEditing}
             >
               <Check size={13} strokeWidth={2} aria-hidden />
@@ -3036,7 +3036,7 @@ export function ReplyComposer({
             </span>
             <button
               type="button"
-              className="iil-btn iil-btn--ghost"
+              className="obligo-btn obligo-btn--ghost"
               onClick={backToEditingFromSchedule}
             >
               Edit draft
@@ -3045,7 +3045,7 @@ export function ReplyComposer({
               <button
                 ref={editScheduleBtnRef}
                 type="button"
-                className="iil-btn iil-btn--outline"
+                className="obligo-btn obligo-btn--outline"
                 onClick={() => setScheduleOpen((o) => !o)}
               >
                 Edit schedule
@@ -3063,7 +3063,7 @@ export function ReplyComposer({
             </div>
             <button
               type="button"
-              className="iil-btn iil-btn--ghost"
+              className="obligo-btn obligo-btn--ghost"
               onClick={cancelSchedule}
             >
               Cancel

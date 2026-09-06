@@ -1,5 +1,5 @@
 /**
- * Bounded typed error codes for IIL backend.
+ * Bounded typed error codes for Obligo backend.
  *
  * Rules:
  * 1. Only these codes may appear in persisted fields (sync_runs.error_message,

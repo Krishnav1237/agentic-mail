@@ -1,6 +1,6 @@
 /**
  * The one place account/profile state lives — Account/Auth, kept distinct
- * from `settingsStore` (IIL preferences), `mailStore` (canonical mail) and
+ * from `settingsStore` (Obligo preferences), `mailStore` (canonical mail) and
  * `workflowStore` (Actions/Approvals/Opportunities state). See `userProfile.ts`
  * for why that separation matters.
  *
@@ -26,7 +26,7 @@ import {
 import { settingsActions } from './settingsStore';
 import { telegramActions } from './telegramIntegrationStore';
 
-const STORAGE_KEY = 'iil-user-profile';
+const STORAGE_KEY = 'obligo-user-profile';
 
 function readStored(): UserProfile {
   if (typeof window === 'undefined') return DEFAULT_PROFILE;

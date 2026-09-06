@@ -54,7 +54,7 @@ export function CompletionSummaryHeader({
       </Eyebrow>
       <button
         type="button"
-        className="iil-icon-btn iil-chip-btn"
+        className="obligo-icon-btn obligo-chip-btn"
         aria-expanded={expanded}
         onClick={onToggle}
         disabled={count === 0}

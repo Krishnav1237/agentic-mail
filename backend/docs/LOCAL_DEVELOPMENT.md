@@ -1,5 +1,5 @@
 # Local Development & Environment Setup Guide
-*Inbox Intelligence Layer (IIL) Backend*
+*Obligo Backend*
 
 ---
 
@@ -9,7 +9,7 @@
 
 ## 1. System Requirements
 
-Before setting up the IIL backend, ensure your environment meets the following specifications:
+Before setting up the Obligo backend, ensure your environment meets the following specifications:
 
 - **Node.js**: v18.0.0 or higher (v20+ recommended)
 - **npm**: v9.0.0 or higher
@@ -60,12 +60,12 @@ NODE_ENV=development
 TRUST_PROXY=0
 FRONTEND_URL=http://localhost:3000
 
-DATABASE_URL=postgres://HP@localhost:5432/iil_test
+DATABASE_URL=postgres://HP@localhost:5432/obligo_test
 REDIS_URL=redis://localhost:6379
 
 AUTH_JWT_SECRET=development-jwt-secret-min-32-chars-long-key
-AUTH_JWT_ISSUER=iil-api
-AUTH_JWT_AUDIENCE=iil-app
+AUTH_JWT_ISSUER=obligo-api
+AUTH_JWT_AUDIENCE=obligo-app
 TOKEN_ENC_KEY=MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
 
 GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
@@ -89,7 +89,7 @@ VALIDATION_HELDOUT_CORPUS_PATH=/secure/local/path/heldout-corpus.json
 Apply migrations 001 through 007 sequentially on your local database:
 
 ```bash
-export DB_URL="postgres://HP@localhost:5432/iil_test"
+export DB_URL="postgres://HP@localhost:5432/obligo_test"
 
 psql "$DB_URL" -f db/migrations/001_baseline_schema.sql
 psql "$DB_URL" -f db/migrations/002_gmail_ingestion.sql

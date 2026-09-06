@@ -527,7 +527,7 @@ describe('demo data carries the signals the model would produce', () => {
   });
 
   it('keeps opportunities out of the cleanup buckets', () => {
-    // An opportunity IIL surfaced on purpose is the last thing that should be
+    // An opportunity Obligo surfaced on purpose is the last thing that should be
     // swept away by a housekeeping rule.
     for (const o of opportunities.items) {
       expect(rowById(o.id).classification, o.id).toBeUndefined();

@@ -40,7 +40,7 @@ const repoRootDir = resolve(__dirname, '../../../');
 
 async function runQualityBenchmark() {
   console.log('================================================================');
-  console.log('  IIL EXTRACTION QUALITY BENCHMARK (HELD-OUT HUMAN CORPUS)');
+  console.log('  OBLIGO EXTRACTION QUALITY BENCHMARK (HELD-OUT HUMAN CORPUS)');
   console.log(`  Threshold Version: ${currentThresholdVersion()}`);
   console.log('================================================================\n');
 

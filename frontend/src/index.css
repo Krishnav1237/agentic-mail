@@ -18,12 +18,12 @@ html.light {
 }
 
 /*
-  Landing page uses the global invert-filter for light mode. The IIL workspace
-  opts OUT of this (adds `.iil-workspace` to <html> while mounted) because it
+  Landing page uses the global invert-filter for light mode. The Obligo workspace
+  opts OUT of this (adds `.obligo-workspace` to <html> while mounted) because it
   ships an explicit token-based light theme — so gold stays gold and the warm
   paper surface renders as designed rather than as an inversion of the dark UI.
 */
-html.light:not(.iil-workspace) {
+html.light:not(.obligo-workspace) {
   filter: invert(1) hue-rotate(180deg);
 }
 
@@ -35,7 +35,7 @@ html.light:not(.iil-workspace) {
   this element specifically — the double invert is a no-op, leaving the
   toggle's own explicit colors as the final rendered result everywhere.
 */
-html.light:not(.iil-workspace) .theme-toggle-btn {
+html.light:not(.obligo-workspace) .theme-toggle-btn {
   filter: invert(1) hue-rotate(180deg);
 }
 
@@ -259,13 +259,13 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* =====================================================================
-   IIL WORKSPACE — Sprint 1 (Dashboard, Inbox, Actions, Opportunities,
-   Approvals, Settings). Token-based theme scoped under `.iil-root`; both
+   OBLIGO WORKSPACE — Sprint 1 (Dashboard, Inbox, Actions, Opportunities,
+   Approvals, Settings). Token-based theme scoped under `.obligo-root`; both
    dark and light fall out of one neutral-ink alpha ladder (`--ink`),
    matching the design handoff. Nothing here leaks onto the Landing page.
    ===================================================================== */
 
-.iil-root {
+.obligo-root {
   /* Space-separated triplets, like --ink/--coral below — not hex — so gold can
      be alpha-composited via `rgb(var(--gold-2) / 0.25)` anywhere a duplicated
      `rgba(212,175,55,…)` literal would otherwise appear. The gradients just
@@ -280,7 +280,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      keeping this would have left a token with no consumers, i.e. a second
      definition of a gradient nothing renders, waiting to be picked up by
      something that should be reading the semantic token instead. The 135°
-     ramp below stays: `GoldDot` still renders it as part of IIL's own brand
+     ramp below stays: `GoldDot` still renders it as part of Obligo's own brand
      layer, which is not the attention system and does not follow the
      preference. */
   --gold-grad-135: linear-gradient(
@@ -363,7 +363,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      sits over thin gold beams and fine grain, not a dense starfield — too
      strong a blur diffuses that signal to near-nothing. This keeps the
      ambient light passing behind the shell readable as a soft blurred glow
-     instead of vanishing (see .iil-topbar / .iil-sidebar). */
+     instead of vanishing (see .obligo-topbar / .obligo-sidebar). */
   --glass-blur-shell: 15px;
 
   /* Spacing, radius and typography tokens — theme-invariant (no dark/light
@@ -384,7 +384,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   /* Three radii, matching the three values already dominant in the
      component/row/large-surface tiers (buttons and chips; rows, panels and
      cards; the thread reading pane). Not a replacement for every radius in
-     the app — see `.iil-panel`/`.iil-btn`/etc., which keep their own
+     the app — see `.obligo-panel`/`.obligo-btn`/etc., which keep their own
      already-established values — but the ones a new component should reach
      for first. */
   --radius-component: 8px;
@@ -401,10 +401,10 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      Opportunities, Approvals, Settings) already renders, restated once so all
      five read it from the same place instead of five duplicated (and
      silently drifting — three carried the `--type-scale` factor, two didn't)
-     copies of the same shorthand. This is deliberately NOT `.iil-title` — the
+     copies of the same shorthand. This is deliberately NOT `.obligo-title` — the
      larger Landing-derived treatment (`clamp(30px, 4.2vw, 44px)`, gradient
      fill) that only `PageHeader`/Foundation's style-guide still renders.
-     Nothing in the shipped navigation uses `.iil-title`; it is left as-is
+     Nothing in the shipped navigation uses `.obligo-title`; it is left as-is
      rather than repointed, since changing it would edit the one place that
      already correctly demonstrates the OLDER pattern for reference. */
   --type-page-title:
@@ -428,7 +428,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   --dur-micro: 220ms;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* THE reading measure for mail content — the message body, IIL's insight,
+  /* THE reading measure for mail content — the message body, Obligo's insight,
      and the suggested reply's read-only preview all size to this one value.
 
      It used to be three separate `maxWidth: '62ch'` literals in three
@@ -446,7 +446,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
               measured at 1440x900 the pane offers 779px and this resolves
               first, so the mail simply fills it.
        104ch  a ceiling, not a measure. The thread pane is NOT inside
-              `.iil-page` and so is not capped by `--rail-max`; it grows with
+              `.obligo-page` and so is not capped by `--rail-max`; it grows with
               the canvas, which on a 2560px monitor is unbounded. Without a
               cap a long email there would set ~240-character lines, which is
               genuinely unreadable rather than merely wide.
@@ -483,7 +483,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   shadow, mirroring the Landing `.glass-panel` / nav material. The atmosphere
   below the surfaces is what the blur reveals.
 */
-.iil-root[data-theme='dark'] {
+.obligo-root[data-theme='dark'] {
   --ink: 255 255 255;
   --paper: #0a0908;
   --root-bg: var(--paper);
@@ -551,7 +551,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     transparent 26%,
     rgba(0, 0, 0, 0.62) 100%
   );
-  /* Aerial perspective behind the canvas (see `.iil-depth-veil`) — in a dark
+  /* Aerial perspective behind the canvas (see `.obligo-depth-veil`) — in a dark
      room, distance means falling away toward black. */
   --depth-veil: brightness(0.78) contrast(0.92) saturate(0.85) blur(1.5px);
 
@@ -614,7 +614,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    near-neutral black, but this makes it an exact, intentional neutral
    rather than incidentally-close-enough — pure black is the stated
    contract, not a side effect of how dark `--paper` happens to be tuned. */
-.iil-root[data-theme='dark'][data-atmosphere='off'] {
+.obligo-root[data-theme='dark'][data-atmosphere='off'] {
   --root-bg: #000000;
 }
 
@@ -653,7 +653,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   Text is tuned darker than a raw invert would give, so hierarchy is carried
   by contrast rather than by fading anything toward illegible.
 */
-.iil-root[data-theme='light'] {
+.obligo-root[data-theme='light'] {
   --ink: 20 18 14;
   --paper: #f8f4ea;
   --root-bg: var(--paper);
@@ -766,7 +766,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
   /* The exact same beam-line + grain geometry and motion as dark — the line
      uses a deeper amber, and the grain specks are darkened toward the same
-     amber (via `.iil-beam-grain` filter below) rather than recolored
+     amber (via `.obligo-beam-grain` filter below) rather than recolored
      per-speck, so both read against warm ivory instead of washing out, while
      staying the same neutral champagne gold family (never the saturated UI
      accent gold). */
@@ -803,7 +803,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      gain: at parity the field reads heavier here than the dark original it
      is matching.
 
-     Consumed only by `.iil-beam-grain` (the shell ambient wash keeps its own
+     Consumed only by `.obligo-beam-grain` (the shell ambient wash keeps its own
      `--shell-ambient-rgb` below), so this changes the particles and nothing
      else. */
   --grain-rgb: 82, 62, 28;
@@ -898,7 +898,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    the root's own background (`--root-bg`, not `--paper` itself), so every
    card/panel/popover that reads `--paper` for its own warm surface colour
    is completely unaffected — only the environment turns neutral. */
-.iil-root[data-theme='light'][data-atmosphere='off'] {
+.obligo-root[data-theme='light'][data-atmosphere='off'] {
   --root-bg: #ffffff;
 }
 
@@ -910,8 +910,8 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
      --coral / --gold-*        BASE DESIGN SYSTEM pigments. Still exactly
                                what they were. `--coral` is also the
-                               destructive-action red (`.iil-btn--danger`),
-                               and `--gold-*` is also IIL's whole assistant
+                               destructive-action red (`.obligo-btn--danger`),
+                               and `--gold-*` is also Obligo's whole assistant
                                brand layer — the insight card, the suggested
                                reply composer, the star, the time picker.
      --attention-urgency /     SEMANTIC attention pigments. What "urgent"
@@ -920,14 +920,14 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
    Before this split there was one token doing both jobs, which meant
    "recolour urgency" and "recolour the Delete button" were the same edit,
-   and "recolour importance" would have repainted every piece of IIL's own
+   and "recolour importance" would have repainted every piece of Obligo's own
    branding. Delete is destructive, not urgent; the insight card is the
    assistant speaking, not a mail that matters. Different questions, so
    different tokens — and the default VALUES alias the originals, so nothing
    moves a pixel until the user actually picks something.
 
    Selection is by data attribute rather than by inline style. `AppShell`
-   writes `data-urgency` / `data-importance` onto `.iil-root` from the
+   writes `data-urgency` / `data-importance` onto `.obligo-root` from the
    preferences store, one attribute each, and the cascade does the rest:
    every surface in the application repaints on the same frame, with no prop
    threading, no re-render of anything that doesn't consume these, and no
@@ -939,7 +939,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    surface rendered outside the shell resolve to, so attention is never
    momentarily colourless.
    ===================================================================== */
-.iil-root {
+.obligo-root {
   --attention-urgency: var(--urgency-coral);
   --attention-importance-1: var(--importance-gold-1);
   --attention-importance-2: var(--importance-gold-2);
@@ -948,51 +948,51 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   --attention-importance-soft: var(--importance-gold-soft);
 }
 
-.iil-root[data-urgency='coral'] {
+.obligo-root[data-urgency='coral'] {
   --attention-urgency: var(--urgency-coral);
 }
-.iil-root[data-urgency='amber'] {
+.obligo-root[data-urgency='amber'] {
   --attention-urgency: var(--urgency-amber);
 }
-.iil-root[data-urgency='rose'] {
+.obligo-root[data-urgency='rose'] {
   --attention-urgency: var(--urgency-rose);
 }
-.iil-root[data-urgency='magenta'] {
+.obligo-root[data-urgency='magenta'] {
   --attention-urgency: var(--urgency-magenta);
 }
-.iil-root[data-urgency='crimson'] {
+.obligo-root[data-urgency='crimson'] {
   --attention-urgency: var(--urgency-crimson);
 }
 
-.iil-root[data-importance='gold'] {
+.obligo-root[data-importance='gold'] {
   --attention-importance-1: var(--importance-gold-1);
   --attention-importance-2: var(--importance-gold-2);
   --attention-importance-3: var(--importance-gold-3);
   --attention-importance-ink: var(--importance-gold-ink);
   --attention-importance-soft: var(--importance-gold-soft);
 }
-.iil-root[data-importance='teal'] {
+.obligo-root[data-importance='teal'] {
   --attention-importance-1: var(--importance-teal-1);
   --attention-importance-2: var(--importance-teal-2);
   --attention-importance-3: var(--importance-teal-3);
   --attention-importance-ink: var(--importance-teal-ink);
   --attention-importance-soft: var(--importance-teal-soft);
 }
-.iil-root[data-importance='blue'] {
+.obligo-root[data-importance='blue'] {
   --attention-importance-1: var(--importance-blue-1);
   --attention-importance-2: var(--importance-blue-2);
   --attention-importance-3: var(--importance-blue-3);
   --attention-importance-ink: var(--importance-blue-ink);
   --attention-importance-soft: var(--importance-blue-soft);
 }
-.iil-root[data-importance='violet'] {
+.obligo-root[data-importance='violet'] {
   --attention-importance-1: var(--importance-violet-1);
   --attention-importance-2: var(--importance-violet-2);
   --attention-importance-3: var(--importance-violet-3);
   --attention-importance-ink: var(--importance-violet-ink);
   --attention-importance-soft: var(--importance-violet-soft);
 }
-.iil-root[data-importance='green'] {
+.obligo-root[data-importance='green'] {
   --attention-importance-1: var(--importance-green-1);
   --attention-importance-2: var(--importance-green-2);
   --attention-importance-3: var(--importance-green-3);
@@ -1025,7 +1025,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   That difference is part of how the two axes read apart at a glance and is
   independent of which pigment either one is currently drawn in.
 */
-.iil-root {
+.obligo-root {
   --attention-urgency-bg: rgb(var(--attention-urgency) / 0.1);
   --attention-urgency-bg-hover: rgb(var(--attention-urgency) / 0.16);
   --attention-urgency-border: rgb(var(--attention-urgency) / 0.24);
@@ -1076,7 +1076,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   far, medium, sharp/narrow/close). There is no drawn beam shape at all — each
   "beam" is rendered purely as illuminated grain: two layers of hundreds of
   hand-placed, individually-sized, individually-faded microscopic specks
-  (`.iil-beam-grain--Na` / `--Nb`, generated once and baked into a single
+  (`.obligo-beam-grain--Na` / `--Nb`, generated once and baked into a single
   non-repeating `background-image` — never a tiled pattern) whose density
   happens to trace a ribbon. Most specks are near-invisible; a minority sit
   brighter, so the aggregate reads as a soft shimmering cloud rather than
@@ -1084,7 +1084,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   stretches noticeably fuller, via hand-authored hotspots) so the ribbon
   appears to swell and thin without its footprint ever actually changing
   width. The two grain layers per beam cross-fade slowly and out of phase
-  (`iil-grain-shimmer`), so which specks read as "lit" drifts gently over
+  (`obligo-grain-shimmer`), so which specks read as "lit" drifts gently over
   time — the organic flicker of dust actually suspended in light, not a
   static texture. The particles ARE the beam; there is nothing else to see.
 
@@ -1101,19 +1101,19 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   All motion is transform/opacity only (GPU-friendly) and freezes under the
   reduced-motion block below.
 */
-.iil-atmosphere {
+.obligo-atmosphere {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
-.iil-vignette,
-.iil-beam-slot {
+.obligo-vignette,
+.obligo-beam-slot {
   position: absolute;
   pointer-events: none;
 }
-.iil-vignette {
+.obligo-vignette {
   inset: 0;
   background: var(--vignette);
   z-index: 2;
@@ -1123,7 +1123,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    sidebar's width, each fading out past that edge. Never animated, so it
    never depends on where a beam currently is; the beams still add brighter
    moments on top of this when they pass through. */
-.iil-shell-ambient {
+.obligo-shell-ambient {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -1143,38 +1143,38 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* Fixed base placement per beam — width, angle and travel amplitude are
    handcrafted per beam (never duplicated) to read as three distinct, unequal
    ribbons rather than repeated copies. This box is the shared coordinate
-   space both the sine-shaped line (`.iil-beam`, further down) and its grain
+   space both the sine-shaped line (`.obligo-beam`, further down) and its grain
    are positioned within, so they always stay registered to one another. */
-.iil-beam-slot {
+.obligo-beam-slot {
   will-change: transform, opacity;
 }
-.iil-beam-slot--1 {
+.obligo-beam-slot--1 {
   top: 8vw;
   left: -54.28vw;
   width: 177vw;
   height: 84px;
   transform: rotate(-8deg);
-  animation: iil-beam-travel-1 72s linear infinite;
+  animation: obligo-beam-travel-1 72s linear infinite;
 }
-.iil-beam-slot--2 {
+.obligo-beam-slot--2 {
   top: 34vw;
   left: -44.84vw;
   width: 151.04vw;
   height: 84px;
   transform: rotate(-13deg);
-  animation: iil-beam-travel-2 63s linear infinite -18s;
+  animation: obligo-beam-travel-2 63s linear infinite -18s;
 }
-.iil-beam-slot--3 {
+.obligo-beam-slot--3 {
   top: 54vw;
   left: -35.4vw;
   width: 127.44vw;
   height: 52px;
   transform: rotate(-16deg);
-  animation: iil-beam-travel-3 55s linear infinite -9s;
+  animation: obligo-beam-travel-3 55s linear infinite -9s;
 }
 /* Bottom → top drift with an opacity envelope that reaches zero exactly at
    the loop boundary, so resetting position at 0%/100% is never visible. */
-@keyframes iil-beam-travel-1 {
+@keyframes obligo-beam-travel-1 {
   0% {
     transform: rotate(-8deg) translate3d(0, 20vh, 0);
     opacity: 0;
@@ -1194,7 +1194,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     opacity: 0;
   }
 }
-@keyframes iil-beam-travel-2 {
+@keyframes obligo-beam-travel-2 {
   0% {
     transform: rotate(-13deg) translate3d(0, 16vh, 0);
     opacity: 0;
@@ -1214,7 +1214,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     opacity: 0;
   }
 }
-@keyframes iil-beam-travel-3 {
+@keyframes obligo-beam-travel-3 {
   0% {
     transform: rotate(-16deg) translate3d(0, 13vh, 0);
     opacity: 0;
@@ -1242,11 +1242,11 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    bobbing independently. Distinct duration and phase per beam so the three
    never read as synchronized. This also recolors the line + its wrapped
    grain together (TEMP tuning). */
-.iil-beam-wave {
+.obligo-beam-wave {
   position: absolute;
   inset: 0;
   will-change: transform;
-  animation-name: iil-beam-wave;
+  animation-name: obligo-beam-wave;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }
@@ -1254,13 +1254,13 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    full amplitude ("top") and full flatness ("bottom") at the same instant
    instead of drifting in and out of phase with each other (which read as
    the beams "colliding" as one bowed out while another went flat). */
-.iil-beam-wave--1,
-.iil-beam-wave--2,
-.iil-beam-wave--3 {
+.obligo-beam-wave--1,
+.obligo-beam-wave--2,
+.obligo-beam-wave--3 {
   animation-duration: 2.4s;
   animation-delay: 0s;
 }
-@keyframes iil-beam-wave {
+@keyframes obligo-beam-wave {
   0%,
   100% {
     transform: scaleY(calc(1 - var(--wave-amp))) translateY(0);
@@ -1283,27 +1283,27 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    rigid blocks would have. `freq` is tuned so at least one full oscillation
    falls within the visible viewport even though the box itself extends well
    past both edges. Outer falloff, glow and core are three such ribbons
-   sharing the identical centreline (baked per `.iil-beam--N .iil-beam-*`
+   sharing the identical centreline (baked per `.obligo-beam--N .obligo-beam-*`
    rule below) — different thickness and blur only. Each is its own element
    (not a pseudo-element of a filtered parent) because `filter` rasterizes an
    element together with its descendants before blurring: nesting all three
    under one filtered wrapper would blur the core by the outer layer's much
    larger radius too. The wave's shape itself is never re-animated — only
-   `.iil-beam-wave`'s `scaleY` breathes the whole thing — so the grain
+   `.obligo-beam-wave`'s `scaleY` breathes the whole thing — so the grain
    (generated against this exact same sine formula, sharing this exact same
    box) scales in perfect lockstep with the ribbon instead of drifting out of
    registration. */
-.iil-beam {
+.obligo-beam {
   position: absolute;
   inset: 0;
 }
-.iil-beam-outer,
-.iil-beam-glow,
-.iil-beam-core {
+.obligo-beam-outer,
+.obligo-beam-glow,
+.obligo-beam-core {
   position: absolute;
   inset: 0;
 }
-.iil-beam-outer {
+.obligo-beam-outer {
   background: linear-gradient(
     90deg,
     transparent 2%,
@@ -1312,7 +1312,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   );
   filter: blur(var(--outer-blur));
 }
-.iil-beam-glow {
+.obligo-beam-glow {
   background: linear-gradient(
     90deg,
     transparent 4%,
@@ -1321,7 +1321,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   );
   filter: blur(var(--glow-blur));
 }
-.iil-beam-core {
+.obligo-beam-core {
   background: linear-gradient(
     90deg,
     transparent 8%,
@@ -1330,19 +1330,19 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   );
   filter: blur(var(--core-blur));
 }
-.iil-beam--1 {
+.obligo-beam--1 {
   --outer-blur: 215px;
   --glow-blur: 95px;
   --core-blur: 0.7px;
   --wave-amp: 0.22;
 }
-.iil-beam--2 {
+.obligo-beam--2 {
   --outer-blur: 165px;
   --glow-blur: 67.5px;
   --core-blur: 0.5px;
   --wave-amp: 0.16;
 }
-.iil-beam--3 {
+.obligo-beam--3 {
   --outer-blur: 115px;
   --glow-blur: 45px;
   --core-blur: 0.35px;
@@ -1351,7 +1351,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* Baked clip-path polygons — see the doc comment above for how these are
    derived; regenerate via the sine-ribbon script if frequency/amplitude/
    thickness need to change rather than hand-editing point lists. */
-.iil-beam--1 .iil-beam-outer {
+.obligo-beam--1 .obligo-beam-outer {
   clip-path: polygon(
     0% 43.45%,
     2.33% 57.88%,
@@ -1443,7 +1443,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 56.55%
   );
 }
-.iil-beam--1 .iil-beam-glow {
+.obligo-beam--1 .obligo-beam-glow {
   clip-path: polygon(
     0% 47.32%,
     2.33% 61.75%,
@@ -1535,7 +1535,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 52.68%
   );
 }
-.iil-beam--1 .iil-beam-core {
+.obligo-beam--1 .obligo-beam-core {
   clip-path: polygon(
     0% 48.87%,
     2.33% 63.3%,
@@ -1627,7 +1627,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 51.13%
   );
 }
-.iil-beam--2 .iil-beam-outer {
+.obligo-beam--2 .obligo-beam-outer {
   clip-path: polygon(
     0% 71.83%,
     2.33% 74.64%,
@@ -1719,7 +1719,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 82.55%
   );
 }
-.iil-beam--2 .iil-beam-glow {
+.obligo-beam--2 .obligo-beam-glow {
   clip-path: polygon(
     0% 75.05%,
     2.33% 77.86%,
@@ -1811,7 +1811,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 79.33%
   );
 }
-.iil-beam--2 .iil-beam-core {
+.obligo-beam--2 .obligo-beam-core {
   clip-path: polygon(
     0% 76.24%,
     2.33% 79.05%,
@@ -1903,7 +1903,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 78.14%
   );
 }
-.iil-beam--3 .iil-beam-outer {
+.obligo-beam--3 .obligo-beam-outer {
   clip-path: polygon(
     0% 63.19%,
     2.33% 54.21%,
@@ -1995,7 +1995,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 76.65%
   );
 }
-.iil-beam--3 .iil-beam-glow {
+.obligo-beam--3 .obligo-beam-glow {
   clip-path: polygon(
     0% 67.22%,
     2.33% 58.25%,
@@ -2087,7 +2087,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     0% 72.61%
   );
 }
-.iil-beam--3 .iil-beam-core {
+.obligo-beam--3 .obligo-beam-core {
   clip-path: polygon(
     0% 68.67%,
     2.33% 59.69%,
@@ -2190,7 +2190,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    than dots. `--grain-opacity` (theme token) scales the whole beam's
    visibility; the light theme additionally darkens the specks via `filter`
    so they read against ivory instead of washing out. */
-.iil-beam-grain {
+.obligo-beam-grain {
   position: absolute;
   inset: 0;
   opacity: var(--grain-opacity);
@@ -2207,12 +2207,12 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    which is what makes a field of them look like scratches rather than a
    continuous shimmer. The extra quarter-pixel restores the same softness the
    dark theme has, and nothing else about the layer changes. */
-.iil-root[data-theme='light'] .iil-beam-grain {
+.obligo-root[data-theme='light'] .obligo-beam-grain {
   filter: blur(0.8px);
 }
 
 /* beam 1 grain layer A (620 points) */
-.iil-beam-grain--1a {
+.obligo-beam-grain--1a {
   background-image:
     radial-gradient(
       0.83px 0.83px at 31.4% 40.02%,
@@ -5317,7 +5317,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* beam 1 grain layer B (540 points) */
-.iil-beam-grain--1b {
+.obligo-beam-grain--1b {
   background-image:
     radial-gradient(
       0.77px 0.77px at 73.21% 75.7%,
@@ -8022,7 +8022,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* beam 2 grain layer A (680 points) */
-.iil-beam-grain--2a {
+.obligo-beam-grain--2a {
   background-image:
     radial-gradient(
       0.7px 0.7px at 77.38% 57.93%,
@@ -11427,7 +11427,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* beam 2 grain layer B (580 points) */
-.iil-beam-grain--2b {
+.obligo-beam-grain--2b {
   background-image:
     radial-gradient(
       2.29px 2.29px at 7.39% 66.8%,
@@ -14332,7 +14332,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* beam 3 grain layer A (440 points) */
-.iil-beam-grain--3a {
+.obligo-beam-grain--3a {
   background-image:
     radial-gradient(
       1.03px 1.03px at 90.02% 60.5%,
@@ -16537,7 +16537,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* beam 3 grain layer B (380 points) */
-.iil-beam-grain--3b {
+.obligo-beam-grain--3b {
   background-image:
     radial-gradient(
       0.44px 0.44px at 48.64% 27.19%,
@@ -18451,7 +18451,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    `left` are *derived* from the topbar height / sidebar width respectively
    (fixed margin + fixed gap + the scaled dimension) so they stay in sync
    automatically if --ui-scale changes, instead of drifting out of alignment. */
-.iil-topbar {
+.obligo-topbar {
   position: fixed;
   top: 20px;
   left: 24px;
@@ -18469,7 +18469,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   backdrop-filter: blur(var(--glass-blur-shell));
   -webkit-backdrop-filter: blur(var(--glass-blur-shell));
 }
-.iil-sidebar {
+.obligo-sidebar {
   position: fixed;
   top: calc(36px + var(--ui-scale) * 60px);
   left: 24px;
@@ -18495,7 +18495,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    backdrop blur — the star field must read *through* it, so content floats on
    the visible environment rather than on an opaque plane (Landing cards do the
    same over the starfield). The floating chrome above still frosts. */
-.iil-canvas {
+.obligo-canvas {
   position: fixed;
   top: calc(36px + var(--ui-scale) * 60px);
   left: calc(40px + var(--ui-scale) * 220px);
@@ -18521,7 +18521,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    beam's path, timing, particle system, thickness, or opacity, and no change
    to the canvas's own transparency. Sits in the stacking order strictly
    between the atmosphere (z-index 0) and the canvas panel (z-index 20),
-   sized and rounded to the exact same rect as `.iil-canvas` above. Because
+   sized and rounded to the exact same rect as `.obligo-canvas` above. Because
    the canvas has no backdrop-filter of its own and an almost-fully
    transparent fill, the beam would otherwise read at full intensity right up
    to the glass — sharing the same visual plane as the interface instead of
@@ -18539,7 +18539,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    WHICH DIRECTION "farther away" points is per-theme, so the filter itself is
    a token (`--depth-veil`): a dark room fades distance toward black, a bright
    one hazes it toward white. See both theme blocks above. */
-.iil-depth-veil {
+.obligo-depth-veil {
   position: fixed;
   top: calc(36px + var(--ui-scale) * 60px);
   left: calc(40px + var(--ui-scale) * 220px);
@@ -18563,19 +18563,19 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* Scroll container living inside a canvas. */
-.iil-scroll {
+.obligo-scroll {
   height: 100%;
   overflow-y: auto;
 }
 
 /* Sidebar nav rows + floating active pill. */
-.iil-nav {
+.obligo-nav {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: calc(var(--ui-scale) * 7px);
 }
-.iil-nav-item {
+.obligo-nav-item {
   position: relative;
   z-index: 1;
   display: flex;
@@ -18592,11 +18592,11 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     color 0.2s ease,
     background-color 0.2s ease;
 }
-.iil-nav-item:hover {
+.obligo-nav-item:hover {
   color: var(--text-secondary);
   background: rgb(var(--ink) / 0.04);
 }
-.iil-nav-item[data-active='true'] {
+.obligo-nav-item[data-active='true'] {
   font-weight: 500;
   color: var(--text-strong);
 }
@@ -18604,7 +18604,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    step below the label on the ink ladder and only warms toward it on hover/active
    (active tint is set inline on the element). Improves scanability, never
    decorative. */
-.iil-nav-icon {
+.obligo-nav-icon {
   position: relative;
   z-index: 1;
   display: flex;
@@ -18614,10 +18614,10 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   color: var(--text-faint);
   transition: color 0.2s ease;
 }
-.iil-nav-item:hover .iil-nav-icon {
+.obligo-nav-item:hover .obligo-nav-icon {
   color: var(--text-secondary);
 }
-.iil-pill {
+.obligo-pill {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -18630,18 +18630,18 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* Quick Access section heading, which is also its expand/collapse control.
 
    Sized and inset to sit exactly where the plain `Eyebrow` heading it
-   replaced did (same 14px horizontal inset as every `.iil-nav-item` label),
+   replaced did (same 14px horizontal inset as every `.obligo-nav-item` label),
    so turning the heading into a button changed what it DOES without changing
    where it sits. The chevron takes the trailing edge via `space-between`,
    which is what makes the whole row — label, gap and chevron — one obvious
    target rather than a heading with a small icon parked next to it.
 
    The hover/focus treatment is the nav's own (`--text-secondary` plus the
-   same 4% ink wash `.iil-nav-item:hover` uses), not a new interaction
+   same 4% ink wash `.obligo-nav-item:hover` uses), not a new interaction
    language for one control. `:focus-visible` keeps a real ring: this is a
    keyboard-reachable control that toggles a whole navigation group, and the
    background wash alone is too quiet to serve as a focus indicator. */
-.iil-quick-access-toggle {
+.obligo-quick-access-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -18659,23 +18659,23 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     color 0.2s ease,
     background-color 0.2s ease;
 }
-.iil-quick-access-toggle:hover {
+.obligo-quick-access-toggle:hover {
   color: var(--text-secondary);
   background: rgb(var(--ink) / 0.04);
 }
-.iil-quick-access-toggle:focus-visible {
+.obligo-quick-access-toggle:focus-visible {
   outline: 2px solid rgb(var(--ink) / 0.35);
   outline-offset: 2px;
 }
 /* The heading inherits the button's own colour so hover moves both the label
    and the chevron together, instead of the chevron warming while the label
    it belongs to stays put. */
-.iil-quick-access-toggle .iil-eyebrow {
+.obligo-quick-access-toggle .obligo-eyebrow {
   color: inherit;
 }
 
 /* Small type helpers. */
-.iil-eyebrow {
+.obligo-eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: calc(var(--ui-scale) * var(--type-scale, 1) * 10px);
   font-weight: 500;
@@ -18683,10 +18683,10 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   text-transform: uppercase;
   color: var(--text-faint);
 }
-.iil-mono {
+.obligo-mono {
   font-family: 'JetBrains Mono', monospace;
 }
-.iil-tag {
+.obligo-tag {
   display: inline-flex;
   align-items: center;
   flex: none;
@@ -18702,12 +18702,12 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 }
 
 /* Range sliders (Settings → Advanced → Priority Weights). */
-.iil-root input[type='range'] {
+.obligo-root input[type='range'] {
   accent-color: rgb(var(--ink) / 0.5);
 }
 
 /* Chevron/arrow tap targets stay quiet but clickable. */
-.iil-icon-btn {
+.obligo-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18720,30 +18720,30 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
 /* Opened-mail header's "to me ▾" message-details disclosure — quiet until
    hovered/focused, matching the rest of the header's restraint. */
-.iil-meta-trigger {
+.obligo-meta-trigger {
   transition:
     background-color 0.14s ease,
     color 0.14s ease;
 }
-.iil-meta-trigger:hover,
-.iil-meta-trigger[aria-expanded='true'] {
+.obligo-meta-trigger:hover,
+.obligo-meta-trigger[aria-expanded='true'] {
   background: rgb(var(--ink) / 0.06);
   color: var(--text-secondary);
 }
-.iil-meta-trigger:focus-visible {
+.obligo-meta-trigger:focus-visible {
   outline: 2px solid rgb(var(--gold-3) / 0.5);
   outline-offset: 1px;
 }
 
 /* Collapsed earlier-message row (thread history) — hover/focus feedback so
    it reads as clickable, same restraint as the metadata disclosure above. */
-.iil-thread-collapsed-row {
+.obligo-thread-collapsed-row {
   transition: background-color 0.14s ease;
 }
-.iil-thread-collapsed-row:hover {
+.obligo-thread-collapsed-row:hover {
   background: rgb(var(--ink) / 0.04);
 }
-.iil-thread-collapsed-row:focus-visible {
+.obligo-thread-collapsed-row:focus-visible {
   outline: 2px solid rgb(var(--gold-3) / 0.5);
   outline-offset: 1px;
 }
@@ -18751,7 +18751,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* Responsive fallback: below the shell's comfortable width, drop the
    fixed floating frame to normal flow so nothing is clipped on mobile. */
 /* =====================================================================
-   IIL WORKSPACE — Shared foundation systems (Sprint 1 rebuild).
+   OBLIGO WORKSPACE — Shared foundation systems (Sprint 1 rebuild).
    Page template rail, shared surfaces + controls, focus + reduced-motion.
    Everything below is theme-agnostic: it reads the `--ink` / `--paper`
    ladder so dark and light stay identical apart from lighting.
@@ -18762,24 +18762,24 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    read their size through this one value instead of each hardcoding its own
    numbers, so the whole foundation can be retuned by changing a single
    multiplier rather than by hand-editing every dimension it touches. Scoped
-   to `.iil-root` (the workspace shell), not `html`, so it can never reach
+   to `.obligo-root` (the workspace shell), not `html`, so it can never reach
    Landing/marketing pages, which don't opt into this token. Page-local
    content (row heights, icon `size=` props on individual pages) is
    deliberately NOT wired to this yet — only the shared foundation is. */
-.iil-root {
+.obligo-root {
   --ui-scale: 1.2;
 }
 
 /* Reading rail — a comfortable measure centered in the canvas; the extra width
    becomes void the content floats in, not wider text (Reference §62-63). */
-.iil-root {
+.obligo-root {
   --rail-max: calc(var(--ui-scale) * 1060px);
 }
 
 /* Page Template: centered reading rail + generous internal rhythm. Wide gaps and
    deep top/bottom breathing turn sections into islands floating in the room, not
    a stack of tiles (composition). Owned here so every page inherits it. */
-.iil-page {
+.obligo-page {
   /* Per-page content zoom (WorkspacePage's `scale` prop), decoupled from
      --ui-scale: --ui-scale sizes the shell (topbar/sidebar/canvas, Reference
      §8) and must stay untouched; --content-scale reproduces browser zoom for
@@ -18797,7 +18797,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   /* Counter-scale for font-size only (Actions/Opportunities/Approvals set
      this below 1 so their larger --content-scale doesn't also inflate text
      proportionally — see WorkspacePage's `typeScale` prop). Read by
-     .iil-eyebrow/.iil-tag and by each page's own inline font declarations;
+     .obligo-eyebrow/.obligo-tag and by each page's own inline font declarations;
      never by padding/gap/radius/dimensions, so layout stays exactly at
      --content-scale. */
   --type-scale: 1;
@@ -18819,7 +18819,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
 /* Luminous page title — holds light like the Landing headline: a top-bright
    gradient fill + a soft halo in dark; weight + near-black contrast in light. */
-.iil-title {
+.obligo-title {
   margin: 0;
   font:
     300 clamp(30px, 4.2vw, 44px)/1.05 'Inter',
@@ -18831,7 +18831,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   color: transparent;
   text-shadow: var(--title-glow);
 }
-.iil-title--accent {
+.obligo-title--accent {
   background: var(--gold-title-grad);
   -webkit-background-clip: text;
   background-clip: text;
@@ -18843,7 +18843,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    rim, a near-invisible border, and NO backdrop blur so the star field reads
    through it. Depth is a soft ambient shadow, not a heavy slab; hover lifts by
    *light* (brighter fill + rim), the way Landing cards do. */
-.iil-panel {
+.obligo-panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 16px;
@@ -18851,7 +18851,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     var(--panel-shadow),
     inset 0 1px 0 var(--inset-hi);
 }
-.iil-panel--interactive {
+.obligo-panel--interactive {
   cursor: pointer;
   transition:
     transform var(--dur-micro) var(--ease),
@@ -18859,7 +18859,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     box-shadow var(--dur-micro) ease,
     background-color 0.22s ease;
 }
-.iil-panel--interactive:hover {
+.obligo-panel--interactive:hover {
   transform: translateY(-1px);
   background: var(--panel-hover);
   border-color: var(--panel-border-hover);
@@ -18896,7 +18896,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    use a real `border` (e.g. `border-bottom`) for that, which this rule
    intentionally never touches. Reach for the `InteractiveRow` component
    (components/workspace) instead of hand-writing this className + var set. */
-.iil-action-row {
+.obligo-action-row {
   display: flex;
   align-items: center;
   width: 100%;
@@ -18924,26 +18924,26 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     box-shadow var(--dur-micro) ease,
     background-color var(--dur-micro) ease;
 }
-.iil-action-row:hover,
-.iil-action-row[data-selected='true'] {
+.obligo-action-row:hover,
+.obligo-action-row[data-selected='true'] {
   transform: translateY(calc(var(--pin-offset, 0px) + var(--row-lift, -1px)));
   background: var(--row-hover-bg, var(--row-bg, transparent));
   box-shadow:
     inset 0 0 0 1px var(--row-hover-border, var(--row-border, transparent)),
     var(--row-hover-shadow, var(--elev-shadow-hover));
 }
-.iil-action-row:active {
+.obligo-action-row:active {
   transform: translateY(var(--pin-offset, 0px)) scale(0.99);
 }
 
 /* Actions page toolbar controls (Search toggle, Filter trigger, Clear all,
-   show) — every row on the page has a hover state via .iil-action-row, but
+   show) — every row on the page has a hover state via .obligo-action-row, but
    these small utility buttons had none at all. Same custom-property technique
-   as .iil-action-row so each button's JS-driven rest/open colors and a real
+   as .obligo-action-row so each button's JS-driven rest/open colors and a real
    :hover can coexist without one overriding the other. Buttons that don't set
    a chip background/border (Clear all, show) just get the text-brightening
    half of the rule. */
-.iil-chip-btn {
+.obligo-chip-btn {
   color: var(--chip-color, inherit);
   background: var(--chip-bg, transparent);
   border: 1px solid var(--chip-border, transparent);
@@ -18952,7 +18952,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     border-color 0.18s ease,
     color 0.18s ease;
 }
-.iil-chip-btn:hover {
+.obligo-chip-btn:hover {
   color: var(--chip-color-hover, var(--text-strong));
   background: var(--chip-bg-hover, var(--chip-bg, transparent));
   border-color: var(--chip-border-hover, var(--chip-border, transparent));
@@ -18960,7 +18960,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
 /* Button — one filled neutral action per surface; hierarchy comes from that
    single fill (Constitution §60/§10). Gold is never a button (§4). */
-.iil-btn {
+.obligo-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -18980,44 +18980,44 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     color 0.2s ease,
     box-shadow 0.2s ease;
 }
-.iil-btn:active {
+.obligo-btn:active {
   transform: scale(0.98);
 }
-.iil-btn:disabled {
+.obligo-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.iil-btn--primary {
+.obligo-btn--primary {
   color: var(--paper);
   background: rgb(var(--ink) / 0.9);
 }
-.iil-btn--primary:hover:not(:disabled) {
+.obligo-btn--primary:hover:not(:disabled) {
   background: rgb(var(--ink) / 1);
 }
-.iil-btn--outline {
+.obligo-btn--outline {
   color: var(--text);
   border-color: rgb(var(--ink) / 0.14);
 }
-.iil-btn--outline:hover:not(:disabled) {
+.obligo-btn--outline:hover:not(:disabled) {
   color: var(--text-strong);
   border-color: rgb(var(--ink) / 0.26);
   background: rgb(var(--ink) / 0.03);
 }
-.iil-btn--ghost {
+.obligo-btn--ghost {
   color: var(--text-secondary);
 }
-.iil-btn--ghost:hover:not(:disabled) {
+.obligo-btn--ghost:hover:not(:disabled) {
   color: var(--text-strong);
   background: rgb(var(--ink) / 0.05);
 }
 /* Destructive — the same muted rust already used for "overdue"/"urgent"
    across Actions/Approvals/Opportunities (--coral), never a saturated red,
    so Delete reads as distinct without shouting. */
-.iil-btn--danger {
+.obligo-btn--danger {
   color: rgb(var(--coral) / 0.85);
   border-color: rgb(var(--coral) / 0.22);
 }
-.iil-btn--danger:hover:not(:disabled) {
+.obligo-btn--danger:hover:not(:disabled) {
   color: rgb(var(--coral) / 1);
   background: rgb(var(--coral) / 0.08);
   border-color: rgb(var(--coral) / 0.34);
@@ -19034,9 +19034,9 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    mark inside the chip — none of which require perceiving the swatch's colour.
    That redundancy is the point on this particular control.
 
-   Sizing/weight are the existing `.iil-tag` family's, so these sit in the
+   Sizing/weight are the existing `.obligo-tag` family's, so these sit in the
    Settings page's own vocabulary rather than introducing a picker's. */
-.iil-swatch-option {
+.obligo-swatch-option {
   display: inline-flex;
   align-items: center;
   gap: calc(var(--ui-scale) * 6px);
@@ -19051,22 +19051,22 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     border-color 0.2s ease,
     color 0.2s ease;
 }
-.iil-swatch-option:hover {
+.obligo-swatch-option:hover {
   border-color: rgb(var(--ink) / 0.24);
   background: rgb(var(--ink) / 0.04);
 }
-.iil-swatch-option[data-selected='true'] {
+.obligo-swatch-option[data-selected='true'] {
   border-color: rgb(var(--ink) / 0.34);
   background: rgb(var(--ink) / 0.07);
 }
 /* A real ring, offset clear of the pill — the rest of this control's states
    are expressed as low-alpha ink washes, which are far too quiet to double as
    a focus indicator. */
-.iil-swatch-option:focus-visible {
+.obligo-swatch-option:focus-visible {
   outline: 2px solid rgb(var(--ink) / 0.4);
   outline-offset: 2px;
 }
-.iil-swatch-option__chip {
+.obligo-swatch-option__chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -19083,23 +19083,23 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    than as a separate mark beside it. `--paper` in both themes: every swatch in
    both palettes is a mid-to-deep tone, so the theme's own background colour is
    the reliably legible ink for a glyph drawn on top of one. */
-.iil-swatch-option__chip svg {
+.obligo-swatch-option__chip svg {
   color: var(--paper);
 }
-.iil-swatch-option__label {
+.obligo-swatch-option__label {
   font:
     500 calc(var(--ui-scale) * 11px)/1 'Inter',
     sans-serif;
   color: var(--text-muted);
   white-space: nowrap;
 }
-.iil-swatch-option[data-selected='true'] .iil-swatch-option__label {
+.obligo-swatch-option[data-selected='true'] .obligo-swatch-option__label {
   color: var(--text-strong);
 }
 
 /* Toggle — binary switch (Settings → Beta Features). Paper knob rides an ink
    track so it reads in both themes and both states. */
-.iil-toggle {
+.obligo-toggle {
   position: relative;
   flex: none;
   width: calc(var(--ui-scale) * 38px);
@@ -19113,12 +19113,12 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     background-color 0.2s ease,
     border-color 0.2s ease;
 }
-.iil-toggle[data-on='true'] {
+.obligo-toggle[data-on='true'] {
   background: rgb(var(--ink) / 0.82);
   border-color: transparent;
 }
 
-.iil-toggle__knob {
+.obligo-toggle__knob {
   position: absolute;
   top: calc(var(--ui-scale) * 2px);
   left: calc(var(--ui-scale) * 2px);
@@ -19129,17 +19129,17 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s var(--ease);
 }
-.iil-toggle[data-on='true'] .iil-toggle__knob {
+.obligo-toggle[data-on='true'] .obligo-toggle__knob {
   transform: translateX(calc(var(--ui-scale) * 16px));
 }
 
 /* Select / Dropdown — embedded feel, no heavy border (Constitution §9).
    The menu is a floating glass surface reusing the elevation system. */
-.iil-select {
+.obligo-select {
   position: relative;
   display: inline-block;
 }
-.iil-select__trigger {
+.obligo-select__trigger {
   display: inline-flex;
   align-items: center;
   gap: calc(var(--ui-scale) * 8px);
@@ -19157,22 +19157,22 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     border-color 0.18s ease,
     color 0.18s ease;
 }
-.iil-select__trigger:hover {
+.obligo-select__trigger:hover {
   background: rgb(var(--ink) / 0.04);
   color: var(--text-strong);
 }
-.iil-select__trigger[data-open='true'] {
+.obligo-select__trigger[data-open='true'] {
   background: rgb(var(--ink) / 0.05);
   border-color: rgb(var(--ink) / 0.1);
 }
-.iil-select__chev {
+.obligo-select__chev {
   color: var(--text-faint);
   transition: transform 0.2s var(--ease);
 }
-.iil-select__trigger[data-open='true'] .iil-select__chev {
+.obligo-select__trigger[data-open='true'] .obligo-select__chev {
   transform: rotate(180deg);
 }
-.iil-menu {
+.obligo-menu {
   position: absolute;
   z-index: 40;
   min-width: 100%;
@@ -19187,7 +19187,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   backdrop-filter: blur(var(--glass-blur-strong));
   -webkit-backdrop-filter: blur(var(--glass-blur-strong));
 }
-.iil-option {
+.obligo-option {
   display: flex;
   align-items: center;
   gap: calc(var(--ui-scale) * 8px);
@@ -19207,31 +19207,31 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     background-color 0.14s ease,
     color 0.14s ease;
 }
-.iil-option:hover,
-.iil-option[data-active='true'] {
+.obligo-option:hover,
+.obligo-option[data-active='true'] {
   background: rgb(var(--ink) / 0.06);
   color: var(--text-strong);
 }
-.iil-option[data-selected='true'] {
+.obligo-option[data-selected='true'] {
   color: var(--text-strong);
 }
 /* A visibly present but not-yet-selectable option (e.g. Reply Drafting's
    "Auto-send") — dimmed, no hover feedback, not-allowed cursor, so it reads
    as "coming soon" rather than a working control. */
-.iil-option[data-disabled='true'] {
+.obligo-option[data-disabled='true'] {
   color: var(--text-faint);
   cursor: not-allowed;
 }
-.iil-option[data-disabled='true']:hover {
+.obligo-option[data-disabled='true']:hover {
   background: transparent;
   color: var(--text-faint);
 }
 
-/* IIL suggested-reply composer — plain-HTML output of execCommand needs a
+/* Obligo suggested-reply composer — plain-HTML output of execCommand needs a
    few structural resets (list markers, link color) that the rest of the
    app's typography doesn't otherwise define. */
-.iil-reply-content ul,
-.iil-reply-content ol {
+.obligo-reply-content ul,
+.obligo-reply-content ol {
   margin: 8px 0;
   padding-left: 22px;
 }
@@ -19240,16 +19240,16 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    still produces real <ul>/<ol><li> markup, but without this the markers
    themselves render invisible, leaving only the indentation above and
    making working lists look like they "only indent". */
-.iil-reply-content ul {
+.obligo-reply-content ul {
   list-style: disc;
 }
-.iil-reply-content ol {
+.obligo-reply-content ol {
   list-style: decimal;
 }
-.iil-reply-content li {
+.obligo-reply-content li {
   margin: 2px 0;
 }
-.iil-reply-content a {
+.obligo-reply-content a {
   color: var(--gold-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -19258,36 +19258,36 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      plain click will navigate. */
   cursor: text;
 }
-/* `.iil-link-armed` is toggled on the editor while Ctrl/Cmd is held (see
+/* `.obligo-link-armed` is toggled on the editor while Ctrl/Cmd is held (see
    ReplyComposer) — only then does hovering a link swap to a pointer cursor,
    signaling that a click will actually open it instead of placing the
    caret. */
-.iil-link-armed a:hover {
+.obligo-link-armed a:hover {
   cursor: pointer;
 }
-.iil-reply-content p {
+.obligo-reply-content p {
   margin: 0 0 8px;
 }
-.iil-reply-content p:last-child {
+.obligo-reply-content p:last-child {
   margin-bottom: 0;
 }
-.iil-reply-content:focus {
+.obligo-reply-content:focus {
   box-shadow: 0 0 0 2px rgb(var(--ink) / 0.08);
 }
 
 /* Custom schedule-send date wheel (ReplyComposer) — native scrollbar hidden
    so the column reads as a picker, not a scroll pane; the snap behaviour
    itself is plain CSS (`scroll-snap-type`) set inline per-column. */
-.iil-wheel-col {
+.obligo-wheel-col {
   scrollbar-width: none;
 }
-.iil-wheel-col::-webkit-scrollbar {
+.obligo-wheel-col::-webkit-scrollbar {
   display: none;
 }
 
 /* Range slider (Settings → Advanced → Priority Weights). accent-color themes it
    from the ink ladder; the row keeps the value in mono at the far right. */
-.iil-slider {
+.obligo-slider {
   width: 100%;
   height: calc(var(--ui-scale) * 4px);
   cursor: pointer;
@@ -19296,7 +19296,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 
 /* Shared focus ring — keyboard users get the same clarity as mouse users
    (Constitution §52/§146). Neutral, never gold. */
-.iil-root :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+.obligo-root :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid rgb(var(--ink) / 0.45);
   outline-offset: 2px;
 }
@@ -19326,24 +19326,24 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    expensive no matter the device. Nothing here names a specific device or
    pixel count tied to one. */
 @media (max-width: 968px), (orientation: portrait) and (max-width: 1040px) {
-  /* Desktop gives .iil-canvas a definite height via position:fixed +
+  /* Desktop gives .obligo-canvas a definite height via position:fixed +
      top/bottom insets, which is what lets every "height: 100%" further down
-     the tree (WorkspacePage's .iil-scroll, and — critically — ThreadView's
+     the tree (WorkspacePage's .obligo-scroll, and — critically — ThreadView's
      rail/reading-pane split) actually resolve to something real instead of
-     collapsing to auto/content-size. Switching .iil-canvas to position:static
+     collapsing to auto/content-size. Switching .obligo-canvas to position:static
      for the stacked mobile layout throws that away unless something else
-     supplies a definite height in its place: making .iil-root a column flex
+     supplies a definite height in its place: making .obligo-root a column flex
      container with a real (not just min-) height, and letting the
-     now-in-flow topbar/nav take their natural size while .iil-canvas
+     now-in-flow topbar/nav take their natural size while .obligo-canvas
      (flex: 1 below) claims whatever's left, is that replacement — robust to
      however many rows the nav wraps onto, never a guessed pixel budget. */
-  .iil-root {
+  .obligo-root {
     display: flex;
     flex-direction: column;
     height: 100vh;
     height: 100dvh;
   }
-  .iil-topbar {
+  .obligo-topbar {
     position: sticky;
     inset: 0 0 auto 0;
     flex: none;
@@ -19352,7 +19352,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
        the instant this query engages. */
     margin: clamp(8px, 2.2vw, 20px);
   }
-  .iil-sidebar {
+  .obligo-sidebar {
     position: static;
     width: auto;
     flex: none;
@@ -19360,20 +19360,20 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     bottom: auto;
     padding: clamp(6px, 1.6vw, 10px);
   }
-  .iil-sidebar .iil-nav {
+  .obligo-sidebar .obligo-nav {
     flex-direction: row;
     flex-wrap: wrap;
     gap: clamp(4px, 1.2vw, 6px);
   }
-  .iil-canvas {
+  .obligo-canvas {
     position: static;
     flex: 1 1 auto;
     /* A definite size (not merely a floor) so descendants relying on
        height:100% — including Inbox/Approvals' rail+reading-pane split —
-       keep working once .iil-canvas leaves position:fixed. */
+       keep working once .obligo-canvas leaves position:fixed. */
     min-height: 0;
   }
-  .iil-page {
+  .obligo-page {
     padding: clamp(16px, 4vw, 24px) clamp(12px, 3vw, 18px)
       clamp(24px, 6vw, 36px);
     gap: clamp(18px, 4vw, 26px);
@@ -19387,29 +19387,29 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    further — never the 40px nav-item height itself, which stays put as the
    accessible tap-target floor already established above. */
 @media (max-width: 400px) {
-  .iil-topbar {
+  .obligo-topbar {
     margin: 8px;
     padding: 0 16px;
   }
-  .iil-sidebar {
+  .obligo-sidebar {
     margin: 8px;
     padding: 6px;
   }
-  .iil-sidebar .iil-nav {
+  .obligo-sidebar .obligo-nav {
     gap: 4px;
   }
-  .iil-nav-item {
+  .obligo-nav-item {
     gap: 8px;
     padding: 0 10px;
   }
-  .iil-canvas {
+  .obligo-canvas {
     margin: 8px;
   }
 }
 
 /* =====================================================================
    Container queries — layout decisions keyed to actual available space
-   (`.iil-page`/`.iil-canvas`, see their `container-type` above) rather than
+   (`.obligo-page`/`.obligo-canvas`, see their `container-type` above) rather than
    the viewport a second time. A component here can become correctly
    space-constrained for reasons that have nothing to do with phone size at
    all: the sidebar eating width, a narrow browser window, a large monitor
@@ -19424,7 +19424,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    a real icon inside a sized, rounded surface makes the control legible as
    interactive while staying at rest otherwise — no fill, no color, so it
    stays quiet until touched. */
-.iil-transfer-arrow {
+.obligo-transfer-arrow {
   width: 26px;
   height: 26px;
   flex: none;
@@ -19437,17 +19437,17 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     color 0.18s ease,
     transform 0.12s ease;
 }
-.iil-transfer-arrow:hover,
-.iil-transfer-arrow:focus-visible {
+.obligo-transfer-arrow:hover,
+.obligo-transfer-arrow:focus-visible {
   color: var(--text-strong);
   background: rgb(var(--ink) / 0.07);
   border-color: rgb(var(--ink) / 0.12);
 }
-.iil-transfer-arrow:active {
+.obligo-transfer-arrow:active {
   transform: scale(0.92);
 }
 @container (max-width: 560px) {
-  .iil-transfer-arrow {
+  .obligo-transfer-arrow {
     width: 22px;
     height: 22px;
   }
@@ -19458,21 +19458,21 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    Settings.tsx) rather than keeping a second, near-identical layout rule —
    the two sections share the same sortable/plain-list shape, so they share
    the same CSS. */
-.iil-quick-access-columns {
+.obligo-quick-access-columns {
   display: flex;
   gap: 32px;
   align-items: flex-start;
 }
-.iil-quick-access-columns > div {
+.obligo-quick-access-columns > div {
   flex: 1;
   min-width: 150px;
 }
 @container (max-width: 560px) {
-  .iil-quick-access-columns {
+  .obligo-quick-access-columns {
     flex-direction: column;
     gap: 20px;
   }
-  .iil-quick-access-columns > div {
+  .obligo-quick-access-columns > div {
     min-width: 0;
     width: 100%;
   }
@@ -19484,28 +19484,28 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    whatever the content's natural height happens to be. When the main content
    is tall enough on its own, this has no effect — min-height only supplies
    spare room to grow into, it never shrinks or clips content.
-   Divided by --content-scale for the same reason .iil-page's own `width`
+   Divided by --content-scale for the same reason .obligo-page's own `width`
    above is: this box is laid out pre-transform, then `transform: scale()`
    blows it back up to the visible rail, so a plain 100% would render 10%
    *taller* than the panel at this page's 1.1 scale and force a scrollbar
    even when the content is short. */
-.iil-dashboard-shell {
+.obligo-dashboard-shell {
   min-height: calc(100% / var(--content-scale));
 }
 
 /* Dashboard — "Needs your decision" takes the dominant left region; the two
    awareness groups (Opportunities, Upcoming) stack in a narrower right
    column so weight isn't concentrated in one vertical strip. Keyed to
-   .iil-page's own container width (not the viewport) so it collapses
+   .obligo-page's own container width (not the viewport) so it collapses
    whenever the *available* space gets tight — sidebar present or not. */
-.iil-dashboard-columns {
+.obligo-dashboard-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
   gap: 40px 56px;
   align-items: start;
 }
 @container (max-width: 760px) {
-  .iil-dashboard-columns {
+  .obligo-dashboard-columns {
     grid-template-columns: 1fr;
     gap: 32px;
   }
@@ -19519,7 +19519,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    canvas — a genuine full-width mobile reading view, not a compressed
    desktop one. The existing "close thread" control already returns to the
    inbox list in both modes, so it needs no mobile-specific replacement. */
-.iil-thread-rail {
+.obligo-thread-rail {
   /* Must live here, not as an inline style on the <aside> — an inline
      `display` would always win over this class's `display: none` below
      regardless of the @container match, since inline styles beat any
@@ -19528,40 +19528,40 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
      element's own inline style silently overrode it every time. */
   display: flex;
 }
-.iil-thread-rail-glow {
+.obligo-thread-rail-glow {
   display: block;
 }
-.iil-thread-pane {
+.obligo-thread-pane {
   padding: 16px;
 }
 @container (max-width: 720px) {
-  .iil-thread-rail {
+  .obligo-thread-rail {
     display: none;
   }
-  .iil-thread-rail-glow {
+  .obligo-thread-rail-glow {
     display: none;
   }
-  .iil-thread-pane {
+  .obligo-thread-pane {
     padding: 10px;
   }
 }
 
 /* Inbox stream row — a real column grid (not one continuous flex line) so
-   IIL's extracted insight sits in its own clearly separated right-side
+   Obligo's extracted insight sits in its own clearly separated right-side
    region instead of visually chaining onto the email's own subject. Grid
    guarantees the subject and insight columns can never overlap: each has
    its own track, so a long subject truncates within its own space rather
-   than colliding with the insight or timestamp. Keyed to .iil-page's own
+   than colliding with the insight or timestamp. Keyed to .obligo-page's own
    container width, the same mechanism Settings' Priorities columns and the
    thread rail/pane split already use. */
-.iil-stream-row {
+.obligo-stream-row {
   display: grid;
   /* `time` was 44px — enough for a plain timestamp ("Yest.", "9:14a") but
      not for the longer plain-language timing strings Opportunities rows
      also carry here ("applications closed", "closes in 11 days"), which
      would wrap onto 2-3 cramped lines and visually crowd the star right
      next to it. 130px comfortably fits every current value on one line;
-     `.iil-stream-time` below still truncates with an ellipsis as a safety
+     `.obligo-stream-time` below still truncates with an ellipsis as a safety
      net for anything longer, rather than wrapping. */
   grid-template-columns: auto 128px minmax(0, 1fr) minmax(
       0,
@@ -19571,7 +19571,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   column-gap: 11px;
   align-items: center;
 }
-.iil-stream-star {
+.obligo-stream-star {
   grid-area: star;
   display: inline-flex;
   align-items: center;
@@ -19580,21 +19580,21 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
 /* One cell holding both marks side by side — the neutral unread dot and the
    coral/gold attention dot — since they're independent dimensions and a row
    can legitimately show either, both, or neither. See `AttentionDot`. */
-.iil-stream-dot {
+.obligo-stream-dot {
   grid-area: dot;
 }
-.iil-stream-sender {
+.obligo-stream-sender {
   grid-area: sender;
 }
-.iil-stream-subject {
+.obligo-stream-subject {
   grid-area: subject;
 }
-.iil-stream-insight {
+.obligo-stream-insight {
   grid-area: insight;
   padding-left: 14px;
   border-left: 1px solid rgb(var(--ink) / 0.08);
 }
-.iil-stream-time {
+.obligo-stream-time {
   grid-area: time;
   white-space: nowrap;
   overflow: hidden;
@@ -19607,7 +19607,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    side — and the row grows to fit both lines (the one row-height exception
    the narrow layout genuinely needs). */
 @container (max-width: 640px) {
-  .iil-stream-row {
+  .obligo-stream-row {
     grid-template-columns: auto minmax(0, 1fr) 96px auto;
     grid-template-areas:
       'dot sender time star'
@@ -19616,7 +19616,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     row-gap: 2px;
     padding-block: 8px;
   }
-  .iil-stream-insight {
+  .obligo-stream-insight {
     padding-left: 0;
     border-left: none;
   }
@@ -19628,11 +19628,11 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    because a draft's columns are genuinely different (no attention dot, no
    star; a recipient instead of a sender, and a meta cell carrying the
    attachment count next to the modified time). */
-.iil-draft-row {
+.obligo-draft-row {
   display: grid;
   /* The BODY takes the flexible track here, not the subject — the mirror of
-     `.iil-stream-row`, and for the same reason. There, the email's own
-     subject grows and IIL's extracted insight is clamped beside it. Here the
+     `.obligo-stream-row`, and for the same reason. There, the email's own
+     subject grows and Obligo's extracted insight is clamped beside it. Here the
      subject is "re: <the thread you already picked>" and carries almost no
      information, while the preview is the user's own unfinished sentence —
      the one thing that tells two drafts apart. */
@@ -19643,24 +19643,24 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
   column-gap: 11px;
   align-items: center;
 }
-.iil-draft-recipient {
+.obligo-draft-recipient {
   grid-area: recipient;
 }
-.iil-draft-subject {
+.obligo-draft-subject {
   grid-area: subject;
 }
-.iil-draft-preview {
+.obligo-draft-preview {
   grid-area: preview;
   padding-left: 14px;
   border-left: 1px solid rgb(var(--ink) / 0.08);
 }
-.iil-draft-meta {
+.obligo-draft-meta {
   grid-area: meta;
 }
-.iil-draft-actions {
+.obligo-draft-actions {
   grid-area: actions;
 }
-/* Same reasoning as `.iil-stream-row`'s own breakpoint — below a comfortable
+/* Same reasoning as `.obligo-stream-row`'s own breakpoint — below a comfortable
    combined width the preview column stops being readable, so the row stacks
    instead of squeezing. Recipient and modified-time stay on the first line
    (the two things you scan a Drafts list by), subject takes the second, and
@@ -19674,7 +19674,7 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    is ~730px — the preview was down to about seventy pixels: present, aligned,
    and useless. */
 @container (max-width: 800px) {
-  .iil-draft-row {
+  .obligo-draft-row {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'recipient meta'
@@ -19683,11 +19683,11 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
     row-gap: 3px;
     padding-block: 9px;
   }
-  .iil-draft-preview {
+  .obligo-draft-preview {
     padding-left: 0;
     border-left: none;
   }
-  .iil-draft-actions {
+  .obligo-draft-actions {
     justify-self: end;
   }
 }
@@ -19696,9 +19696,9 @@ html.light .group:hover .hover\:border-white\/\[0\.1\] {
    changes (Constitution §150). Framer surfaces honor `useReducedMotion` in JS;
    this neutralizes CSS transitions/animations inside the workspace only. */
 @media (prefers-reduced-motion: reduce) {
-  .iil-root *,
-  .iil-root *::before,
-  .iil-root *::after {
+  .obligo-root *,
+  .obligo-root *::before,
+  .obligo-root *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

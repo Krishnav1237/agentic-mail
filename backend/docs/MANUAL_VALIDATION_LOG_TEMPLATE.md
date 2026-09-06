@@ -1,5 +1,5 @@
 # Manual Validation Log Template
-*IIL Validation Program — Stage 3*
+*Obligo Validation Program — Stage 3*
 *Copy this template for each cohort session.*
 *Fill in only coded/anonymized observations. Do not record personal information, email addresses, or raw interview transcripts.*
 

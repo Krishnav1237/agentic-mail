@@ -1,5 +1,5 @@
 # Backend Implementation Status & Subsystem Inventory
-*Inbox Intelligence Layer (IIL) Backend — Phases 1–4 Implementation State*
+*Obligo Backend — Phases 1–4 Implementation State*
 
 ---
 

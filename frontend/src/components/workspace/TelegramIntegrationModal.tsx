@@ -101,7 +101,7 @@ function TelegramCard() {
               maxWidth: 320,
             }}
           >
-            Receive IIL notifications for things that need your attention.
+            Receive Obligo notifications for things that need your attention.
           </p>
         </div>
         <Button
@@ -119,7 +119,7 @@ function TelegramCard() {
       {integration.connected && (
         <div style={{ marginTop: 16 }}>
           <div
-            className="iil-eyebrow"
+            className="obligo-eyebrow"
             style={{ color: 'var(--text-faint)', marginBottom: 2 }}
           >
             Notifications
@@ -144,7 +144,7 @@ function TelegramCard() {
           </DialogRow>
 
           <div
-            className="iil-eyebrow"
+            className="obligo-eyebrow"
             style={{ color: 'var(--text-faint)', margin: '16px 0 2px' }}
           >
             Timing
@@ -234,7 +234,7 @@ export function TelegramIntegrationModal({
       open={open}
       onClose={onClose}
       title="Integrations"
-      description="Connect external services IIL can notify you through."
+      description="Connect external services Obligo can notify you through."
       width={460}
     >
       <TelegramCard />

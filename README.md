@@ -1,6 +1,6 @@
-# Inbox Intelligence Layer (IIL)
+# Obligo
 
-Inbox Intelligence Layer is an execution layer built on top of communication. It connects to Gmail, ingests emails, parses structure and MIME metadata, runs structured AI classification and extraction, and materializes actionable obligations (`actions`) and career/event opportunities (`opportunities`).
+Obligo is an execution layer built on top of communication. It connects to Gmail, ingests emails, parses structure and MIME metadata, runs structured AI classification and extraction, and materializes actionable obligations (`actions`) and career/event opportunities (`opportunities`).
 
 > **Implementation Baseline**: Backend Phases 1–4 and the validation operations infrastructure are implemented and structurally verified through automated tests. Real Google OAuth, live Gmail synchronization, real-provider extraction quality, manual forwarding feasibility, user demand, willingness to pay, and vertical selection still require owner-led validation. Phase 5–7 remain deferred.
 
@@ -50,7 +50,7 @@ cp .env.example .env
 ### 3. Apply Migrations (001–007)
 
 ```bash
-export DB_URL="postgres://HP@localhost:5432/iil_test"
+export DB_URL="postgres://HP@localhost:5432/obligo_test"
 
 psql "$DB_URL" -f db/migrations/001_baseline_schema.sql
 psql "$DB_URL" -f db/migrations/002_gmail_ingestion.sql

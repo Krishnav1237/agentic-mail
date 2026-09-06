@@ -30,7 +30,7 @@ export function Eyebrow({
 }) {
   return (
     <span
-      className="iil-eyebrow"
+      className="obligo-eyebrow"
       style={{
         ...(alpha !== undefined
           ? { color: `rgb(var(--ink) / ${alpha})` }
@@ -87,7 +87,7 @@ export function Tag({
   style?: CSSProperties;
 }) {
   return (
-    <span className="iil-tag" style={style}>
+    <span className="obligo-tag" style={style}>
       {children}
     </span>
   );
@@ -304,8 +304,8 @@ export function ShelfHeading({
 }
 
 /**
- * `ConfirmDialog`'s own content, portalled to `.iil-root` rather than
- * rendered in place. Every workspace page renders inside `.iil-page`, which
+ * `ConfirmDialog`'s own content, portalled to `.obligo-root` rather than
+ * rendered in place. Every workspace page renders inside `.obligo-page`, which
  * carries its own `transform: scale(...)` (per-page content zoom) — a
  * `transform` on an ancestor gives the browser a new containing block for
  * `position: fixed`, so without the portal this dialog centers on the

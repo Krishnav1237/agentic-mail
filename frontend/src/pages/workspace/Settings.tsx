@@ -74,7 +74,7 @@ import { settingsActions, useAgentSettings } from '../../lib/settingsStore';
 /**
  * Settings — the one page that is configuration, not correspondence (Reference
  * §24-25). Every other workspace page shows the user their mail; this one
- * shows them the rules IIL follows while doing that, so its identity is a
+ * shows them the rules Obligo follows while doing that, so its identity is a
  * settings form rather than a stream of records: embedded label+control rows
  * inside a `Panel`, not cards, not a search bar — there's nothing to browse
  * or filter here, just a fixed, known list of settings.
@@ -183,7 +183,7 @@ function TransferArrow({
       type="button"
       aria-label={ariaLabel}
       onClick={onClick}
-      className="iil-icon-btn iil-transfer-arrow"
+      className="obligo-icon-btn obligo-transfer-arrow"
     >
       <Icon size={16} strokeWidth={2} aria-hidden />
     </button>
@@ -398,9 +398,9 @@ function PrioritiesSection({ high }: { high: PriorityTopic[] }) {
   };
 
   return (
-    <div className="iil-quick-access-columns">
+    <div className="obligo-quick-access-columns">
       <div>
-        <span className="iil-eyebrow" style={{ color: 'var(--text-faint)' }}>
+        <span className="obligo-eyebrow" style={{ color: 'var(--text-faint)' }}>
           High priority
         </span>
         <p
@@ -458,7 +458,7 @@ function PrioritiesSection({ high }: { high: PriorityTopic[] }) {
       </div>
 
       <div style={{ textAlign: 'right' }}>
-        <span className="iil-eyebrow" style={{ color: 'var(--text-faint)' }}>
+        <span className="obligo-eyebrow" style={{ color: 'var(--text-faint)' }}>
           Lower priority
         </span>
         <p
@@ -583,17 +583,17 @@ function AttentionColorPicker<T extends string>({
               // whichever option is currently chosen.
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(option.key)}
-              className="iil-swatch-option"
+              className="obligo-swatch-option"
               data-selected={selected}
             >
               <span
                 aria-hidden
-                className="iil-swatch-option__chip"
+                className="obligo-swatch-option__chip"
                 style={{ background: option.swatch }}
               >
                 {selected && <Check size={11} strokeWidth={3} aria-hidden />}
               </span>
-              <span className="iil-swatch-option__label">{option.label}</span>
+              <span className="obligo-swatch-option__label">{option.label}</span>
             </button>
           );
         })}
@@ -640,7 +640,7 @@ const PREVIEW_STATES = PREVIEW_STATE_ORDER.map(
  * whatever pigment the store currently holds. So this preview cannot show a
  * colour the application wouldn't, cannot drift when the palette is retuned,
  * and needs no subscription of its own: changing a swatch above rewrites the
- * token on `.iil-root` and every one of these values repaints with it.
+ * token on `.obligo-root` and every one of these values repaints with it.
  *
  * `'row'` density on purpose — Inbox's stream is the canonical treatment (it
  * is what the card density was normalised to), so this previews the weight the
@@ -666,7 +666,7 @@ function AttentionPreviewRow({ attention }: { attention: Attention }) {
         padding: '10px 14px',
         borderRadius: 8,
         background: visual.bg,
-        // The same inset ring `.iil-action-row` draws — never a real border,
+        // The same inset ring `.obligo-action-row` draws — never a real border,
         // which would change the box's size between states.
         boxShadow: `inset 0 0 0 1px ${visual.border ?? 'transparent'}`,
         transition: 'background .2s ease, box-shadow .2s ease',
@@ -706,7 +706,7 @@ function AttentionPreviewRow({ attention }: { attention: Attention }) {
             Demo subject
           </span>
           <span
-            className="iil-mono"
+            className="obligo-mono"
             style={{
               flex: 'none',
               font: '400 10.5px "JetBrains Mono", monospace',
@@ -1004,9 +1004,9 @@ function QuickAccessSection() {
   };
 
   return (
-    <div className="iil-quick-access-columns">
+    <div className="obligo-quick-access-columns">
       <div>
-        <span className="iil-eyebrow" style={{ color: 'var(--text-faint)' }}>
+        <span className="obligo-eyebrow" style={{ color: 'var(--text-faint)' }}>
           Visible in navigation
         </span>
         <p
@@ -1024,8 +1024,8 @@ function QuickAccessSection() {
           // `closestCenter` compares droppable rects against the dragged
           // item's own measured rect, which goes stale once the page has
           // been scrolled before the drag starts — inside this app's nested
-          // `position: fixed` / `container-type` shell (`.iil-canvas` /
-          // `.iil-scroll`), that measurement error was large enough that
+          // `position: fixed` / `container-type` shell (`.obligo-canvas` /
+          // `.obligo-scroll`), that measurement error was large enough that
           // `over` never left the row the drag started on, so a drop always
           // silently snapped back. `pointerWithin` instead tests the live
           // pointer position against each droppable's rect every move —
@@ -1075,7 +1075,7 @@ function QuickAccessSection() {
       </div>
 
       <div style={{ textAlign: 'right' }}>
-        <span className="iil-eyebrow" style={{ color: 'var(--text-faint)' }}>
+        <span className="obligo-eyebrow" style={{ color: 'var(--text-faint)' }}>
           Available
         </span>
         <p
@@ -1326,7 +1326,7 @@ export default function Settings() {
                 color: 'var(--text-faint)',
               }}
             >
-              How IIL is currently configured
+              How Obligo is currently configured
             </p>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {behaviorSummary.map((row, i) => (
@@ -1344,7 +1344,7 @@ export default function Settings() {
                   }}
                 >
                   <span
-                    className="iil-eyebrow"
+                    className="obligo-eyebrow"
                     style={{
                       flex: 'none',
                       width: 112,
@@ -1497,7 +1497,7 @@ export default function Settings() {
                       maxWidth: 420,
                     }}
                   >
-                    Receive upcoming IIL features before public release.
+                    Receive upcoming Obligo features before public release.
                   </p>
                 </div>
                 <Toggle
@@ -1558,7 +1558,7 @@ export default function Settings() {
                   }}
                 >
                   Customize how urgency and importance are highlighted across
-                  IIL.
+                  Obligo.
                 </p>
                 <Panel padding={6}>
                   <div
@@ -1637,7 +1637,7 @@ export default function Settings() {
       <ConfirmDialog
         open={deleteOpen}
         title="Delete your account?"
-        message="This permanently removes your IIL workspace, settings, and disconnects your mailbox. This can't be undone."
+        message="This permanently removes your Obligo workspace, settings, and disconnects your mailbox. This can't be undone."
         confirmLabel="Delete account"
         onConfirm={() => setDeleteOpen(false)}
         onCancel={() => setDeleteOpen(false)}

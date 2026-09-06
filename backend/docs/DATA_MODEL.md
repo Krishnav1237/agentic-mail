@@ -1,5 +1,5 @@
 # Database Data Model & Schema Architecture
-*Inbox Intelligence Layer (IIL) Backend — Schema Reference (Migrations 001–007)*
+*Obligo Backend — Schema Reference (Migrations 001–007)*
 
 ---
 

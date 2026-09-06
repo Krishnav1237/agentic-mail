@@ -27,7 +27,7 @@ export function Panel({
 }) {
   return (
     <div
-      className={`iil-panel${interactive ? ' iil-panel--interactive' : ''} ${className}`.trim()}
+      className={`obligo-panel${interactive ? ' obligo-panel--interactive' : ''} ${className}`.trim()}
       style={{ padding, ...style }}
       onClick={onClick}
     >

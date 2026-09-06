@@ -1,5 +1,5 @@
 # API Reference
-*Inbox Intelligence Layer (IIL) Backend — Phases 1–4 + Validation Infrastructure*
+*Obligo Backend — Phases 1–4 + Validation Infrastructure*
 
 ---
 

@@ -1,5 +1,5 @@
 # Testing Guide & Quality Assurance Specification
-*Inbox Intelligence Layer (IIL) Backend — Testing Reference*
+*Obligo Backend — Testing Reference*
 
 ---
 

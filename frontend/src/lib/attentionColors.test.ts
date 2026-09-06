@@ -54,7 +54,7 @@ type SettingsStore = typeof import('./settingsStore');
 let settings: SettingsStore;
 let storage: Map<string, string>;
 
-const STORAGE_KEY = 'iil-agent-preferences';
+const STORAGE_KEY = 'obligo-agent-preferences';
 
 beforeEach(async () => {
   storage = new Map();

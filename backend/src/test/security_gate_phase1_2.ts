@@ -34,11 +34,11 @@ async function runSecurityGate() {
   const sampleUser = { userId: '123e4567-e89b-12d3-a456-426614174000', email: 'user@example.com' };
   const jwtToken = signUserJwt(sampleUser);
   const decoded = jwt.decode(jwtToken) as any;
-  if (decoded.iss !== 'iil-api' || decoded.aud !== 'iil-app' || !decoded.exp) {
+  if (decoded.iss !== 'obligo-api' || decoded.aud !== 'obligo-app' || !decoded.exp) {
     throw new Error('FAILED: JWT claims missing required issuer, audience, or exp');
   }
   console.log('    Decoded JWT claims:', { iss: decoded.iss, aud: decoded.aud, sub: decoded.sub });
-  console.log('    PASSED: JWT token claims verified (iss: iil-api, aud: iil-app).');
+  console.log('    PASSED: JWT token claims verified (iss: obligo-api, aud: obligo-app).');
 
   console.log('\n=== ALL PHASE 1 & 2 SECURITY GATE UNIT ASSERTS PASSED SUCCESSFULLY ===\n');
   process.exit(0);

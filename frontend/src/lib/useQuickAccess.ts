@@ -11,8 +11,8 @@
 import { useEffect, useState } from 'react';
 import { ALL_MAIL_VIEW_IDS, DEFAULT_QUICK_ACCESS, type MailViewId } from './mailViews';
 
-const STORAGE_KEY = 'iil-quick-access';
-const CHANGE_EVENT = 'iil-quick-access-change';
+const STORAGE_KEY = 'obligo-quick-access';
+const CHANGE_EVENT = 'obligo-quick-access-change';
 
 type QuickAccessState = { quickAccess: string[]; available: string[] };
 

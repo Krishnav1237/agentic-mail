@@ -1,7 +1,7 @@
 /**
  * Help & Feedback — reached from the avatar menu, not a sidebar page (Part 2
  * of the spec: the app already has many primary navigation items, and this
- * is "how the user communicates with the IIL team", a different concern
+ * is "how the user communicates with the Obligo team", a different concern
  * from Settings/Profile/Mail — see Part 3's information architecture).
  *
  * One shared form structure handles all four categories (Get help / Report
@@ -83,11 +83,11 @@ type SubmitStatus = 'idle' | 'sending' | 'sent' | 'error';
  * "I was on the Inbox page in dark mode" themselves.
  *
  * Reads `<html class="light">` directly rather than through
- * `useWorkspaceTheme` — that hook stamps/strips `.iil-workspace` on
+ * `useWorkspaceTheme` — that hook stamps/strips `.obligo-workspace` on
  * `<html>` for its own lifetime (see its doc comment), on the assumption
  * that `AppShell` is its only concurrent consumer for the whole session. A
  * second live instance here would unmount every time this form closes
- * (category change, Back, Done) and rip `.iil-workspace` off `<html>` while
+ * (category change, Back, Done) and rip `.obligo-workspace` off `<html>` while
  * `AppShell`'s own instance was still mounted and depending on it — which is
  * exactly what broke light mode: the global `html.light` invert filter
  * (meant only for the Landing page) would reactivate under the workspace
@@ -143,7 +143,7 @@ function CategoryPicker({
               key={key}
               type="button"
               onClick={() => onSelect(key)}
-              className="iil-btn iil-btn--outline"
+              className="obligo-btn obligo-btn--outline"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -208,7 +208,7 @@ function FeedbackForm({
             color: 'var(--text-secondary)',
           }}
         >
-          Sent — thanks for letting us know. The IIL team can follow up at{' '}
+          Sent — thanks for letting us know. The Obligo team can follow up at{' '}
           {profile.email}.
         </p>
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>

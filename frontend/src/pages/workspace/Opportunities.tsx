@@ -85,7 +85,7 @@ function timingLabelFor(item: Opportunity): string {
  * value rather than from a second flag.
  *
  * Interaction reuses the exact system established by Actions: every row is a
- * real `<button className="iil-action-row">` (shared hover/press/focus/
+ * real `<button className="obligo-action-row">` (shared hover/press/focus/
  * selected recipe, see index.css), search is the shared `ExpandingSearch`,
  * and group headers/expand-collapse are the shared `Group` component —
  * both live in `components/workspace` so Actions and Opportunities can't
@@ -141,7 +141,7 @@ function RowMeta({
 }) {
   return (
     <span
-      className="iil-mono"
+      className="obligo-mono"
       style={{
         flex: 'none',
         marginLeft: 'auto',
@@ -272,10 +272,10 @@ function OpportunityCard({
           <RowMeta item={item} attention={attention} />
         </div>
         {/* Fixed thirds: preview gets half the row, a quiet quarter of
-            breathing room, then IIL's insight in the last quarter. */}
+            breathing room, then Obligo's insight in the last quarter. */}
         <div style={{ display: 'flex', alignItems: 'baseline' }}>
           {/* Real content preview — a plausible line from the actual
-              message, never IIL's own reasoning (`why`) standing in for it. */}
+              message, never Obligo's own reasoning (`why`) standing in for it. */}
           <span
             style={{
               ...TRUNCATE,
@@ -290,8 +290,8 @@ function OpportunityCard({
             {preview}
           </span>
           <span aria-hidden style={{ flex: '0 0 25%' }} />
-          {/* IIL's own insight — same right-side slot as Inbox's
-              `.iil-stream-insight` column, colored from the one shared
+          {/* Obligo's own insight — same right-side slot as Inbox's
+              `.obligo-stream-insight` column, colored from the one shared
               attention palette. Once passed, there's nothing left to suggest
               — the text itself goes away rather than just losing its color
               (same rule Inbox/Approvals follow). */}
@@ -317,7 +317,7 @@ function OpportunityCard({
 export default function Opportunities() {
   const [query, setQuery] = useState('');
   const location = useLocation();
-  // Every opportunity is, underneath, a real message IIL surfaced — clicking
+  // Every opportunity is, underneath, a real message Obligo surfaced — clicking
   // one opens the same canonical mail-detail view Inbox/Approvals/Actions use
   // rather than a page-local preview. Dashboard can also deep-link straight
   // to one by navigating here with `state: { openMailId }` — read
@@ -477,7 +477,7 @@ export default function Opportunities() {
               if (item.lifecycle === 'passed') {
                 return (
                   <span
-                    className="iil-eyebrow"
+                    className="obligo-eyebrow"
                     style={{ marginLeft: 'auto', color: 'var(--text-faint)' }}
                   >
                     {item.completedNote ?? 'Completed'}
@@ -496,7 +496,7 @@ export default function Opportunities() {
                 >
                   <button
                     type="button"
-                    className="iil-btn iil-btn--ghost"
+                    className="obligo-btn obligo-btn--ghost"
                     onClick={() => {
                       workflowActions.setOpportunityLifecycle(item.id, 'passed');
                       // Passing resolves the item, so it leaves the active
@@ -589,7 +589,7 @@ export default function Opportunities() {
                     description={
                       query
                         ? 'Try a different search term, or clear it to see everything in this view.'
-                        : 'Opportunities matching this view will show up here as IIL finds them.'
+                        : 'Opportunities matching this view will show up here as Obligo finds them.'
                     }
                     action={
                       query ? (

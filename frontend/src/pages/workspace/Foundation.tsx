@@ -7,7 +7,7 @@
  * real AppShell, in both themes, with none of a product page's business
  * logic or demo data in the way — the one place a future engineer can see
  * every reusable piece (rows, panels, dropdowns, attention states, the
- * `PageHeader`/`.iil-title` treatment that predates and differs from the
+ * `PageHeader`/`.obligo-title` treatment that predates and differs from the
  * six real pages' own 20px `--type-page-title`) without hunting through
  * Actions/Approvals/etc. for a live example. Reachable at `/foundation`,
  * intentionally absent from the sidebar and from `MAIL_VIEWS` — it is a
@@ -249,7 +249,7 @@ export default function Foundation() {
                   Real email content — same contrast in every state.
                 </span>
                 <span
-                  className="iil-mono"
+                  className="obligo-mono"
                   style={{
                     marginLeft: 'auto',
                     font: '500 10px "JetBrains Mono", monospace',
@@ -296,7 +296,7 @@ export default function Foundation() {
                   color: 'var(--gold-ink)',
                 }}
               >
-                IIL brand mark
+                Obligo brand mark
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -346,7 +346,7 @@ export default function Foundation() {
             <EmptyState
               icon={<InboxIcon size={26} strokeWidth={1.5} />}
               title="Nothing needs you right now"
-              description="When IIL surfaces something that requires a decision, it will appear here. Everything handled automatically stays out of your way."
+              description="When Obligo surfaces something that requires a decision, it will appear here. Everything handled automatically stays out of your way."
               action={<Button variant="outline">Review handled items</Button>}
             />
           </Panel>

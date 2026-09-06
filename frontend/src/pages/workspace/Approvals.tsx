@@ -210,7 +210,7 @@ function ApprovalRow({
           {/* Timing metadata, colored by this row's attention — the same
               accent the rail carries, from the one shared palette. */}
           <span
-            className="iil-mono"
+            className="obligo-mono"
             style={{
               flex: 'none',
               marginLeft: 'auto',
@@ -222,11 +222,11 @@ function ApprovalRow({
           </span>
         </div>
         {/* Fixed thirds: preview gets half the row, a quiet quarter of
-            breathing room, then IIL's insight in the last quarter — so the
+            breathing room, then Obligo's insight in the last quarter — so the
             preview never crowds toward the insight column regardless of how
             long either text is. */}
         <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          {/* Real email content preview — never IIL's own extraction text
+          {/* Real email content preview — never Obligo's own extraction text
               standing in for what the sender actually wrote. */}
           <span
             style={{
@@ -242,9 +242,9 @@ function ApprovalRow({
             {preview}
           </span>
           <span aria-hidden style={{ flex: '0 0 25%' }} />
-          {/* IIL's own insight — its own right-side slot, same treatment as
-              Inbox's `.iil-stream-insight` column, so "what the email says"
-              and "what IIL thinks is important about it" never blend.
+          {/* Obligo's own insight — its own right-side slot, same treatment as
+              Inbox's `.obligo-stream-insight` column, so "what the email says"
+              and "what Obligo thinks is important about it" never blend.
               Colored from the one shared attention palette while still
               active; once completed, there's nothing left to suggest — the
               text itself goes away rather than just losing its color.
@@ -404,7 +404,7 @@ function ListView({
               description={
                 query
                   ? 'Try a different search term, or clear it to see everything.'
-                  : 'Approvals will show up here as IIL prepares them for your review.'
+                  : 'Approvals will show up here as Obligo prepares them for your review.'
               }
               action={
                 query ? (
@@ -533,7 +533,7 @@ function ReviewSurface({
         if (approval.completedAt) {
           return (
             <span
-              className="iil-eyebrow"
+              className="obligo-eyebrow"
               style={{ marginLeft: 'auto', color: 'var(--text-faint)' }}
             >
               {approval.completedNote ?? 'Completed'}
@@ -552,7 +552,7 @@ function ReviewSurface({
           >
             <button
               type="button"
-              className="iil-btn iil-btn--outline"
+              className="obligo-btn obligo-btn--outline"
               onClick={() => {
                 mailActions.markUnread(approval.id);
                 onClose();
@@ -563,7 +563,7 @@ function ReviewSurface({
             </button>
             <button
               type="button"
-              className="iil-btn iil-btn--outline"
+              className="obligo-btn obligo-btn--outline"
               onClick={() => onReject(approval.id)}
             >
               Reject

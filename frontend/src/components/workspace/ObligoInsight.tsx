@@ -1,30 +1,30 @@
 /**
- * IIL's own output inside an opened mail — the insight section, plus the
- * compact gold control both IIL elements collapse into.
+ * Obligo's own output inside an opened mail — the insight section, plus the
+ * compact gold control both Obligo elements collapse into.
  *
  * THE PROBLEM THIS EXISTS TO SOLVE. A mail's row preview has always shown a
- * truncated IIL insight in its own right-hand column, but the opened mail had
- * nowhere to put the full text: the insight was passed to the "IIL Suggested
+ * truncated Obligo insight in its own right-hand column, but the opened mail had
+ * nowhere to put the full text: the insight was passed to the "Obligo Suggested
  * Reply" control as its one-line description, so a mail with an insight and no
- * drafted reply — the single most common case on Actions, where IIL is blocked
+ * drafted reply — the single most common case on Actions, where Obligo is blocked
  * precisely *because* it can't draft anything — showed the insight in the list
  * and then lost it completely the moment the user opened the mail. The row was
- * the only place IIL's output could be read, and only ever in truncated form.
+ * the only place Obligo's output could be read, and only ever in truncated form.
  *
  * THREE KINDS OF TEXT, THREE PLACES. The opened mail keeps them apart:
  *
  *   the message body   what the sender actually wrote     (MailThreadView)
- *   IIL Insight        what IIL inferred/recommends/flags (here)
- *   IIL Suggested Reply a draft to review, edit and send  (ReplyComposer)
+ *   Obligo Insight        what Obligo inferred/recommends/flags (here)
+ *   Obligo Suggested Reply a draft to review, edit and send  (ReplyComposer)
  *
  * AI-authored text never enters the message body, and the sender's words never
- * enter either IIL element.
+ * enter either Obligo element.
  *
- * SHARED VISUAL LANGUAGE, DISTINCT SEMANTIC LABEL. Both IIL elements use the
+ * SHARED VISUAL LANGUAGE, DISTINCT SEMANTIC LABEL. Both Obligo elements use the
  * same gold vocabulary the suggested reply already established — gold dot,
  * gold eyebrow, the `--approve-band`/`--approve-border` card — because both
  * are assistant-generated content and should read as one layer. What tells
- * them apart is the label ("IIL Insight" vs "IIL Suggested Reply") and the
+ * them apart is the label ("Obligo Insight" vs "Obligo Suggested Reply") and the
  * interaction: the insight opens expanded because it's something to read, the
  * draft opens collapsed because it's something to act on.
  */
@@ -34,7 +34,7 @@ import { GoldDot } from './primitives';
 import { truncatePreview } from '../../lib/mailAdapters';
 
 /**
- * The compact one-line control an IIL element collapses into: gold dot, its
+ * The compact one-line control an Obligo element collapses into: gold dot, its
  * label, a short preview of what's inside, and a chevron. Shared by the
  * insight and the suggested reply so the two can't drift into two slightly
  * different gold rows — the label and the preview are the only differences,
@@ -43,7 +43,7 @@ import { truncatePreview } from '../../lib/mailAdapters';
  * The preview here is a *teaser for content that's one click away*, never the
  * only copy of it — the same rule the list rows follow.
  */
-export function IILDisclosure({
+export function ObligoDisclosure({
   label,
   preview,
   expanded,
@@ -149,14 +149,14 @@ export function IILDisclosure({
 }
 
 /**
- * The full IIL insight for an opened mail.
+ * The full Obligo insight for an opened mail.
  *
- * EXPANDED BY DEFAULT, AND COMPLETE. If IIL has something to tell the user,
+ * EXPANDED BY DEFAULT, AND COMPLETE. If Obligo has something to tell the user,
  * the user should see it on open without hunting for it — so this starts
  * expanded and shows the whole insight. It is never line-clamped, never
  * hover-only, never a tooltip: long insights wrap and, if the reading pane
  * runs short, scroll with everything else. Collapsing is a deliberate user
- * action, and the collapsed state (a compact `IILDisclosure` row) still shows
+ * action, and the collapsed state (a compact `ObligoDisclosure` row) still shows
  * a preview plus a way back.
  *
  * Collapse state is intentionally per-thread and not persisted: the caller
@@ -166,9 +166,9 @@ export function IILDisclosure({
  * would hide a *different* insight the reader has never seen.
  *
  * Renders nothing at all when there's no insight — no header, no empty
- * container, no filler. The UI reflects what IIL actually has.
+ * container, no filler. The UI reflects what Obligo actually has.
  */
-export function IILInsight({
+export function ObligoInsight({
   insight,
   defaultExpanded = true,
 }: {
@@ -183,11 +183,11 @@ export function IILInsight({
 
   if (!expanded) {
     return (
-      <IILDisclosure
-        label="IIL Insight"
+      <ObligoDisclosure
+        label="Obligo Insight"
         preview={truncatePreview(text, 90)}
         expanded={false}
-        ariaLabel="Show the full IIL insight"
+        ariaLabel="Show the full Obligo insight"
         onToggle={() => setExpanded(true)}
       />
     );
@@ -195,12 +195,12 @@ export function IILInsight({
 
   return (
     <section
-      aria-label="IIL insight"
+      aria-label="Obligo insight"
       style={{
         borderRadius: 14,
         padding: '12px 16px 14px',
         // The same smoked-gold card the suggested-reply composer uses, from
-        // the same two tokens — so the two IIL elements read as one layer in
+        // the same two tokens — so the two Obligo elements read as one layer in
         // both themes rather than two separately-tuned golds.
         background: 'var(--approve-band)',
         border: '1px solid var(--approve-border)',
@@ -208,14 +208,14 @@ export function IILInsight({
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <GoldDot size={6} />
-        <span className="iil-eyebrow" style={{ color: 'var(--gold-ink)' }}>
-          IIL Insight
+        <span className="obligo-eyebrow" style={{ color: 'var(--gold-ink)' }}>
+          Obligo Insight
         </span>
         <button
           type="button"
-          className="iil-icon-btn"
+          className="obligo-icon-btn"
           aria-expanded
-          aria-label="Collapse IIL insight"
+          aria-label="Collapse Obligo insight"
           onClick={() => setExpanded(false)}
           style={{
             marginLeft: 'auto',
@@ -233,14 +233,14 @@ export function IILInsight({
         </button>
       </div>
       {/* Full text, always. `--text-secondary` is the same readable ladder
-          token the message body above uses — IIL's layer is identified by the
+          token the message body above uses — Obligo's layer is identified by the
           gold label and the card, never by being dimmer than the email, which
           would make the assistant's output the hardest thing on screen to
           read. `pre-line` so a multi-paragraph insight stays multi-paragraph
           instead of collapsing into one run-on block. */}
       <p
         style={{
-          // Same shared measure as the message body above it, so IIL's
+          // Same shared measure as the message body above it, so Obligo's
           // insight and the email it's about occupy the same column rather
           // than two independently-chosen widths that only looked equal.
           maxWidth: 'var(--measure-mail)',

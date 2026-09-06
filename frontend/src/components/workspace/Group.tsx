@@ -24,12 +24,12 @@ import { DURATION, EASE } from './motion';
 
 /**
  * Manual stand-in for `position: sticky`, needed because every page that
- * groups rows into tiers renders inside `.iil-page`, which carries its own
+ * groups rows into tiers renders inside `.obligo-page`, which carries its own
  * `transform: scale(...)` (WorkspacePage's per-page content zoom). A
  * `transform` on an ancestor gives the browser a new containing block for
  * that subtree, and both `position: sticky` and `position: fixed` inside it
  * resolve their offsets against that moving, scaled box instead of the real
- * `.iil-scroll` viewport — confirmed by direct measurement (a sticky/fixed
+ * `.obligo-scroll` viewport — confirmed by direct measurement (a sticky/fixed
  * header drifts by exactly the raw scroll delta, i.e. it never actually
  * pins). That's the unexplained gap, the missing blur, and the
  * per-section-inconsistent offset described in the bug: native sticky simply
@@ -54,7 +54,7 @@ import { DURATION, EASE } from './motion';
  *
  * The measured offset is written as the `--pin-offset` custom property
  * (not `element.style.transform` directly) so each consumer composes it
- * into its own `transform` however fits — `.iil-action-row` already blends
+ * into its own `transform` however fits — `.obligo-action-row` already blends
  * it with its hover-lift/press-scale transforms in index.css; a plain,
  * non-interactive sticky element (Actions' "Completed" footer) can just
  * declare `transform: translateY(var(--pin-offset, 0px))` once, inline.
@@ -79,7 +79,7 @@ export function useTransformSticky<T extends HTMLElement>() {
     const header = headerRef.current;
     const start = startRef.current;
     const end = endRef.current;
-    const scrollEl = header?.closest('.iil-scroll') as HTMLElement | null;
+    const scrollEl = header?.closest('.obligo-scroll') as HTMLElement | null;
     if (!header || !start || !scrollEl) return;
 
     let lastPinned = false;
@@ -172,16 +172,16 @@ export function useGroupExpanded(id: string, defaultExpanded = true) {
  * One collapsible tier. `label` is a pre-styled node — each page keeps its
  * own typographic identity (Actions' uppercase mono `Eyebrow` tier labels vs
  * Opportunities' sentence-case bold `ShelfHeading`s); only the interactive
- * skeleton is shared: chevron, count, hover/press/focus (`.iil-action-row`),
+ * skeleton is shared: chevron, count, hover/press/focus (`.obligo-action-row`),
  * and — when `stickyIndex` is given — pinning with a frosted background that
  * switches on only while actually stuck.
  *
- * The header is a single `.iil-action-row` button carrying its own sticky
+ * The header is a single `.obligo-action-row` button carrying its own sticky
  * positioning via inline style rather than a second CSS class layered on
  * top: two classes both trying to own `background` fight over source order,
  * so the stuck-state background is expressed the same way every row's rest/
  * hover background already is — through `--row-bg`/`--row-hover-bg` — and
- * `position`/`backdrop-filter` are added inline, properties `.iil-action-row`
+ * `position`/`backdrop-filter` are added inline, properties `.obligo-action-row`
  * never declares, so there's nothing to conflict with.
  *
  * The header's *label* text — not its padding — is what has to land at the
@@ -288,7 +288,7 @@ export function Group({
         </div>
         {count !== undefined && (
           <span
-            className="iil-mono"
+            className="obligo-mono"
             style={{
               flex: 'none',
               marginLeft: 'auto',
@@ -317,7 +317,7 @@ export function Group({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: DURATION.micro, ease: EASE }}
             // Rows use the shared paddingInline:8/marginInline:-8 hover-bleed
-            // trick (see .iil-action-row consumers) so their hover ring can
+            // trick (see .obligo-action-row consumers) so their hover ring can
             // extend 8px beyond the text without shifting it. This wrapper
             // needs `overflow: hidden` to animate height, which would clip
             // that 8px bleed at exactly the left/right edges — the same bug

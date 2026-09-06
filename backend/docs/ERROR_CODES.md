@@ -1,5 +1,5 @@
 # Bounded Public & Persisted Error Code Reference
-*Inbox Intelligence Layer (IIL) Backend — Error Code System*
+*Obligo Backend — Error Code System*
 
 ---
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-The IIL backend enforces a **bounded typed error code system** defined in [`src/errors/AppError.ts`](../src/errors/AppError.ts).
+The Obligo backend enforces a **bounded typed error code system** defined in [`src/errors/AppError.ts`](../src/errors/AppError.ts).
 
 ### Core Principles
 1. **Zero Secret / Raw Error Leakage**: Raw SQL error tracebacks, file paths, access tokens, and arbitrary provider error messages are **never** returned in API HTTP responses or written to database fields (`sync_runs.error_message`, `extraction_runs.error_code`, `provider_sync_states.error_message`).

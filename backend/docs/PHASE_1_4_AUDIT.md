@@ -1,5 +1,5 @@
 # Phase 1–4 Runtime & Data-Integrity Gate Ledger
-*IIL Backend — Historical Gate Closure Verification Record*
+*Obligo Backend — Historical Gate Closure Verification Record*
 
 ---
 

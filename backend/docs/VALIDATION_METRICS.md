@@ -1,5 +1,5 @@
 # Validation Metrics Specification
-*IIL Validation Program — Stage 1 & 6 Metrics Reference*
+*Obligo Validation Program — Stage 1 & 6 Metrics Reference*
 
 ---
 

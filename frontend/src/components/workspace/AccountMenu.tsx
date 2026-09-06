@@ -4,8 +4,8 @@
  *
  * Same anchored-popover mechanics as `RecipientDisclosure`/`Select`:
  * `usePopoverPosition`/`useOutsideClose`/`getPortalRoot`, portalled to
- * `.iil-root` (not `document.body`) so `position: fixed` stays
- * viewport-relative under `.iil-page`'s own content-zoom transform, and
+ * `.obligo-root` (not `document.body`) so `position: fixed` stays
+ * viewport-relative under `.obligo-page`'s own content-zoom transform, and
  * closes on outside-click or Escape like every other overlay in the
  * workspace.
  */
@@ -90,7 +90,7 @@ export function AccountMenu() {
               ref={popoverRef}
               role="dialog"
               aria-label="Account menu"
-              className="iil-menu"
+              className="obligo-menu"
               style={{
                 width: 240,
                 minWidth: 240,
@@ -144,15 +144,15 @@ export function AccountMenu() {
                   paddingTop: 6,
                 }}
               >
-                <button type="button" className="iil-option" onClick={goToProfile}>
+                <button type="button" className="obligo-option" onClick={goToProfile}>
                   <User size={14} strokeWidth={1.75} aria-hidden />
                   <span>Profile</span>
                 </button>
-                <button type="button" className="iil-option" onClick={openHelp}>
+                <button type="button" className="obligo-option" onClick={openHelp}>
                   <HelpCircle size={14} strokeWidth={1.75} aria-hidden />
                   <span>Help &amp; Feedback</span>
                 </button>
-                <button type="button" className="iil-option" onClick={handleSignOut}>
+                <button type="button" className="obligo-option" onClick={handleSignOut}>
                   <LogOut size={14} strokeWidth={1.75} aria-hidden />
                   <span>Sign out</span>
                 </button>

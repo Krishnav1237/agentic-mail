@@ -1,4 +1,4 @@
-# IIL (Inbox Intelligence Layer)
+# Obligo
 # Frontend Design Constitution
 # Sprint 1 (Locked)
 
@@ -6,7 +6,7 @@
 
 # 1. Product Philosophy
 
-IIL is not an email client.
+Obligo is not an email client.
 
 It is an AI assistant that quietly reduces work.
 
@@ -378,7 +378,7 @@ The page is called Settings — plain human language, not "Configuration" or
 "Automation Settings" (§11). The word "Tuning" appeared in early planning and
 never shipped; Settings is the V1.0 name and is not scheduled to change.
 
-Settings teaches IIL how to behave.
+Settings teaches Obligo how to behave.
 
 Not how to configure software.
 
@@ -438,7 +438,7 @@ Default:
 Starred and Sent pinned. Everything else Available.
 
 This section is navigation configuration, not automation — it does not
-affect what IIL does with mail, only how the user reaches it. Placed here,
+affect what Obligo does with mail, only how the user reaches it. Placed here,
 between How I Help and Inbox Cleanup, because it is still a "how I want this
 to work" preference and Settings is where every such preference lives.
 
@@ -633,7 +633,7 @@ Dark and Light should feel like identical products under different lighting.
 
 Whenever introducing a new page ask:
 
-Does this feel like it belongs inside IIL?
+Does this feel like it belongs inside Obligo?
 
 Not:
 
@@ -663,7 +663,7 @@ Never sacrifice clarity for prettier UI.
 
 # 27. Ultimate Goal
 
-Users should eventually trust IIL enough that interacting with it becomes almost invisible.
+Users should eventually trust Obligo enough that interacting with it becomes almost invisible.
 
 The highest compliment is not:
 

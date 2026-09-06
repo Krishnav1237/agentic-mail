@@ -74,7 +74,7 @@ const buildWaitlistConfirmationHtml = () => `<!DOCTYPE html>
           <table width="520" cellpadding="0" cellspacing="0" style="background:#050505; border-radius:14px; padding:42px; border:1px solid #111;">
             <tr>
               <td style="font-size:13px; letter-spacing:1.5px; color:#8a8a8a;">
-                IIL | INBOX INTELLIGENCE LAYER
+                OBLIGO
               </td>
             </tr>
             <tr>
@@ -89,7 +89,7 @@ const buildWaitlistConfirmationHtml = () => `<!DOCTYPE html>
             </tr>
             <tr>
               <td style="padding-top:14px; font-size:15px; line-height:1.7; color:#b3b3b3;">
-                IIL connects to your personal email and converts incoming messages into structured execution - tasks extracted, deadlines tracked, and replies prepared automatically.
+                Obligo connects to your personal email and converts incoming messages into structured execution - tasks extracted, deadlines tracked, and replies prepared automatically.
               </td>
             </tr>
             <tr>
@@ -139,7 +139,7 @@ const sendConfirmationEmail = async (email: string) => {
     body: JSON.stringify({
       from,
       to: email,
-      subject: "You're on the list for IIL!",
+      subject: "You're on the list for Obligo!",
       html: buildWaitlistConfirmationHtml(),
     }),
   });

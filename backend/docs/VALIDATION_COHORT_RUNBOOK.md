@@ -1,5 +1,5 @@
 # Validation Cohort Runbook
-*IIL Validation Program — Stage 3*
+*Obligo Validation Program — Stage 3*
 *Operational guide for conducting the 14-day validation study.*
 
 ---
@@ -23,7 +23,7 @@ All of the following MUST be true before starting a cohort.
 
 ```
 1. Navigate to https://console.cloud.google.com
-2. Select the IIL project
+2. Select the Obligo project
 3. Navigate to APIs & Services → OAuth consent screen
 4. Set Publishing Status to "Testing" (NOT Production)
 5. Under "Test users", add all 5 participant Gmail addresses

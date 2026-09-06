@@ -113,7 +113,7 @@ class SyntheticTestAiProvider implements AiProvider {
 
 async function runRegressionBenchmark() {
   console.log('================================================================');
-  console.log('  IIL STRUCTURAL & SAFETY REGRESSION BENCHMARK');
+  console.log('  OBLIGO STRUCTURAL & SAFETY REGRESSION BENCHMARK');
   console.log('  Mode: Structural, Safety & Pipeline Verification (Synthetic)');
   console.log('  Note: Does NOT evaluate or claim real LLM extraction accuracy.');
   console.log('================================================================\n');

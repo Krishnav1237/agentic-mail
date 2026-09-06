@@ -3,7 +3,7 @@
  *
  * Two halves live here, both pure and both free of React, storage and UI:
  *
- *   AgentPreferences  what the user has told IIL to do — the exact payload a
+ *   AgentPreferences  what the user has told Obligo to do — the exact payload a
  *                     backend would receive on save and hand to the LLM/ML
  *                     layer as its operating instructions.
  *   The rules         given a mail's agent-derived SIGNALS and those
@@ -40,7 +40,7 @@ import { dayDiffFor, FOLLOW_UP_WAIT_DAYS } from './deadlineGroups';
 /* ----------------------------- Preferences ------------------------------- */
 
 /**
- * How much of the reply IIL should produce.
+ * How much of the reply Obligo should produce.
  *
  * `off` IS AN INSTRUCTION, NOT A DISPLAY TOGGLE. It means "do not generate
  * drafts at all" — the model never runs, and no draft is produced to be shown
@@ -48,7 +48,7 @@ import { dayDiffFor, FOLLOW_UP_WAIT_DAYS } from './deadlineGroups';
  * generated draft in the UI would burn the tokens and the latency anyway. See
  * {@link shouldGenerateDrafts}.
  *
- * `auto` is reserved and currently not selectable (IIL never sends
+ * `auto` is reserved and currently not selectable (Obligo never sends
  * unattended); it exists in the type because the backend contract has to name
  * the state even while the UI refuses to enter it.
  */
@@ -63,11 +63,11 @@ export type ReplyTone =
   | 'friendly'
   | 'personalized';
 
-/** How far IIL may act on its own for the lighter-weight housekeeping
+/** How far Obligo may act on its own for the lighter-weight housekeeping
  * actions. `suggest` surfaces a recommendation; `automatic` performs it. */
 export type AutomationLevel = 'never' | 'suggest' | 'automatic';
 
-/** Whether IIL may proactively identify follow-up opportunities. `on` only
+/** Whether Obligo may proactively identify follow-up opportunities. `on` only
  * ever surfaces a suggestion — it never sends anything on its own; the user
  * always chooses to send. */
 export type FollowUpMode = 'off' | 'on';
@@ -140,7 +140,7 @@ export type AgentPreferences = {
   };
   cleanup: Record<CleanupCategory, CleanupAction>;
   /**
-   * Which topics IIL should treat as mattering more than the rest, MOST
+   * Which topics Obligo should treat as mattering more than the rest, MOST
    * IMPORTANT FIRST — a plain ordered list, not a numeric score. A topic
    * absent from this list is low priority; there is nothing else to say
    * about it, so low-priority topics carry no weight, rank or record of
@@ -261,7 +261,7 @@ export function cleanupActionFor(
 }
 
 /**
- * Whether IIL may identify this thread as a follow-up opportunity — THE ONE
+ * Whether Obligo may identify this thread as a follow-up opportunity — THE ONE
  * authoritative predicate; no page/component/selector re-derives any piece
  * of this itself.
  *
@@ -269,10 +269,10 @@ export function cleanupActionFor(
  *   1. Follow-ups is on (an instruction, not a display toggle — the same
  *      "off is off" contract `shouldGenerateDrafts` follows: everything
  *      below is still evaluated the same way underneath, so the setting
- *      never changes what "needs a follow-up" means, only whether IIL may
+ *      never changes what "needs a follow-up" means, only whether Obligo may
  *      say so).
  *   2. The thread's own workflow is still active — enforced by the CALLER
- *      (`mailStore.getFollowUpSuggestion` gates on `isIILEligible`, i.e.
+ *      (`mailStore.getFollowUpSuggestion` gates on `isObligoEligible`, i.e.
  *      `!completedAt`), not here: this file never imports mail/workflow
  *      state, so "is this thread done" isn't a fact it can ask on its own.
  *   3-4. The user's own message is the thread's last one, and nothing has
@@ -319,7 +319,7 @@ export function isFollowUpCandidate(
 }
 
 /**
- * Whether a thread meets the bar for IIL to archive it without asking.
+ * Whether a thread meets the bar for Obligo to archive it without asking.
  *
  * Deliberately NOT age/read-count based — those are not reliable signals
  * that a thread is actually done. The only signals used are canonical: the
@@ -336,7 +336,7 @@ export function isSafeToAutoArchive(
 }
 
 /**
- * Whether the user has told IIL that a topic matters more than the rest —
+ * Whether the user has told Obligo that a topic matters more than the rest —
  * simply membership in {@link AgentPreferences.highPriorityTopics}. A topic
  * not in that list is low priority, which means "don't raise this" and
  * never "push this down" — see {@link applyTopicPriority} for why that
@@ -462,7 +462,7 @@ export function sanitizePreferences(raw: unknown): AgentPreferences {
   // old three-state value ('never'|'suggest'|'automatic'). Migrate rather
   // than silently resetting an existing user's choice: 'never' -> 'off',
   // anything that previously surfaced or acted ('suggest'|'automatic') ->
-  // 'on', since both meant "IIL may identify follow-ups" under the old model.
+  // 'on', since both meant "Obligo may identify follow-ups" under the old model.
   const followUpMode = (value: unknown): FollowUpMode => {
     if (value === 'off' || value === 'on') return value;
     if (value === 'never') return 'off';

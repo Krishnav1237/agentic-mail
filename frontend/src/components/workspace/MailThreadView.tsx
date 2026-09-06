@@ -8,8 +8,8 @@
  * props rather than reimplementing the UI.
  *
  * What stays fixed here, for every caller: header (subject/sender/star/
- * close), the thread-history + current-message region, the IIL Insight
- * section (backed by the shared `IILInsight`), the Reply / IIL Suggested
+ * close), the thread-history + current-message region, the Obligo Insight
+ * section (backed by the shared `ObligoInsight`), the Reply / Obligo Suggested
  * Reply response area (backed by the shared `ReplyComposer`), and the
  * two-region flex layout that keeps the original email visible instead of
  * letting the composer push it off-screen. What callers can vary: which rows
@@ -18,7 +18,7 @@
  * actually happens on send/schedule, and the footer's actions.
  *
  * ONE READING ORDER, EVERYWHERE. Sender and subject, then the sender's own
- * message, then IIL's insight, then IIL's drafted reply, then the user's
+ * message, then Obligo's insight, then Obligo's drafted reply, then the user's
  * actions. Because Inbox/Actions/Approvals/Opportunities/Dashboard all open
  * through this one component, that order — and the rule that AI-authored text
  * never appears inside the message body — holds on every page by
@@ -60,7 +60,7 @@ import {
   attentionWeight,
   isTinted,
 } from './attention';
-import { IILDisclosure, IILInsight } from './IILInsight';
+import { ObligoDisclosure, ObligoInsight } from './ObligoInsight';
 import { createPortal } from 'react-dom';
 import { InteractiveRow } from './InteractiveRow';
 import {
@@ -306,7 +306,7 @@ export function SnoozeMenu({ onPick }: { onPick: (date: Date) => void }) {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         type="button"
-        className="iil-btn iil-btn--outline"
+        className="obligo-btn obligo-btn--outline"
         onClick={() => setOpen((o) => !o)}
       >
         <Clock size={13} strokeWidth={2} aria-hidden />
@@ -319,7 +319,7 @@ export function SnoozeMenu({ onPick }: { onPick: (date: Date) => void }) {
               ref={popoverRef}
               role="menu"
               aria-label="Snooze until"
-              className="iil-menu"
+              className="obligo-menu"
               style={{
                 margin: 0,
                 listStyle: 'none',
@@ -337,7 +337,7 @@ export function SnoozeMenu({ onPick }: { onPick: (date: Date) => void }) {
                   <button
                     type="button"
                     role="menuitem"
-                    className="iil-option"
+                    className="obligo-option"
                     style={{ width: '100%' }}
                     onClick={() => {
                       setOpen(false);
@@ -471,8 +471,8 @@ export function MailThreadView({
   //
   //   hasThread   is there a real message exchange to render, or does this
   //               fall back to the row's own one-line snippet?
-  //   insight     does IIL have something to tell the reader about this mail?
-  //   hasDraft    has IIL drafted a reply worth opening?
+  //   insight     does Obligo have something to tell the reader about this mail?
+  //   hasDraft    has Obligo drafted a reply worth opening?
   //
   // They're genuinely independent: a Sent/Scheduled reply has thread history
   // and no draft; a blocked Action has an insight and no draft; a one-line
@@ -485,7 +485,7 @@ export function MailThreadView({
   /**
    * The unsent reply already on file for this thread, if any.
    *
-   * A saved draft outranks both the blank manual composer and IIL's suggested
+   * A saved draft outranks both the blank manual composer and Obligo's suggested
    * one: it is the user's own work, and the whole point of saving it was to
    * come back to it. Read on every render so it is picked up when the thread
    * is reopened — which is the behaviour "Save as draft" always implied and
@@ -496,18 +496,18 @@ export function MailThreadView({
   /**
    * Which reply surface a caller asking for `defaultExpanded` lands on.
    *
-   * 'ai' can only render when IIL actually drafted something (see the
+   * 'ai' can only render when Obligo actually drafted something (see the
    * composer blocks below), so choosing it unconditionally meant "open
    * expanded" silently rendered NOTHING on any thread without an AI draft —
    * which is every thread the Drafts view opens. It also has to yield to a
    * saved draft: the user's own writing is what should be resumed, under its
-   * own "Reply" eyebrow, rather than presented back to them as IIL's
+   * own "Reply" eyebrow, rather than presented back to them as Obligo's
    * suggestion.
    */
   const expandedMode = () => (hasDraft && !savedDraft ? 'ai' : 'manual');
 
   // Single source of truth for which reply surface is active. 'idle' shows
-  // the compact Reply / IIL Suggested Reply controls; 'manual' and 'ai' each
+  // the compact Reply / Obligo Suggested Reply controls; 'manual' and 'ai' each
   // mount the *same* `ReplyComposer`, just with different starting content —
   // never two composer instances at once, never a composer hidden with CSS.
   const [replyMode, setReplyMode] = useState<'idle' | 'manual' | 'ai'>(() =>
@@ -555,7 +555,7 @@ export function MailThreadView({
   }, [openId]);
 
   // The conversation has to belong to the thread that's actually open. Where
-  // IIL was involved we have the real exchange; elsewhere the row's own
+  // Obligo was involved we have the real exchange; elsewhere the row's own
   // preview is the message, so the surface never shows someone else's mail.
   const messages =
     hasThread && threadDetail
@@ -651,7 +651,7 @@ export function MailThreadView({
 
   // Shared starting recipients for both the manual and AI composer — same
   // "who this thread is with" derivation either way, so switching between
-  // Reply and IIL Suggested Reply never changes who the draft is addressed
+  // Reply and Obligo Suggested Reply never changes who the draft is addressed
   // to. (`savedDraft`, which outranks both, is resolved further up — the
   // initial reply mode depends on it.)
   const replyTo = selected ? [selected.senderEmail ?? selected.sender] : [];
@@ -717,13 +717,13 @@ export function MailThreadView({
   return (
     <div style={{ display: 'flex', height: '100%' }}>
       {/* Compressed stream — hidden below the container-query breakpoint in
-          index.css (`.iil-thread-rail`), where the split no longer leaves
+          index.css (`.obligo-thread-rail`), where the split no longer leaves
           the reading pane a comfortable width; the message then takes the
           full canvas instead of squeezing next to a rail that has nowhere
           left to shrink. */}
       <aside
         aria-label={railLabel}
-        className="iil-thread-rail"
+        className="obligo-thread-rail"
         style={{
           width: 238,
           flex: 'none',
@@ -773,19 +773,19 @@ export function MailThreadView({
         </div>
       </aside>
 
-      {/* Reading surface — `.iil-thread-pane` carries the responsive padding
+      {/* Reading surface — `.obligo-thread-pane` carries the responsive padding
           (see index.css); once the rail hides, this fills the whole canvas
           rather than staying pinned to its split-view width. */}
       <div
-        className="iil-thread-pane"
+        className="obligo-thread-pane"
         style={{ flex: 1, minWidth: 0, position: 'relative' }}
       >
         {/* A thread of light carrying continuity from the rail to the
             surface — only makes sense when the rail is actually visible, so
-            it hides alongside it (`.iil-thread-rail-glow`). */}
+            it hides alongside it (`.obligo-thread-rail-glow`). */}
         <span
           aria-hidden
-          className="iil-thread-rail-glow"
+          className="obligo-thread-rail-glow"
           style={{
             position: 'absolute',
             left: 0,
@@ -845,7 +845,7 @@ export function MailThreadView({
             </h2>
             <button
               type="button"
-              className="iil-icon-btn"
+              className="obligo-icon-btn"
               aria-label="Close thread"
               onClick={onClose}
               style={{
@@ -878,7 +878,7 @@ export function MailThreadView({
                   the Approvals page was unreachable without scrolling a
                   region that gave no indication it scrolled.
                 · At tablet and phone heights, the email itself collapsed to
-                  its 96px floor — two lines, sometimes one — while the IIL
+                  its 96px floor — two lines, sometimes one — while the Obligo
                   insight beside it kept every pixel of its natural height,
                   because `flex: none` doesn't shrink and `0 1 auto` does. The
                   assistant's text outranking the sender's is the one thing
@@ -897,7 +897,7 @@ export function MailThreadView({
               overflowY: 'auto',
             }}
           >
-            {/* Message body — the received message(s) and nothing else. IIL's
+            {/* Message body — the received message(s) and nothing else. Obligo's
                 insight and its drafted reply live in their own sections
                 below, never inside this one, so the sender's words and the
                 assistant's can never read as one continuous message.
@@ -963,7 +963,7 @@ export function MailThreadView({
                 >
                   <button
                     type="button"
-                    className="iil-icon-btn"
+                    className="obligo-icon-btn"
                     aria-expanded={historyPreviewsVisible}
                     onClick={toggleHistoryPreviews}
                     style={{
@@ -1012,7 +1012,7 @@ export function MailThreadView({
                   {historyPreviewsVisible && history.length > 1 && (
                     <button
                       type="button"
-                      className="iil-icon-btn"
+                      className="obligo-icon-btn"
                       aria-pressed={allHistoryExpanded}
                       onClick={toggleAllHistory}
                       style={{
@@ -1128,7 +1128,7 @@ export function MailThreadView({
                             textAlign: 'left',
                             borderRadius: 6,
                           }}
-                          className="iil-thread-collapsed-row"
+                          className="obligo-thread-collapsed-row"
                         >
                           <span
                             style={{
@@ -1273,7 +1273,7 @@ export function MailThreadView({
                             Falls back to the abbreviated label only when no
                             real timestamp is on file. */}
                         <span
-                          className="iil-mono"
+                          className="obligo-mono"
                           style={{
                             font: '400 10px "JetBrains Mono", monospace',
                             color: 'var(--text-faint)',
@@ -1290,7 +1290,7 @@ export function MailThreadView({
                       {selected && (
                         <button
                           type="button"
-                          className="iil-stream-star"
+                          className="obligo-stream-star"
                           aria-label={
                             selected.starred
                               ? `Unstar ${selected.subject}`
@@ -1326,7 +1326,7 @@ export function MailThreadView({
               )}
             </div>
 
-            {/* IIL INSIGHT — what IIL inferred about this mail, in full.
+            {/* Obligo INSIGHT — what Obligo inferred about this mail, in full.
                 Positioned exactly here on purpose: after everything the
                 sender actually wrote (the region above, which it is
                 deliberately NOT inside — the insight is never part of the
@@ -1355,7 +1355,7 @@ export function MailThreadView({
                 note for why that distinction mattered. */}
             {insight && (
               <div style={{ flex: 'none', marginTop: 16 }}>
-                <IILInsight key={`insight-${openId}`} insight={insight} />
+                <ObligoInsight key={`insight-${openId}`} insight={insight} />
               </div>
             )}
 
@@ -1364,7 +1364,7 @@ export function MailThreadView({
                 Two things want to be true at once here, and they pull in
                 opposite directions: the insight has to sit directly under the
                 email it's about (not floating at the far end of a wall of
-                blank space), and the idle Reply / IIL Suggested Reply
+                blank space), and the idle Reply / Obligo Suggested Reply
                 controls have to stay pinned to the bottom of the reading
                 pane, where they've always been. Without an insight, the
                 message region's own `flex-grow: 1` does both jobs at once —
@@ -1389,7 +1389,7 @@ export function MailThreadView({
             {/* Response area — one coherent slot, one mode at a time
                 (`replyMode`). Idle shows compact entry points only, so the
                 received message is never sharing space with a permanently
-                expanded draft. Reply and IIL Suggested Reply both mount the
+                expanded draft. Reply and Obligo Suggested Reply both mount the
                 *same* `ReplyComposer`, just seeded differently — never two
                 composer instances at once.
 
@@ -1421,8 +1421,8 @@ export function MailThreadView({
                     }}
                   >
                     {/* Compact entry point for the AI draft — the same
-                        `IILDisclosure` control the insight collapses into, so
-                        the two IIL elements are visibly one family.
+                        `ObligoDisclosure` control the insight collapses into, so
+                        the two Obligo elements are visibly one family.
 
                         Its preview is the DRAFT'S OWN opening line, not the
                         insight. It used to be the insight, which is how the
@@ -1432,7 +1432,7 @@ export function MailThreadView({
                         draft's own first words are the honest description of
                         what opening this reveals.
 
-                        IT COMES FIRST. IIL's suggestion is the path this
+                        IT COMES FIRST. Obligo's suggestion is the path this
                         product is arguing for, so it takes the leading
                         position and "Reply yourself" sits beside it as the
                         alternative — which is also what that label now says
@@ -1441,7 +1441,7 @@ export function MailThreadView({
                     {hasDraft && threadDetail && (
                       // The panel fills this wrapper; the wrapper decides how
                       // much of the row the panel gets. Splitting it that way
-                      // keeps `IILDisclosure` ignorant of the one row it
+                      // keeps `ObligoDisclosure` ignorant of the one row it
                       // happens to share with a button — the insight above
                       // renders the same component with no wrapper at all.
                       //
@@ -1454,14 +1454,14 @@ export function MailThreadView({
                       // what a bare `minWidth: 0` would have allowed on a
                       // phone. Nothing here fixes the panel's rendered width.
                       <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-                        <IILDisclosure
-                          label="IIL Suggested Reply"
+                        <ObligoDisclosure
+                          label="Obligo Suggested Reply"
                           preview={truncatePreview(
                             threadDetail.draftPreview,
                             70
                           )}
                           expanded={false}
-                          ariaLabel="Open IIL suggested reply"
+                          ariaLabel="Open Obligo suggested reply"
                           onToggle={() => setReplyMode('ai')}
                         />
                       </div>
@@ -1478,13 +1478,13 @@ export function MailThreadView({
                         The label itself is conditional on `hasDraft`, the
                         same flag that gates the disclosure beside it.
                         "Reply yourself" only makes sense as a CONTRAST to
-                        IIL's own suggestion — with no draft to contrast
+                        Obligo's own suggestion — with no draft to contrast
                         against, there's nothing to be the alternative to, so
                         the button reverts to the plain, un-contrasted
                         "Reply" a mail with no suggestion actually needs. */}
                     <button
                       type="button"
-                      className="iil-btn iil-btn--outline"
+                      className="obligo-btn obligo-btn--outline"
                       style={{ flex: 'none' }}
                       onClick={() => setReplyMode('manual')}
                     >
@@ -1495,7 +1495,7 @@ export function MailThreadView({
                 )}
 
                 {/* Manual reply — a genuine blank composer, never seeded
-                    from the AI draft, so ignoring IIL entirely is a real
+                    from the AI draft, so ignoring Obligo entirely is a real
                     path, not just a hidden one. */}
                 {activeReplyMode === 'manual' && (
                   <ReplyComposer
@@ -1520,7 +1520,7 @@ export function MailThreadView({
                 {activeReplyMode === 'ai' && threadDetail && (
                   <ReplyComposer
                     key={`ai-${openId}`}
-                    eyebrow="IIL suggested reply"
+                    eyebrow="Obligo suggested reply"
                     sendLabel={sendLabel}
                     initialDraft={
                       savedDraft
@@ -1576,7 +1576,7 @@ export function MailThreadView({
                   <span />
                   <button
                     type="button"
-                    className="iil-btn iil-btn--outline"
+                    className="obligo-btn obligo-btn--outline"
                     onClick={() => {
                       if (!selected) return;
                       mailActions.restoreToInbox(selected.id);
@@ -1591,7 +1591,7 @@ export function MailThreadView({
                 <>
                   <button
                     type="button"
-                    className="iil-btn iil-btn--danger"
+                    className="obligo-btn obligo-btn--danger"
                     onClick={() => {
                       if (!selected) return;
                       mailActions.trash(selected.id);
@@ -1611,7 +1611,7 @@ export function MailThreadView({
                   >
                     <button
                       type="button"
-                      className="iil-btn iil-btn--outline"
+                      className="obligo-btn obligo-btn--outline"
                       onClick={() => {
                         if (!selected) return;
                         mailActions.archive(selected.id);
@@ -1626,7 +1626,7 @@ export function MailThreadView({
                     </button>
                     <button
                       type="button"
-                      className="iil-btn iil-btn--outline"
+                      className="obligo-btn obligo-btn--outline"
                       onClick={() => {
                         if (!selected) return;
                         onMarkUnread(selected.id);
@@ -1642,7 +1642,7 @@ export function MailThreadView({
                         domain-specific completion buttons (Mark done /
                         Approve & send /  Reject / Pass), which each supply
                         their own `footer` and never reach this default bar
-                        at all. Sometimes IIL can't tell a thread is finished,
+                        at all. Sometimes Obligo can't tell a thread is finished,
                         but the person reading it can; this is that signal,
                         in the same outline-button language as every other
                         action here rather than a new kind of control. Hidden
@@ -1651,7 +1651,7 @@ export function MailThreadView({
                     {!selected.completedAt && (
                       <button
                         type="button"
-                        className="iil-btn iil-btn--outline"
+                        className="obligo-btn obligo-btn--outline"
                         onClick={() => {
                           mailActions.complete(selected.id);
                           onClose();
@@ -1677,7 +1677,7 @@ export function MailThreadView({
                     {!alreadyRepliedByMe && (
                       <button
                         type="button"
-                        className="iil-btn iil-btn--outline"
+                        className="obligo-btn obligo-btn--outline"
                         onClick={() => {
                           if (!selected) return;
                           mailActions.markSpam(selected.id);

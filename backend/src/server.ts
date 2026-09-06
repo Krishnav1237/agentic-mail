@@ -2,13 +2,13 @@ import { app } from './app.js';
 import { env } from './config/env.js';
 
 const server = app.listen(env.PORT, () => {
-  console.log(`[IIL Backend] Server running on http://localhost:${env.PORT} (${env.NODE_ENV})`);
+  console.log(`[Obligo Backend] Server running on http://localhost:${env.PORT} (${env.NODE_ENV})`);
 });
 
 const gracefulShutdown = (signal: string) => {
-  console.log(`[IIL Backend] ${signal} received. Closing HTTP server...`);
+  console.log(`[Obligo Backend] ${signal} received. Closing HTTP server...`);
   server.close(() => {
-    console.log('[IIL Backend] HTTP server closed.');
+    console.log('[Obligo Backend] HTTP server closed.');
     process.exit(0);
   });
 };

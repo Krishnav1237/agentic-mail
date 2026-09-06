@@ -20,7 +20,7 @@ export * from './controls';
 export * from './feedback';
 export * from './primitives';
 export * from './ReplyComposer';
-export * from './IILInsight';
+export * from './ObligoInsight';
 export * from './MailThreadView';
 export * from './Avatar';
 export * from './AccountMenu';

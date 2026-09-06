@@ -1,11 +1,11 @@
-# IIL Frontend Implementation Reference
+# Obligo Frontend Implementation Reference
 Version 1.0
 
 ---
 
 # Purpose
 
-This document records the implementation details that define the current IIL frontend.
+This document records the implementation details that define the current Obligo frontend.
 
 Unlike the Design Constitution and the Frontend Architecture & Engineering Constitution, this document contains no product philosophy.
 
@@ -188,7 +188,7 @@ The workspace requires precise control over gold accents, paper colors and surfa
 | Class | Purpose |
 |---------|---------|
 | .light | Enables Light Mode |
-| .iil-workspace | Opts workspace out of inversion |
+| .obligo-workspace | Opts workspace out of inversion |
 
 ---
 
@@ -339,7 +339,7 @@ This layer exists independently of page content.
 
 # Part I Summary
 
-This section defines the immutable foundation of the IIL frontend.
+This section defines the immutable foundation of the Obligo frontend.
 
 Everything above should be considered implementation constants.
 
@@ -363,7 +363,7 @@ PageRail is the primary content container used throughout the Landing Page.
 
 It establishes the maximum readable width, horizontal padding and alignment rhythm that future workspace pages inherit.
 
-PageRail is considered the canonical content container for IIL.
+PageRail is considered the canonical content container for Obligo.
 
 Source:
 Landing.tsx :contentReference[oaicite:0]{index=0}
@@ -832,7 +832,7 @@ Landing.tsx
 
 # Part II Summary
 
-This section establishes the measurable interaction language of IIL.
+This section establishes the measurable interaction language of Obligo.
 
 Future implementations should inherit:
 
@@ -858,7 +858,7 @@ This section documents the reusable workspace systems introduced by `AppShell`.
 
 Unlike the Landing Page, which is responsible for storytelling, the Workspace is responsible for productivity.
 
-Every page inside IIL should inherit these systems rather than recreating them.
+Every page inside Obligo should inherit these systems rather than recreating them.
 
 Source:
 AppShell.tsx :contentReference[oaicite:0]{index=0}
@@ -892,11 +892,11 @@ They render inside it.
 ## Hierarchy
 
 ```text
-iil-root
+obligo-root
 
-├── iil-grain
+├── obligo-grain
 
-├── iil-glow
+├── obligo-glow
 
 ├── Topbar
 
@@ -980,7 +980,7 @@ Logo
 
 ↓
 
-IIL
+Obligo
 
 ↓
 
@@ -988,7 +988,7 @@ Divider
 
 ↓
 
-INBOX INTELLIGENCE LAYER
+OBLIGO
 ```
 
 Desktop
@@ -1203,7 +1203,7 @@ AppShell.tsx
 Below the six primary items, a Quick Access group renders the mail-management
 views (Starred, Snoozed, Drafts, Scheduled, Sent, Archive, Trash, Spam) the
 user has pinned from Settings — see §18a below. It shares this navigation's
-visual language (same `.iil-nav-item`, same active-pill mechanics) but is a
+visual language (same `.obligo-nav-item`, same active-pill mechanics) but is a
 distinct, user-configurable list, not part of the fixed six.
 
 ---
@@ -1386,7 +1386,7 @@ consume this one token; none hand-derives its own copy of the shorthand.
 
 A SECOND, LARGER TREATMENT EXISTS AND IS NOT THE SHIPPED PATTERN. The
 `PageHeader` component (`components/workspace/WorkspacePage.tsx`) and the
-`.iil-title`/`.iil-title--accent` classes render the Landing-derived
+`.obligo-title`/`.obligo-title--accent` classes render the Landing-derived
 `clamp(30px, 4.2vw, 44px)` gradient-fill heading. Nothing in the shipped
 navigation uses it — its only consumer is `Foundation.tsx`, the permanent
 dev-only style guide (§48), where it remains as a visible reference for the
@@ -1542,7 +1542,7 @@ Every future page should extend these systems rather than introducing competing 
 
 # Shared Motion, Theme & Brand Identity Reference
 
-This section documents the reusable interaction vocabulary and identity systems that define IIL.
+This section documents the reusable interaction vocabulary and identity systems that define Obligo.
 
 Unlike components, these systems should feel invisible to users.
 
@@ -1725,7 +1725,7 @@ Users should perceive structure rather than animation.
 
 # 32. Hover Language
 
-The hover language throughout IIL follows one consistent philosophy.
+The hover language throughout Obligo follows one consistent philosophy.
 
 Characteristics
 
@@ -1927,11 +1927,11 @@ Logo
 
 ↓
 
-IIL
+Obligo
 
 ↓
 
-Inbox Intelligence Layer
+Obligo
 
 This structure should remain consistent throughout the application.
 
@@ -2057,7 +2057,7 @@ Users should immediately recognize every page as belonging to the same product.
 
 ---
 
-The Landing Page establishes the interaction vocabulary of IIL.
+The Landing Page establishes the interaction vocabulary of Obligo.
 
 The Workspace inherits and adapts it.
 
@@ -2069,7 +2069,7 @@ Instead, they should extend the shared identity already established by the exist
 
 # Component Inventory & Implementation Notes
 
-This section documents the reusable frontend systems that currently exist within the IIL codebase.
+This section documents the reusable frontend systems that currently exist within the Obligo codebase.
 
 Unlike previous sections, this chapter serves as an inventory.
 
@@ -2122,7 +2122,7 @@ Current inventory:
 | Component | Status | Responsibility |
 |-----------|--------|----------------|
 | AppShell | Stable | Global workspace shell |
-| PageRail (`.iil-page`/`--rail-max`) | Stable | Maximum readable width |
+| PageRail (`.obligo-page`/`--rail-max`) | Stable | Maximum readable width |
 | Canvas | Stable | Workspace content area |
 | Sidebar | Stable | Navigation + Quick Access (§18a) |
 | Topbar | Stable | Global controls |
@@ -2220,7 +2220,7 @@ Current surface inventory:
 
 | Surface | Purpose |
 |----------|---------|
-| Glass Panel (`Panel`, `.iil-panel`) | Primary content |
+| Glass Panel (`Panel`, `.obligo-panel`) | Primary content |
 | Floating Shell | Workspace frame |
 | Table Surface | Configuration (Settings) |
 | Overlay Surface | Temporary interaction (menus, popovers, dialogs) |
@@ -2290,7 +2290,7 @@ Current motion systems include:
 | Theme Transition | Stable |
 | `--dur-micro`/`--ease` CSS tokens | Stable — restate `motion.ts`'s `DURATION.micro`/`EASE` for CSS-driven transitions (Engineering Constitution §48) |
 
-These systems establish the official animation vocabulary of IIL.
+These systems establish the official animation vocabulary of Obligo.
 
 ---
 
@@ -2449,13 +2449,13 @@ the implementation becomes the authoritative source until the reference is corre
 
 # Closing Statement
 
-The Design Constitution defines the philosophy of IIL.
+The Design Constitution defines the philosophy of Obligo.
 
 The Frontend Architecture & Engineering Constitution defines how that philosophy is engineered.
 
 The Frontend Implementation Reference documents the concrete implementation that exists today.
 
-Together, these three documents form the complete frontend specification for IIL.
+Together, these three documents form the complete frontend specification for Obligo.
 
 Any future contributor, whether human or AI, should be able to understand, extend and maintain the product without relying on historical conversations or undocumented assumptions.
 

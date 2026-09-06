@@ -1,5 +1,5 @@
 # User Interview Discovery Guide
-*IIL Validation Program — Stage 4*
+*Obligo Validation Program — Stage 4*
 *Qualitative interview protocol and question framework for cohort participants.*
 
 ---

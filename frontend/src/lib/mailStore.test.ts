@@ -166,14 +166,14 @@ describe('cross-page integrity', () => {
     }
   });
 
-  it('never puts IIL-authored text into a message body', () => {
+  it('never puts Obligo-authored text into a message body', () => {
     // The insight and the drafted reply each have their own field; the
     // message body is only ever what the sender wrote.
     for (const o of opportunities.items) {
       const detail = store.mailActions.getThreadDetail(o.id)!;
-      // A completed (passed) opportunity is IIL-ineligible (see
-      // `isIILEligible`) — its insight is withheld, same as any other
-      // finished thread's, rather than still showing IIL's take on an
+      // A completed (passed) opportunity is Obligo-ineligible (see
+      // `isObligoEligible`) — its insight is withheld, same as any other
+      // finished thread's, rather than still showing Obligo's take on an
       // opportunity nobody is pursuing any more.
       expect(detail.insight).toBe(o.completedAt ? '' : o.why);
       expect(toBodyContent(detail.messages[0].body).text).not.toContain(o.why);
@@ -236,7 +236,7 @@ describe('reactivate — a completed thread leaving its terminal state', () => {
     expect(reactivated.attention).toEqual(originalAttention);
   });
 
-  it('makes a completed thread IIL-ineligible, and restores eligibility on reactivate', () => {
+  it('makes a completed thread Obligo-ineligible, and restores eligibility on reactivate', () => {
     const withInsight = approvals.items.find((a) => !a.completedAt)!;
     const original = store.mailActions.getThreadDetail(withInsight.id)!;
     expect(original.insight.length).toBeGreaterThan(0);

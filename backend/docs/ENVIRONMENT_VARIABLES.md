@@ -1,5 +1,5 @@
 # Environment Variables & Configuration Reference
-*Inbox Intelligence Layer (IIL) Backend*
+*Obligo Backend*
 
 ---
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview & Validation Rules
 
-Environment configuration for the IIL backend is defined and validated in [`src/config/env.ts`](../src/config/env.ts) using **Zod**. If any environment variable fails parsing or validation, the backend prints detailed diagnostic issues and terminates immediately with exit code `1`.
+Environment configuration for the Obligo backend is defined and validated in [`src/config/env.ts`](../src/config/env.ts) using **Zod**. If any environment variable fails parsing or validation, the backend prints detailed diagnostic issues and terminates immediately with exit code `1`.
 
 In **production mode** (`NODE_ENV=production`), strict safety checks enforce that default development keys (`AUTH_JWT_SECRET`, `TOKEN_ENC_KEY`), `EMAIL_SCORING_MODE=active`, and disabled proxy settings (`TRUST_PROXY=0`) cause an immediate startup failure.
 
@@ -26,8 +26,8 @@ In **production mode** (`NODE_ENV=production`), strict safety checks enforce tha
 | `REDIS_URL` | Local Redis | Required | Redis 7 connection URL for queues, cache, workers. |
 | `TRUST_PROXY` | `'0'` | Required (`1`) | Express `trust proxy` setting (`0` disabled in dev; set `1` in prod). |
 | `AUTH_JWT_SECRET` | Dev secret | Required ($\ge 32$ chars) | HMAC-SHA256 key for signing JWTs. Must NOT use dev default in prod. |
-| `AUTH_JWT_ISSUER` | `iil-api` | Required | Standard `iss` claim in session JWTs. |
-| `AUTH_JWT_AUDIENCE` | `iil-app` | Required | Standard `aud` claim in session JWTs. |
+| `AUTH_JWT_ISSUER` | `obligo-api` | Required | Standard `iss` claim in session JWTs. |
+| `AUTH_JWT_AUDIENCE` | `obligo-app` | Required | Standard `aud` claim in session JWTs. |
 | `TOKEN_ENC_KEY` | Dev base64 key | Required (Base64 32 bytes) | Base64-encoded key for AES-256-GCM token encryption at rest. |
 | `GOOGLE_CLIENT_ID` | `""` | Required | Google Cloud OAuth 2.0 Web Client ID. |
 | `GOOGLE_CLIENT_SECRET` | `""` | Required | Google Cloud OAuth 2.0 Web Client Secret. |

@@ -76,7 +76,7 @@ export function AttachmentList({ attachments }: { attachments?: StoredAttachment
               {a.name}
             </span>
             <span
-              className="iil-mono"
+              className="obligo-mono"
               style={{ font: '400 9.5px "JetBrains Mono", monospace', color: 'var(--text-faint)' }}
             >
               {formatAttachmentSize(a.size)}
