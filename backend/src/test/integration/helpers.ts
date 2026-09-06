@@ -17,6 +17,9 @@ export async function applyMigrationsClean() {
     '005_runtime_integrity_fixes.sql',
     '006_validation_program.sql',
     '007_validation_scoring_integrity.sql',
+    '008_obligo_rebrand.sql',
+    '009_frontend_alignment.sql',
+    '010_emails_status_constraint.sql',
   ];
 
   // Drop schema public

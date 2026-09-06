@@ -107,9 +107,20 @@ emailsRouter.get('/', authenticateJwt, async (req: AuthenticatedRequest, res: Re
       whereClause += ` AND classification = $${params.length}`;
     }
 
-    const countParams = [params[0], ...params.slice(3)];
+    const countParams: (string | number)[] = [userId];
+    let countWhereClause = 'WHERE user_id = $1 AND is_deleted = FALSE';
+
+    if (status) {
+      countParams.push(status);
+      countWhereClause += ` AND status = $${countParams.length}`;
+    }
+    if (classification) {
+      countParams.push(classification);
+      countWhereClause += ` AND classification = $${countParams.length}`;
+    }
+
     const countRes = await query(
-      `SELECT COUNT(*)::int AS total FROM emails ${whereClause.replace('$2', '$2').replace('$3', '$3')}`,
+      `SELECT COUNT(*)::int AS total FROM emails ${countWhereClause}`,
       countParams
     );
     const total: number = countRes.rows[0]?.total ?? 0;

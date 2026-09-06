@@ -158,4 +158,37 @@ export async function runMigrationsTest() {
   }
 
   console.log('        Passed: Migration 006 -> 007 data-integrity upgrade & idempotency verified.');
+
+  // 7. Test emails.status CHECK constraint (migration 010) — consistency with
+  // actions.status / opportunities.status, which are already constrained.
+  console.log('    1.7 Testing chk_emails_status CHECK constraint (rejects invalid, accepts real values)...');
+  await query('DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;');
+  await applyMigrationsClean();
+
+  const statusUserRes = await query(`INSERT INTO users (email) VALUES ('emails_status_test@example.com') RETURNING id`);
+  const statusUserId = statusUserRes.rows[0].id;
+
+  let rejectedInvalidStatus = false;
+  try {
+    await query(
+      `INSERT INTO emails (user_id, google_message_id, status) VALUES ($1, 'msg_bad_status', 'archived')`,
+      [statusUserId]
+    );
+  } catch (err: any) {
+    if (err.code === '23514') rejectedInvalidStatus = true;
+  }
+  if (!rejectedInvalidStatus) {
+    throw new Error('FAILED: chk_emails_status did not reject an invalid status value ("archived")');
+  }
+
+  for (const validStatus of ['unread', 'read', 'deleted']) {
+    const res = await query(
+      `INSERT INTO emails (user_id, google_message_id, status) VALUES ($1, $2, $3) RETURNING status`,
+      [statusUserId, `msg_status_${validStatus}`, validStatus]
+    );
+    if (res.rows[0].status !== validStatus) {
+      throw new Error(`FAILED: chk_emails_status rejected valid status "${validStatus}"`);
+    }
+  }
+  console.log('        Passed: chk_emails_status rejects invalid values and accepts unread/read/deleted.');
 }

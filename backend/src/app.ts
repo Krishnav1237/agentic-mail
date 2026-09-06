@@ -8,6 +8,7 @@ import { checkDatabaseHealth } from './db/index.js';
 import { checkRedisHealth } from './redis/index.js';
 import { authRouter } from './routes/auth.js';
 import { emailsRouter } from './routes/emails.js';
+import { threadsRouter } from './routes/threads.js';
 import { syncRouter } from './routes/sync.js';
 import { validationRouter } from './routes/validation.js';
 import { AppError, ErrorCode } from './errors/AppError.js';
@@ -88,6 +89,7 @@ export function createApp() {
   // ─── Application routes ───────────────────────────────────────────────────────
   app.use('/auth', authRouter);
   app.use('/emails', emailsRouter);
+  app.use('/threads', threadsRouter);
   app.use('/sync', syncRouter);
   // Internal validation tooling — requires X-Validation-Token header.
   // NOT customer-facing. NOT Phase 5 product APIs.

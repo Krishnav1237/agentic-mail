@@ -166,6 +166,29 @@ export async function runHttpRoutesTest() {
   }
   console.log('        Passed: GET /emails returns plain text body only; raw HTML not exposed.');
 
+  // 6b. GET /emails with status/classification filters — count query placeholder regression
+  console.log('    7.6b Testing GET /emails?status=... and ?classification=... (count query placeholder bug)...');
+  await query(`UPDATE emails SET status = 'read', classification = 'newsletter' WHERE id = $1`, [htmlEmail.id]);
+
+  const statusFilterRes = await request(app, 'GET', '/emails?status=read', { authorization: `Bearer ${userToken}` });
+  if (statusFilterRes.status !== 200) throw new Error(`FAILED: GET /emails?status=read threw (status ${statusFilterRes.status})`);
+  if (typeof statusFilterRes.body.total !== 'number' || statusFilterRes.body.total < 1) {
+    throw new Error('FAILED: GET /emails?status=read returned an incorrect total');
+  }
+  if (!statusFilterRes.body.emails.every((e: any) => e.status === 'read')) {
+    throw new Error('FAILED: GET /emails?status=read returned emails with the wrong status');
+  }
+
+  const classificationFilterRes = await request(app, 'GET', '/emails?classification=newsletter', { authorization: `Bearer ${userToken}` });
+  if (classificationFilterRes.status !== 200) throw new Error(`FAILED: GET /emails?classification=newsletter threw (status ${classificationFilterRes.status})`);
+  if (typeof classificationFilterRes.body.total !== 'number' || classificationFilterRes.body.total < 1) {
+    throw new Error('FAILED: GET /emails?classification=newsletter returned an incorrect total');
+  }
+  if (!classificationFilterRes.body.emails.every((e: any) => e.classification === 'newsletter')) {
+    throw new Error('FAILED: GET /emails?classification=newsletter returned emails with the wrong classification');
+  }
+  console.log('        Passed: GET /emails filters by status/classification without a placeholder mismatch.');
+
   // 7. GET /emails/:id/intelligence & POST /emails/:id/extract
   console.log('    7.7 Testing /emails/:id/extract and /emails/:id/intelligence...');
   const extractRes = await request(app, 'POST', `/emails/${htmlEmail.id}/extract`, { authorization: `Bearer ${userToken}` });
@@ -180,6 +203,49 @@ export async function runHttpRoutesTest() {
     throw new Error('FAILED: User B accessed User A email intelligence!');
   }
   console.log('        Passed: User-scoped ownership enforced on /emails/:id/intelligence.');
+
+  // 7b. GET /threads — one row per thread, not one row per flat message
+  console.log('    7.7b Testing GET /threads returns one thread row with the correct message_count...');
+  const threadRes = await query(
+    `INSERT INTO email_threads (user_id, google_thread_id, message_count, last_message_at)
+     VALUES ($1, 'gthread_1', 2, NOW())
+     RETURNING id`,
+    [user.id]
+  );
+  const threadDbId = threadRes.rows[0].id;
+
+  await query(
+    `INSERT INTO emails (user_id, google_message_id, google_thread_id, thread_id, sender_email, sender_name, subject, body_text, received_at, status)
+     VALUES ($1, 'thread_msg_1', 'gthread_1', $2, 'sender@example.com', 'Sender', 'Thread subject', 'First message body', NOW() - interval '1 hour', 'read')`,
+    [user.id, threadDbId]
+  );
+  await query(
+    `INSERT INTO emails (user_id, google_message_id, google_thread_id, thread_id, sender_email, sender_name, subject, body_text, received_at, status)
+     VALUES ($1, 'thread_msg_2', 'gthread_1', $2, 'sender@example.com', 'Sender', 'Thread subject', 'Second, most recent message body', NOW(), 'unread')`,
+    [user.id, threadDbId]
+  );
+
+  const threadsListRes = await request(app, 'GET', '/threads', { authorization: `Bearer ${userToken}` });
+  if (threadsListRes.status !== 200 || !Array.isArray(threadsListRes.body.threads)) {
+    throw new Error('FAILED: GET /threads');
+  }
+
+  const fetchedThread = threadsListRes.body.threads.find((t: any) => t.id === threadDbId);
+  if (!fetchedThread) throw new Error('FAILED: Seeded thread not returned by GET /threads');
+  if (fetchedThread.message_count !== 2) {
+    throw new Error(`FAILED: Expected message_count=2, got ${fetchedThread.message_count}`);
+  }
+  if (fetchedThread.subject !== 'Thread subject') {
+    throw new Error('FAILED: GET /threads did not return the most recent message subject');
+  }
+  if (typeof fetchedThread.snippet !== 'string' || !fetchedThread.snippet.includes('Second, most recent')) {
+    throw new Error('FAILED: GET /threads did not join to the thread\'s most recent message');
+  }
+  const threadRowCount = threadsListRes.body.threads.filter((t: any) => t.id === threadDbId).length;
+  if (threadRowCount !== 1) {
+    throw new Error(`FAILED: Expected exactly one row for the thread, got ${threadRowCount} (flat messages leaking through)`);
+  }
+  console.log('        Passed: GET /threads groups messages into one row per thread with the correct message_count.');
 
   // 8. Auth Conflict & CSRF Tests
   console.log('    7.8 Testing Auth Conflict (401) & CSRF requirements (403)...');

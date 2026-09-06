@@ -12,8 +12,14 @@ const PROTECTED_ACTION_STATUSES = new Set([
   'completed', 'archived', 'cancelled', 'snoozed',
 ]);
 
+// Everything except 'new' — the frontend only re-derives a fresh surfacing
+// while an opportunity is still in its default 'new' state (workflowStore's
+// setOpportunityLifecycle treats 'saved'/'pursuing' as still-active-but-
+// deliberate, and 'passed' as terminal); all three are states the user
+// (or the frontend on their behalf) has moved the record out of 'new', so
+// none of them should be silently overwritten by a re-extraction.
 const PROTECTED_OPPORTUNITY_STATUSES = new Set([
-  'saved', 'applied', 'dismissed',
+  'saved', 'pursuing', 'passed',
 ]);
 
 export const makeMaterializedEntityKey = (params: {
@@ -288,12 +294,12 @@ export class IntelligenceService {
                  user_id, email_id, idempotency_key, title, company_or_source, description,
                  opportunity_type, status, is_gold, gold_reason, source_context
                )
-               VALUES ($1, $2, $3, $4, $5, $6, $7, 'surfaced', $8, $9, $10)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', $8, $9, $10)
                ON CONFLICT (idempotency_key) DO UPDATE SET
                  is_gold     = EXCLUDED.is_gold,
                  gold_reason = EXCLUDED.gold_reason,
                  updated_at  = NOW()
-               WHERE opportunities.status NOT IN ('saved', 'applied', 'dismissed')`,
+               WHERE opportunities.status NOT IN ('saved', 'pursuing', 'passed')`,
               [
                 userId,
                 emailId,
