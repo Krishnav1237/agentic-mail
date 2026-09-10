@@ -30,10 +30,14 @@ const envSchema = z.object({
 
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL').default('http://localhost:5173'),
 
+  // Defaults to what docker-compose.yml publishes, so a fresh clone works with
+  // `docker compose up` and no .env at all. Must stay in sync with both
+  // docker-compose.yml and .env.example — the same database described in three
+  // places.
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL is required')
-    .default('postgres://HP@localhost:5432/obligo_test'),
+    .default('postgres://postgres:postgres@localhost:5434/inbox_intel'),
 
   REDIS_URL: z
     .string()
@@ -101,6 +105,30 @@ const envSchema = z.object({
     .transform((v) => parseInt(v, 10))
     .refine((n) => n >= 1000 && n <= 120000, 'AI_REQUEST_TIMEOUT_MS must be 1000–120000'),
 
+  // ─── Telegram integration ────────────────────────────────────────────────
+  // All three are optional-with-empty-default so a dev environment without a
+  // bot still boots. When unset, /integrations/telegram's connect and test
+  // routes return TELEGRAM_NOT_CONFIGURED rather than failing obscurely, and
+  // GET/PUT (preferences only) keep working — see routes/integrations.ts.
+  // NEVER log TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET.
+  TELEGRAM_BOT_TOKEN: z.string().optional().default(''),
+
+  // The bot's @username, without the leading '@'. Used only to build the
+  // t.me deep link handed to the client by POST /integrations/telegram/connect.
+  TELEGRAM_BOT_USERNAME: z.string().optional().default(''),
+
+  // Shared secret Telegram echoes back in X-Telegram-Bot-Api-Secret-Token on
+  // every webhook delivery. This is the webhook's ONLY authentication — it has
+  // no JWT session — so it must be long enough to be unguessable when set.
+  TELEGRAM_WEBHOOK_SECRET: z
+    .string()
+    .optional()
+    .default('')
+    .refine(
+      (v) => v === '' || v.length >= 32,
+      'TELEGRAM_WEBHOOK_SECRET must be at least 32 characters when set'
+    ),
+
   // ─── Validation infrastructure ───────────────────────────────────────────
   // Pre-shared secret for internal validation API endpoints.
   // Must be at least 32 characters. Disabled (empty) by default.
@@ -150,6 +178,15 @@ function parseEnv(): Env {
     }
     if (parsed.TRUST_PROXY === '0') {
       failures.push('TRUST_PROXY must be explicitly configured in production (e.g. TRUST_PROXY=1 for single-hop proxy topology)');
+    }
+    // A configured bot with an unauthenticated webhook is worse than no bot:
+    // the webhook is the one route with no JWT session, so the secret is its
+    // only gate. Either run the integration properly or leave it off.
+    if (parsed.TELEGRAM_BOT_TOKEN && !parsed.TELEGRAM_WEBHOOK_SECRET) {
+      failures.push('TELEGRAM_WEBHOOK_SECRET is required in production whenever TELEGRAM_BOT_TOKEN is set');
+    }
+    if (parsed.TELEGRAM_BOT_TOKEN && !parsed.TELEGRAM_BOT_USERNAME) {
+      failures.push('TELEGRAM_BOT_USERNAME is required in production whenever TELEGRAM_BOT_TOKEN is set');
     }
     if (failures.length > 0) {
       console.error('[Obligo] Production environment check failed:');

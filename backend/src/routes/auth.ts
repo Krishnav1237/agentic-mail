@@ -94,15 +94,33 @@ authRouter.get('/google/callback', authRateLimiter, async (req: Request, res: Re
 
     await client.query('BEGIN');
 
+    // Google's account picture, in the frontend's own ProfilePhoto shape. The
+    // `profile` scope is already in GMAIL_SCOPES, so this costs no additional
+    // consent — it is the reason GET /profile can serve a real avatar without
+    // any image storage existing (see routes/profile.ts).
+    const providerPhoto = userInfo.picture
+      ? JSON.stringify({ kind: 'provider', url: userInfo.picture })
+      : null;
+
     const userRes = await client.query(
-      `INSERT INTO users (email, full_name, google_sub)
-       VALUES ($1, $2, $3)
+      `INSERT INTO users (email, full_name, google_sub, profile_photo)
+       VALUES ($1, $2, $3, COALESCE($4::jsonb, '{"kind":"none"}'::jsonb))
        ON CONFLICT (email) DO UPDATE
-         SET full_name  = EXCLUDED.full_name,
-             google_sub = COALESCE(EXCLUDED.google_sub, users.google_sub),
-             updated_at = NOW()
+         SET full_name     = EXCLUDED.full_name,
+             google_sub    = COALESCE(EXCLUDED.google_sub, users.google_sub),
+             -- Refresh the Google picture only for a user who is still ON the
+             -- Google picture (its URLs rotate). A stored {kind:'none'} means
+             -- the user either never had one or explicitly removed it, and
+             -- re-adding it at the next login would silently undo that
+             -- removal — so this never writes over any other kind.
+             profile_photo = CASE
+                               WHEN $4::jsonb IS NULL THEN users.profile_photo
+                               WHEN users.profile_photo->>'kind' = 'provider' THEN $4::jsonb
+                               ELSE users.profile_photo
+                             END,
+             updated_at    = NOW()
        RETURNING id, email`,
-      [userInfo.email, userInfo.name || null, userInfo.id || null]
+      [userInfo.email, userInfo.name || null, userInfo.id || null, providerPhoto]
     );
     const user = userRes.rows[0];
 

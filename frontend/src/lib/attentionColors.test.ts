@@ -52,31 +52,86 @@ import { ALL_MAIL_VIEW_IDS } from './mailViews';
 type SettingsStore = typeof import('./settingsStore');
 
 let settings: SettingsStore;
-let storage: Map<string, string>;
 
-const STORAGE_KEY = 'obligo-agent-preferences';
+/**
+ * Captures what the store hands to the API, in order.
+ *
+ * These tests used to read the same assertions out of a `localStorage` stub,
+ * because that was the only persistence the store had. It now writes to
+ * `PUT /preferences` instead — the wire the "over the wire" assertions below
+ * were always really about — so the stub moved with it. `vi.hoisted` because
+ * `vi.mock`'s factory is hoisted above ordinary module scope.
+ */
+const api = vi.hoisted(() => ({ saved: [] as unknown[] }));
+
+vi.mock('./apiClient', () => ({
+  isBackendEnabled: () => true,
+  savePreferences: async (preferences: unknown) => {
+    api.saved.push(preferences);
+    return preferences;
+  },
+  /**
+   * The real queue debounces; this one holds exactly one pending value and
+   * sends it on an explicit `flush()`. Same observable contract — nothing
+   * reaches the network until the debounce elapses — without fake timers, and
+   * it keeps a test's emit counts free of the extra commit a resolved write
+   * would otherwise schedule.
+   */
+  createWriteQueue: (write: (value: unknown) => Promise<unknown>) => {
+    let pending: unknown;
+    let has = false;
+    return {
+      push: (value: unknown) => {
+        pending = value;
+        has = true;
+      },
+      flush: async () => {
+        if (!has) return;
+        has = false;
+        await write(pending);
+      },
+      cancel: () => {
+        has = false;
+      },
+    };
+  },
+}));
 
 beforeEach(async () => {
-  storage = new Map();
-  // Same stub `settingsIntegration.test.ts` uses, and for the same reason:
-  // the store guards on `typeof window === 'undefined'`, so without a
-  // `window` every persistence assertion below would pass vacuously.
+  api.saved.length = 0;
+  // `window` is still stubbed: `useQuickAccess` and the theme boot script read
+  // storage directly, and this file imports the module graph that reaches
+  // them. The preferences store itself no longer touches storage at all.
   vi.stubGlobal('window', {
     localStorage: {
-      getItem: (k: string) => storage.get(k) ?? null,
-      setItem: (k: string, v: string) => void storage.set(k, v),
-      removeItem: (k: string) => void storage.delete(k),
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
     },
   });
   vi.resetModules();
   settings = await import('./settingsStore');
+  // Stands in for a successful bootstrap. The store refuses to write until it
+  // has actually read the server's copy — otherwise a failed load could
+  // overwrite real preferences with defaults — so without this every write
+  // assertion below would pass vacuously against an empty queue.
+  settings.settingsActions.hydrate(DEFAULT_PREFERENCES);
 });
 
-/** Re-imports the store so it re-reads what the previous instance persisted —
- * the only way to distinguish "held in memory" from "survives a reload". */
-async function reload(): Promise<SettingsStore> {
+/** Re-imports the store, then restores it from what the previous instance
+ * actually sent — the round trip a real reload performs via `GET /preferences`,
+ * and the only way to distinguish "held in memory" from "durable". */
+async function reloadFrom(sent: unknown): Promise<SettingsStore> {
   vi.resetModules();
-  return import('./settingsStore');
+  const reloaded = await import('./settingsStore');
+  reloaded.settingsActions.hydrate(sent);
+  return reloaded;
+}
+
+/** The most recent payload the store sent, after forcing the debounce. */
+async function lastSent(store: SettingsStore = settings): Promise<AgentPreferences> {
+  await store.settingsActions.flush();
+  return api.saved[api.saved.length - 1] as AgentPreferences;
 }
 
 describe('the palettes themselves', () => {
@@ -282,12 +337,12 @@ describe('changing a colour', () => {
       urgencyColor: 'crimson',
       importanceColor: 'green',
     });
-    const written = JSON.parse(storage.get(STORAGE_KEY)!) as AgentPreferences;
+    const written = await lastSent();
     expect(written.urgencyColor).toBe('crimson');
     expect(written.importanceColor).toBe('green');
     // The backend contract must stay stable even if the palette is retuned,
     // so no rendered value may appear in the payload at all.
-    const payload = storage.get(STORAGE_KEY)!;
+    const payload = JSON.stringify(written);
     expect(payload).not.toMatch(/#[0-9a-f]{6}/i);
     expect(payload).not.toMatch(/rgba?\(/i);
   });
@@ -297,7 +352,7 @@ describe('changing a colour', () => {
       urgencyColor: 'amber',
       importanceColor: 'teal',
     });
-    const reloaded = await reload();
+    const reloaded = await reloadFrom(await lastSent());
     expect(reloaded.getAgentPreferences().urgencyColor).toBe('amber');
     expect(reloaded.getAgentPreferences().importanceColor).toBe('teal');
   });
@@ -484,11 +539,11 @@ describe('Quick Access collapse', () => {
     settings.settingsActions.update({ quickAccessCollapsed: true });
     expect(settings.getAgentPreferences().quickAccessCollapsed).toBe(true);
 
-    const reloaded = await reload();
+    const reloaded = await reloadFrom(await lastSent());
     expect(reloaded.getAgentPreferences().quickAccessCollapsed).toBe(true);
 
     reloaded.settingsActions.update({ quickAccessCollapsed: false });
-    const again = await reload();
+    const again = await reloadFrom(await lastSent(reloaded));
     expect(again.getAgentPreferences().quickAccessCollapsed).toBe(false);
   });
 
@@ -505,10 +560,7 @@ describe('Quick Access collapse', () => {
     // the assertion below on its own values is what keeps this test honest
     // about STILL catching a real Quick Access leak.
     settings.settingsActions.update({ quickAccessCollapsed: true });
-    const written = JSON.parse(storage.get(STORAGE_KEY)!) as Record<
-      string,
-      unknown
-    >;
+    const written = (await lastSent()) as unknown as Record<string, unknown>;
     expect(written.quickAccessCollapsed).toBe(true);
     const arrayFields = Object.entries(written).filter(
       ([k, v]) => k !== 'highPriorityTopics' && Array.isArray(v)

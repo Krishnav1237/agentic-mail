@@ -8,7 +8,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: inbox_intel
     ports:
-      - '5433:5432'
+      # Host 5434, not 5433: 5433 is commonly claimed by a natively-installed
+      # PostgreSQL service on developer machines, and a collision there stops
+      # this whole stack from coming up.
+      - '5434:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
   redis:

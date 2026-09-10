@@ -7,9 +7,10 @@
  * page was correct, labelled correctly, and connected to nothing.
  *
  * Both stores are module singletons, so each test takes a fresh pair via
- * `vi.resetModules()`. `localStorage` is stubbed per test for the same
- * reason — preferences persist, and a leaked value would silently seed the
- * next case.
+ * `vi.resetModules()`. The API client is stubbed per test for the same
+ * reason preferences used to need a `localStorage` stub — they persist, and a
+ * leaked value would silently seed the next case. Persistence moved from the
+ * browser to `PUT /preferences`; the stub moved with it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { needsAttention } from './attention';
@@ -21,27 +22,59 @@ type SettingsStore = typeof import('./settingsStore');
 let mail: MailStore;
 let settings: SettingsStore;
 
-/** Survives `vi.resetModules()` so a "reload" of the store re-reads what the
- * previous instance wrote — which is the only way to test persistence. */
-let storage: Map<string, string>;
+/** Survives `vi.resetModules()`, so a "reload" of the store can be restored
+ * from what the previous instance actually sent — the only way to test
+ * durability rather than merely "held in memory". */
+const api = vi.hoisted(() => ({ saved: [] as unknown[] }));
+
+vi.mock('./apiClient', () => ({
+  isBackendEnabled: () => true,
+  savePreferences: async (preferences: unknown) => {
+    api.saved.push(preferences);
+    return preferences;
+  },
+  /** Holds one pending value and sends it on an explicit `flush()` — the real
+   * queue's observable contract (nothing leaves until the debounce elapses)
+   * without fake timers. */
+  createWriteQueue: (write: (value: unknown) => Promise<unknown>) => {
+    let pending: unknown;
+    let has = false;
+    return {
+      push: (value: unknown) => {
+        pending = value;
+        has = true;
+      },
+      flush: async () => {
+        if (!has) return;
+        has = false;
+        await write(pending);
+      },
+      cancel: () => {
+        has = false;
+      },
+    };
+  },
+}));
 
 beforeEach(async () => {
-  storage = new Map();
-  // `window`, not just `localStorage`: the store guards on
-  // `typeof window === 'undefined'` (correctly — it runs during render), so
-  // in this node environment it would otherwise never reach storage at all
-  // and every persistence assertion would pass vacuously.
+  api.saved.length = 0;
+  // `window` is still stubbed because `mailStore`'s wider module graph reaches
+  // code that reads storage directly; the preferences store no longer does.
   vi.stubGlobal('window', {
     localStorage: {
-      getItem: (k: string) => storage.get(k) ?? null,
-      setItem: (k: string, v: string) => void storage.set(k, v),
-      removeItem: (k: string) => void storage.delete(k),
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
     },
   });
   vi.resetModules();
   // Order matters: `mailStore` seeds from the preferences store at import.
   settings = await import('./settingsStore');
   mail = await import('./mailStore');
+  // Stands in for a successful bootstrap — the store refuses to write until it
+  // has read the server's copy, so without this the write assertions below
+  // would pass vacuously against an empty queue.
+  settings.settingsActions.hydrate(undefined);
 });
 
 const rowById = (id: string) =>
@@ -478,8 +511,14 @@ describe('the derivation is stable', () => {
       replyDrafting: 'off',
       highPriorityTopics: ['career'],
     });
+    // What the store SENT is what a fresh instance restores — the round trip
+    // a real reload performs through GET /preferences.
+    await settings.settingsActions.flush();
+    const sent = api.saved[api.saved.length - 1];
+
     vi.resetModules();
     const reloaded = (await import('./settingsStore')) as SettingsStore;
+    reloaded.settingsActions.hydrate(sent);
     expect(reloaded.getAgentPreferences().replyDrafting).toBe('off');
     expect(reloaded.getAgentPreferences().highPriorityTopics).toEqual(['career']);
   });
@@ -494,8 +533,12 @@ describe('Beta Features', () => {
     settings.settingsActions.update({ beta: true });
     expect(settings.getAgentPreferences().beta).toBe(true);
 
+    await settings.settingsActions.flush();
+    const sent = api.saved[api.saved.length - 1];
+
     vi.resetModules();
     const reloaded = (await import('./settingsStore')) as SettingsStore;
+    reloaded.settingsActions.hydrate(sent);
     expect(reloaded.getAgentPreferences().beta).toBe(true);
   });
 

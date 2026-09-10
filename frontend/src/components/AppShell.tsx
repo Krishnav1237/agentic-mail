@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CheckCheck,
@@ -18,6 +18,8 @@ import { useQuickAccess } from '../lib/useQuickAccess';
 import { mailViewById } from '../lib/mailViews';
 import { useWorkspaceTheme } from '../lib/useWorkspaceTheme';
 import { settingsActions, useAgentSettings } from '../lib/settingsStore';
+import { bootstrapStores } from '../lib/storeBootstrap';
+import { useSyncState, type SyncState } from '../lib/syncStatus';
 import { DURATION, EASE, SPRING_PILL, usePageTransition } from './workspace/motion';
 import { Atmosphere } from './workspace/Atmosphere';
 import { AccountMenu, Divider, Eyebrow } from './workspace';
@@ -36,9 +38,93 @@ const navItems: { label: string; to: string; icon: LucideIcon }[] = [
  * The Obligo workspace shell: floating topbar + nav-only sidebar + rounded canvas.
  * Formerly the (dead) dashboard shell — rewritten to the Sprint 1 design.
  */
+/**
+ * The gap between mount and the first `GET /preferences` landing.
+ *
+ * Before the stores had a backend they were populated at module load, so the
+ * workspace's very first paint already carried the user's real values. Now
+ * there is a round trip, and rendering through it would show three wrong
+ * things at once: the whole surface in the DEFAULT attention colours before
+ * repainting in the user's, a demo identity in the topbar avatar (
+ * `DEFAULT_PROFILE` seeds from `mailAdapters`' `CURRENT_USER_NAME`), and —
+ * worst — controls a user could touch during the gap, whose change
+ * `hydrate()` would then silently overwrite, since hydration is
+ * replace-not-merge.
+ *
+ * One gate at the shell removes all three at once, and costs a single round
+ * trip because the three GETs run in parallel. Deliberately neutral: it reads
+ * no attention token, so it cannot itself flash a colour it's here to prevent.
+ */
+function ShellSplash({ theme }: { theme: string }) {
+  return (
+    <div className="obligo-root" data-theme={theme} data-atmosphere="off">
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+        <p
+          role="status"
+          style={{
+            font: '400 13px/1.5 Inter, sans-serif',
+            color: 'var(--text-faint)',
+          }}
+        >
+          Loading your workspace…
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Tells the user when what they're looking at isn't backed by the server.
+ *
+ * Two distinct failures, one line: `failedStores` means an initial load fell
+ * back to defaults (and that store is now refusing to write, so it cannot
+ * overwrite the real values it never managed to read), while `writeError`
+ * means a change applied locally but didn't reach the server.
+ */
+function SyncNotice({ sync }: { sync: SyncState }) {
+  const message =
+    sync.writeError ??
+    (sync.failedStores.length > 0
+      ? `Couldn't load your ${formatList(sync.failedStores)} — showing defaults, and changes here won't be saved.`
+      : null);
+
+  if (!message) return null;
+
+  return (
+    <div
+      role="status"
+      style={{
+        margin: '0 0 10px',
+        padding: '8px 12px',
+        borderRadius: 10,
+        border: '1px solid rgb(var(--coral) / 0.28)',
+        background: 'rgb(var(--coral) / 0.08)',
+        font: '400 12px/1.5 Inter, sans-serif',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      {message}
+    </div>
+  );
+}
+
+/** "Settings", "Settings and Profile", "Settings, Profile and Telegram". */
+function formatList(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
 export default function AppShell() {
   const theme = useWorkspaceTheme();
   const [atmosphereVisible] = useAtmosphereVisible();
+  const sync = useSyncState();
+
+  // `bootstrapStores` is idempotent, which is what makes this safe under
+  // StrictMode's double-invoked effects and any remount of the shell.
+  useEffect(() => {
+    void bootstrapStores();
+  }, []);
+
   const { quickAccess } = useQuickAccess();
   const quickAccessViews = quickAccess
     .map(mailViewById)
@@ -52,6 +138,10 @@ export default function AppShell() {
   const location = useLocation();
   const outlet = useOutlet();
   const pageTransition = usePageTransition();
+
+  // After every hook, never before — an early return above any of the calls
+  // above would change the hook order between renders.
+  if (sync.phase === 'loading') return <ShellSplash theme={theme} />;
 
   return (
     // The two attention pigments reach the entire application through these
@@ -290,6 +380,12 @@ export default function AppShell() {
           `useOutlet` + a pathname key lets AnimatePresence cross-fade routes
           while the shell itself stays permanent. */}
       <main className="obligo-canvas">
+        {/* Non-blocking, and non-blocking on purpose. A store whose GET failed
+            is running on defaults with writing disabled, so the honest thing
+            is to say changes may not save rather than either hiding it or
+            taking the workspace away. `writeError` covers the other half: a
+            change that was applied locally but never reached the server. */}
+        <SyncNotice sync={sync} />
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}

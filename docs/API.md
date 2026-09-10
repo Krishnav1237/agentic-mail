@@ -1,5 +1,5 @@
 # API Reference
-*Obligo Backend — Phases 1–4 + Validation Infrastructure*
+*Obligo Backend — Phases 1–4 + Settings/Profile/Integrations + Validation Infrastructure*
 
 ---
 
@@ -9,7 +9,7 @@
 > - **Synthetic Regression Benchmark:** Implemented (`npm run validation:regression`).
 > - **Real Quality Benchmark:** NOT YET COMPLETED (requires live LLM provider key and external held-out human corpus; returns `QUALITY_BENCHMARK_NOT_RUN`).
 > - **Placement Vertical / OAuth vs Forwarding Path:** UNVALIDATED (pending 14-day cohort study execution).
-> - **Phase 5–7 APIs:** DEFERRED (Product UI APIs, Gmail write execution, and agent planners remain unbuilt).
+> - **Phase 5–7 APIs:** PARTIAL. Settings, Profile and Telegram (§4) are built — see §10 item 1 of `integration-audit.md`. Mail/Actions/Opportunities/Approvals/Dashboard/Drafts APIs, Gmail write execution, and agent planners remain unbuilt.
 
 ---
 
@@ -129,7 +129,89 @@ Internal validation tooling endpoints accept:
 
 ---
 
-## 4. Internal Validation Tooling Endpoints
+## 4. Settings, Profile & Integrations
+
+These three resources are **singletons per user**. There is no `:id` in any path, and none of them 404 for a user who has simply never saved — a missing row reads back as the documented defaults. Each response body is exactly the shape the corresponding frontend store's `hydrate()` consumes, with no wrapper key.
+
+### 4.1 Agent Preferences
+
+#### `GET /preferences`
+- **Auth**: Protected
+- **Returns**: a complete `AgentPreferences` object — `replyDrafting`, `replyTone`, `automation.{archive,followup}`, `cleanup.{promotions,newsletters,marketing,banking}`, `highPriorityTopics[]`, `beta`, `urgencyColor`, `importanceColor`, `quickAccessCollapsed`.
+- **Defaults**: a user with no stored preferences (the column defaults to `{}`) reads back the shipped defaults, never a partial object. Unrecognised stored fields fall back per-field.
+
+#### `PUT /preferences`
+- **Auth**: Protected
+- **Rate Limit**: 60 req / 1 min
+- **Body**: a **complete** `AgentPreferences` object — replace, not merge. Unknown keys and invalid enum values are rejected with `400 VALIDATION_ERROR`.
+- **Returns**: the normalized stored object, identical in shape to `GET`.
+- **Storage**: `user_preferences.preferences` (JSONB, migration 009). `iana_timezone` on the same table is never touched by this route.
+
+### 4.2 Profile
+
+#### `GET /profile`
+- **Auth**: Protected
+- **Returns**: `displayName`, `profilePhoto`, `email`, `emailChange`.
+- **`emailChange`** is always `{"status":"none"}`. Email-change verification is not implemented — auth is Google-OAuth-only and `users.email` is upserted from Google on every login.
+- **404** if the JWT names a user that no longer exists.
+
+#### `PUT /profile`
+- **Auth**: Protected
+- **Rate Limit**: 30 req / 1 min
+- **Body**: `{ displayName, profilePhoto }` — the writable subset. Both required.
+- **Rejected with `400`**: `email` (changes only through a verified flow), `emailChange` (not implemented), and `profilePhoto.kind = "uploaded"` (no image storage is configured — use `{"kind":"none"}` or `{"kind":"provider","url":…}`).
+- **Returns**: the full `UserProfile`, a superset of the request, so one round-trip re-hydrates complete state.
+- **Storage**: `users.display_name` and `users.profile_photo` (migration 011). `users.full_name` stays the Google-supplied value and is deliberately **not** written here — it is overwritten on every login.
+
+### 4.3 Telegram Integration
+
+`connected` is **derived**, never stored: it is true exactly when a Telegram chat is linked. It is not writable through `PUT`.
+
+> [!NOTE]
+> Linking is asynchronous. `POST /connect` returns a deep link with `connected` still `false`; the integration only becomes connected once the user presses Start in Telegram and the bot webhook delivers the code back.
+
+#### `GET /integrations/telegram`
+- **Auth**: Protected
+- **Returns**: `provider`, `connected`, `notificationPreferences.{urgentEmails,followUps}`, `deliveryPreferences.{preferredTime,deadlineReminder}`.
+- A user with no integration row reads back the defaults with `connected: false` — never a `404`.
+- The linked chat id, username and link code are **never** included in any response.
+
+#### `PUT /integrations/telegram`
+- **Auth**: Protected
+- **Rate Limit**: 30 req / 1 min
+- **Body**: `{ notificationPreferences, deliveryPreferences }`. `preferredTime` must be 24-hour `HH:MM`; `deadlineReminder` must be one of `1h|3h|1d|2d|3d`. Sending `connected` is a `400`.
+- **Returns**: the full `TelegramIntegration`.
+
+#### `POST /integrations/telegram/connect`
+- **Auth**: Protected
+- **Rate Limit**: 30 req / 1 min
+- **Returns**: `{ linkUrl, expiresAt, integration }`. `linkUrl` is a `t.me` deep link valid for 15 minutes; `integration.connected` is still `false`.
+- **`503 TELEGRAM_NOT_CONFIGURED`** when no bot is configured on the server.
+- Issuing a new code invalidates any previous one for the same user.
+
+#### `POST /integrations/telegram/disconnect`
+- **Auth**: Protected
+- **Rate Limit**: 30 req / 1 min
+- Clears link state only. **Notification and delivery preferences are preserved**, so reconnecting does not ask the user to reconfigure. This is why it is `POST /disconnect` rather than `DELETE` on the resource.
+- Disconnecting a never-connected integration is a no-op, not an error.
+- Writes a `telegram_disconnected` audit event when something was actually disconnected.
+
+#### `POST /integrations/telegram/test`
+- **Auth**: Protected
+- **Rate Limit**: 5 req / 1 min
+- **Returns**: `{ "ok": true }` once Telegram accepts the message.
+- **`409 TELEGRAM_NOT_CONNECTED`** when no chat is linked; **`502 TELEGRAM_SEND_FAILED`** when Telegram rejects or is unreachable; **`503 TELEGRAM_NOT_CONFIGURED`** when no bot is configured.
+
+#### `POST /integrations/telegram/webhook`
+- **Auth**: **Not** JWT-protected — Telegram has no session. Authenticated solely by the `X-Telegram-Bot-Api-Secret-Token` header, compared timing-safe against `TELEGRAM_WEBHOOK_SECRET`.
+- **Rate Limit**: 120 req / 1 min
+- Handles `/start <code>` only; every other update is acknowledged and ignored. Link codes are single-use and expire after 15 minutes, enforced in SQL.
+- Always returns `200` once the secret validates, so Telegram does not retry updates that will never become valid. A genuine server fault returns `500`, where retrying is desirable.
+- Writes a `telegram_connected` audit event on a successful link.
+
+---
+
+## 5. Internal Validation Tooling Endpoints
 
 > [!IMPORTANT]
 > **Internal Validation Tooling Notice**

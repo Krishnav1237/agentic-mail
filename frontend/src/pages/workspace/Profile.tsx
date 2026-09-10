@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { LogOut } from 'lucide-react';
 import {
   Avatar,
@@ -10,14 +10,8 @@ import {
   Stagger,
   WorkspacePage,
 } from '../../components/workspace';
+import { isValidDisplayName } from '../../lib/userProfile';
 import {
-  isPlausibleEmail,
-  isValidDisplayName,
-  NO_PROFILE_PHOTO,
-  type ProfilePhoto,
-} from '../../lib/userProfile';
-import {
-  changePassword,
   profileActions,
   sessionActions,
   useUserProfile,
@@ -129,102 +123,38 @@ function Row({
 
 /* ------------------------------ Profile picture --------------------------- */
 
+/**
+ * Read-only for now, and honestly labelled as such.
+ *
+ * This row used to run a full local edit flow: pick a file, preview it as a
+ * data URL, Save. None of it can persist. `PUT /profile` rejects
+ * `{kind:'uploaded'}` outright because no image storage exists behind it, so
+ * the control would have failed every time it was used.
+ *
+ * Removal is withheld for a subtler reason rather than a technical one:
+ * `{kind:'none'}` IS writable, but with uploads unavailable and the Google
+ * picture only re-applied at login to a photo that is already `provider`,
+ * removing one is a door that doesn't open again. A control that works once
+ * and then strands the user is worse than one that plainly isn't ready.
+ */
 function ProfilePictureRow({ last = false }: { last?: boolean }) {
   const profile = useUserProfile();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // `undefined` means "not editing" — kept distinct from `NO_PROFILE_PHOTO`
-  // (an explicit, committed "no photo") so a not-yet-saved removal previews
-  // correctly without touching the stored profile until Save.
-  const [pendingPhoto, setPendingPhoto] = useState<ProfilePhoto | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
-  const editing = pendingPhoto !== undefined;
-
-  const onFileChosen = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Choose an image file.');
-      return;
-    }
-    setError(null);
-    const reader = new FileReader();
-    reader.onload = () =>
-      setPendingPhoto({ kind: 'uploaded', dataUrl: String(reader.result) });
-    reader.readAsDataURL(file);
-  };
-
-  const save = () => {
-    if (!pendingPhoto) return;
-    // `setUploadedPhoto`/`removePhoto` are the frontend-ready mutation seams
-    // — see their doc comments for why this stays local data rather than a
-    // real upload.
-    if (pendingPhoto.kind === 'uploaded') {
-      profileActions.setUploadedPhoto(pendingPhoto.dataUrl);
-    } else {
-      profileActions.removePhoto();
-    }
-    setPendingPhoto(undefined);
-  };
-
-  const cancel = () => {
-    setPendingPhoto(undefined);
-    setError(null);
-  };
-
-  const markForRemoval = () => {
-    setError(null);
-    setPendingPhoto(NO_PROFILE_PHOTO);
-  };
-
-  const previewPhoto = editing ? pendingPhoto : profile.profilePhoto;
-  const hasCurrentPhoto = profile.profilePhoto.kind !== 'none';
 
   return (
-    <>
-      <Row
-        label="Profile picture"
-        last={last}
-        value={<Avatar displayName={profile.displayName} photo={previewPhoto} size={44} />}
-        action={
-          editing ? (
-            <>
-              <Button variant="outline" onClick={cancel}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={save}>
-                Save
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                Change picture
-              </Button>
-              {hasCurrentPhoto && (
-                <Button variant="outline" onClick={markForRemoval}>
-                  Remove
-                </Button>
-              )}
-            </>
-          )
-        }
-        note={
-          error ? (
-            <span style={{ ...helperTextStyle, margin: 0, color: 'rgb(var(--coral) / 0.85)' }}>
-              {error}
-            </span>
-          ) : undefined
-        }
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={onFileChosen}
-        style={{ display: 'none' }}
-      />
-    </>
+    <Row
+      label="Profile picture"
+      last={last}
+      value={
+        <Avatar displayName={profile.displayName} photo={profile.profilePhoto} size={44} />
+      }
+      note={
+        <span style={{ ...helperTextStyle, margin: 0 }}>
+          {profile.profilePhoto.kind === 'provider'
+            ? 'Your picture comes from your Google account. Changing it here isn’t available yet.'
+            : 'Custom profile pictures aren’t available yet — your picture comes from your Google account.'}
+        </span>
+      }
+    />
   );
 }
 
@@ -295,77 +225,33 @@ function DisplayNameRow({ last }: { last?: boolean }) {
 
 /* ---------------------------------- Email ---------------------------------- */
 
+/**
+ * Read-only, and honestly labelled.
+ *
+ * This row modelled a current → new → verification-pending flow that nothing
+ * has ever backed. It cannot be backed yet either: `PUT /profile` rejects
+ * `emailChange` outright, and a real flow needs a verification-token table and
+ * outbound email, neither of which exists. More fundamentally, the address is
+ * the Google account's — auth is Google-OAuth-only and `users.email` is
+ * re-read from Google at every login — so changing it here would be undone by
+ * the next sign-in even if it did persist.
+ *
+ * The pending-state rendering is gone with the control, since `GET /profile`
+ * always reports `{status:'none'}` and no code path can produce anything else.
+ */
 function EmailRow({ last }: { last?: boolean }) {
   const profile = useUserProfile();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const pending = profile.emailChange.status === 'pending';
-
-  const startChange = () => {
-    setDraft('');
-    setEditing(true);
-  };
-
-  const submit = () => {
-    if (!isPlausibleEmail(draft)) return;
-    // `profileActions.requestEmailChange` only records the pending step —
-    // see its doc comment for why nothing here ever writes `email` directly.
-    profileActions.requestEmailChange(draft.trim());
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <Row
-        label="Email address"
-        last={last}
-        value={
-          <input
-            type="email"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="new@address.com"
-            aria-label="New email address"
-            autoFocus
-            style={textInputStyle}
-          />
-        }
-        action={
-          <>
-            <Button variant="outline" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={submit} disabled={!isPlausibleEmail(draft)}>
-              Send verification
-            </Button>
-          </>
-        }
-      />
-    );
-  }
 
   return (
     <Row
       label="Email address"
       last={last}
       value={profile.email}
-      action={
-        pending ? (
-          <Button variant="outline" onClick={() => profileActions.cancelEmailChange()}>
-            Cancel
-          </Button>
-        ) : (
-          <Button variant="outline" onClick={startChange}>
-            Change email
-          </Button>
-        )
-      }
       note={
-        pending ? (
-          <span style={{ ...helperTextStyle, margin: 0 }}>
-            Verification pending for {profile.emailChange.requestedEmail}
-          </span>
-        ) : undefined
+        <span style={{ ...helperTextStyle, margin: 0 }}>
+          Your Obligo address is your Google account address. Changing it here
+          isn’t available yet.
+        </span>
       }
     />
   );
@@ -373,136 +259,38 @@ function EmailRow({ last }: { last?: boolean }) {
 
 /* --------------------------------- Password --------------------------------- */
 
-type PasswordFormState = { current: string; next: string; confirm: string };
-const EMPTY_PASSWORD_FORM: PasswordFormState = { current: '', next: '', confirm: '' };
-
-function PasswordRow() {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<PasswordFormState>(EMPTY_PASSWORD_FORM);
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-
-  const canSubmit =
-    form.current.length > 0 &&
-    form.next.length > 0 &&
-    form.next === form.confirm &&
-    !submitting;
-
-  const startEdit = () => {
-    setForm(EMPTY_PASSWORD_FORM);
-    setConfirmed(false);
-    setEditing(true);
-  };
-
-  const cancel = () => {
-    setEditing(false);
-    setForm(EMPTY_PASSWORD_FORM);
-  };
-
-  const confirmedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(confirmedTimeoutRef.current), []);
-
-  const submit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    // `changePassword` is the frontend interaction/form-state seam only —
-    // no verification, hashing or auth happens here; see its doc comment.
-    await changePassword(form.current, form.next);
-    setSubmitting(false);
-    setForm(EMPTY_PASSWORD_FORM);
-    setEditing(false);
-    setConfirmed(true);
-    // A transient success note, not a permanent status — it describes the
-    // action that just happened, not the account's current state, so it
-    // clears itself rather than lingering as if "Password updated." were
-    // true forever.
-    clearTimeout(confirmedTimeoutRef.current);
-    confirmedTimeoutRef.current = setTimeout(() => setConfirmed(false), 4000);
-  };
-
-  if (!editing) {
-    return (
-      <Row
-        label="Password"
-        last
-        value="••••••••"
-        action={
-          <Button variant="outline" onClick={startEdit}>
-            Change password
-          </Button>
-        }
-        note={
-          confirmed ? (
-            <span style={{ ...helperTextStyle, margin: 0 }}>Password updated.</span>
-          ) : undefined
-        }
-      />
-    );
-  }
-
+/**
+ * Not a disabled feature — an inapplicable one, and the copy says so.
+ *
+ * This row used to run a full current/new/confirm form against
+ * `changePassword()`, which resolves after a timer and touches nothing. That
+ * made it the most misleading control on the page: it reported "Password
+ * updated." for a password that does not exist.
+ *
+ * THE DISTINCTION FROM THE OTHER TWO DISABLED ROWS IS DELIBERATE. Profile
+ * pictures and email changes are deferred — the backend can't do them *yet*,
+ * and one day will. A password is different in kind: sign-in is Google OAuth
+ * only, so the account has no Obligo credential to rotate. There is nothing
+ * here to ship later, which is why this says what's true rather than
+ * "not available yet" (audit §12 reaches the same conclusion — the concept is
+ * moot unless the product adds a non-Google credential path).
+ *
+ * The value shows the sign-in METHOD rather than a masked `••••••••`, for the
+ * same reason: dots imply a stored secret, and there isn't one.
+ */
+function SignInMethodRow() {
   return (
-    <div style={{ padding: '10px 4px 14px 14px' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(140px, 180px) minmax(0, 1fr)',
-          rowGap: 10,
-          columnGap: 16,
-          maxWidth: 420,
-        }}
-      >
-        <label htmlFor="profile-current-password" style={fieldLabelStyle}>
-          Current password
-        </label>
-        <input
-          id="profile-current-password"
-          type="password"
-          autoComplete="current-password"
-          value={form.current}
-          onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
-          style={{ ...textInputStyle, minWidth: 0, maxWidth: 'none' }}
-        />
-
-        <label htmlFor="profile-new-password" style={fieldLabelStyle}>
-          New password
-        </label>
-        <input
-          id="profile-new-password"
-          type="password"
-          autoComplete="new-password"
-          value={form.next}
-          onChange={(e) => setForm((f) => ({ ...f, next: e.target.value }))}
-          style={{ ...textInputStyle, minWidth: 0, maxWidth: 'none' }}
-        />
-
-        <label htmlFor="profile-confirm-password" style={fieldLabelStyle}>
-          Confirm new password
-        </label>
-        <input
-          id="profile-confirm-password"
-          type="password"
-          autoComplete="new-password"
-          value={form.confirm}
-          onChange={(e) => setForm((f) => ({ ...f, confirm: e.target.value }))}
-          style={{ ...textInputStyle, minWidth: 0, maxWidth: 'none' }}
-        />
-      </div>
-
-      {form.confirm.length > 0 && form.next !== form.confirm && (
-        <p style={{ ...helperTextStyle, color: 'rgb(var(--coral) / 0.85)' }}>
-          New password and confirmation don't match.
-        </p>
-      )}
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-        <Button variant="outline" onClick={cancel} disabled={submitting}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={submit} disabled={!canSubmit}>
-          {submitting ? 'Updating…' : 'Update password'}
-        </Button>
-      </div>
-    </div>
+    <Row
+      label="Sign-in"
+      last
+      value="Google"
+      note={
+        <span style={{ ...helperTextStyle, margin: 0 }}>
+          Sign-in uses your Google account, so there’s no separate password to
+          change. Manage it in your Google account settings.
+        </span>
+      }
+    />
   );
 }
 
@@ -511,14 +299,15 @@ function PasswordRow() {
 export default function Profile() {
   const profile = useUserProfile();
 
-  const handleSignOut = () => {
-    // The frontend interaction/navigation seam only — see
-    // `sessionActions.signOut` for why real session invalidation stays
-    // out of scope here. A hard navigation, not router `navigate()`, is
+  const handleSignOut = async () => {
+    // AWAITED, not fire-and-forget: `signOut()` now flushes pending preference
+    // writes and calls `POST /auth/logout`, and navigating out from under it
+    // would abort both — losing the user's last change and leaving the session
+    // cookie alive. A hard navigation, not router `navigate()`, is still
     // deliberate — see the identical note in `AccountMenu.tsx`'s own
     // `handleSignOut`: it's what actually clears in-memory mail/drafts/
     // workflow state, which an SPA route change would leave live.
-    sessionActions.signOut();
+    await sessionActions.signOut();
     window.location.assign('/');
   };
 
@@ -600,7 +389,7 @@ export default function Profile() {
         <Reveal>
           <PageSection heading={<ShelfHeading>Security</ShelfHeading>} style={{ marginTop: 28 }}>
             <Panel padding={6}>
-              <PasswordRow />
+              <SignInMethodRow />
             </Panel>
           </PageSection>
         </Reveal>

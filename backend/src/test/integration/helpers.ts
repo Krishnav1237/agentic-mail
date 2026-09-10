@@ -20,6 +20,7 @@ export async function applyMigrationsClean() {
     '008_obligo_rebrand.sql',
     '009_frontend_alignment.sql',
     '010_emails_status_constraint.sql',
+    '011_settings_profile_telegram.sql',
   ];
 
   // Drop schema public

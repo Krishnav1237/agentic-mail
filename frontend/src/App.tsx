@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppShell from './components/AppShell';
+import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/workspace/Dashboard';
 import Inbox from './pages/workspace/Inbox';
 import Actions from './pages/workspace/Actions';
@@ -30,6 +31,10 @@ export default function App() {
           </Suspense>
         }
       />
+      {/* Where Google OAuth lands — outside AppShell, because the shell's
+          bootstrap assumes an authenticated session and this route is what
+          establishes there is one. */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route element={<AppShell />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inbox" element={<Inbox />} />

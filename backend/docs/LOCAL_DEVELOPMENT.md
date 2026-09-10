@@ -60,7 +60,7 @@ NODE_ENV=development
 TRUST_PROXY=0
 FRONTEND_URL=http://localhost:3000
 
-DATABASE_URL=postgres://HP@localhost:5432/obligo_test
+DATABASE_URL=postgres://postgres:postgres@localhost:5434/inbox_intel
 REDIS_URL=redis://localhost:6379
 
 AUTH_JWT_SECRET=development-jwt-secret-min-32-chars-long-key
@@ -86,10 +86,10 @@ VALIDATION_HELDOUT_CORPUS_PATH=/secure/local/path/heldout-corpus.json
 
 ## 4. Applying Database Migrations (001–007)
 
-Apply migrations 001 through 007 sequentially on your local database:
+Apply migrations 001 through 011 sequentially on your local database:
 
 ```bash
-export DB_URL="postgres://HP@localhost:5432/obligo_test"
+export DB_URL="postgres://postgres:postgres@localhost:5434/inbox_intel"
 
 psql "$DB_URL" -f db/migrations/001_baseline_schema.sql
 psql "$DB_URL" -f db/migrations/002_gmail_ingestion.sql
@@ -98,6 +98,10 @@ psql "$DB_URL" -f db/migrations/004_phase1_4_audit_fixes.sql
 psql "$DB_URL" -f db/migrations/005_runtime_integrity_fixes.sql
 psql "$DB_URL" -f db/migrations/006_validation_program.sql
 psql "$DB_URL" -f db/migrations/007_validation_scoring_integrity.sql
+psql "$DB_URL" -f db/migrations/008_obligo_rebrand.sql
+psql "$DB_URL" -f db/migrations/009_frontend_alignment.sql
+psql "$DB_URL" -f db/migrations/010_emails_status_constraint.sql
+psql "$DB_URL" -f db/migrations/011_settings_profile_telegram.sql
 ```
 
 ---

@@ -10,6 +10,9 @@ import { authRouter } from './routes/auth.js';
 import { emailsRouter } from './routes/emails.js';
 import { threadsRouter } from './routes/threads.js';
 import { syncRouter } from './routes/sync.js';
+import { preferencesRouter } from './routes/preferences.js';
+import { profileRouter } from './routes/profile.js';
+import { integrationsRouter } from './routes/integrations.js';
 import { validationRouter } from './routes/validation.js';
 import { AppError, ErrorCode } from './errors/AppError.js';
 
@@ -91,6 +94,12 @@ export function createApp() {
   app.use('/emails', emailsRouter);
   app.use('/threads', threadsRouter);
   app.use('/sync', syncRouter);
+  app.use('/preferences', preferencesRouter);
+  app.use('/profile', profileRouter);
+  // Telegram lives under /integrations so a second provider does not reshape
+  // the path later. Note /integrations/telegram/webhook is intentionally NOT
+  // JWT-authenticated — see routes/integrations.ts.
+  app.use('/integrations', integrationsRouter);
   // Internal validation tooling — requires X-Validation-Token header.
   // NOT customer-facing. NOT Phase 5 product APIs.
   app.use('/validation', validationRouter);

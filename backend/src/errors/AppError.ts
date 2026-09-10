@@ -37,6 +37,11 @@ export const ErrorCode = {
   EXTRACTION_TIMEOUT: 'EXTRACTION_TIMEOUT',
   EXTRACTION_FAILED: 'EXTRACTION_FAILED',
 
+  // Telegram integration
+  TELEGRAM_NOT_CONFIGURED: 'TELEGRAM_NOT_CONFIGURED',
+  TELEGRAM_NOT_CONNECTED: 'TELEGRAM_NOT_CONNECTED',
+  TELEGRAM_SEND_FAILED: 'TELEGRAM_SEND_FAILED',
+
   // General application
   NOT_FOUND: 'NOT_FOUND',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
@@ -118,11 +123,15 @@ export function httpStatusForCode(code: ErrorCodeValue): number {
     case ErrorCode.CSRF_INVALID:
       return 403;
     case ErrorCode.GMAIL_SYNC_ALREADY_RUNNING:
+    case ErrorCode.TELEGRAM_NOT_CONNECTED:
       return 409;
     case ErrorCode.GOOGLE_RATE_LIMITED:
     case ErrorCode.RATE_LIMITED:
       return 429;
+    case ErrorCode.TELEGRAM_SEND_FAILED:
+      return 502;
     case ErrorCode.EXTRACTION_PROVIDER_UNAVAILABLE:
+    case ErrorCode.TELEGRAM_NOT_CONFIGURED:
       return 503;
     default:
       return 500;

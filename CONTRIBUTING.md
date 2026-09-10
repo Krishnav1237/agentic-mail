@@ -35,9 +35,9 @@
 
 ## 3. Database Migration Rules
 
-1. Apply migrations sequentially (`001` through `007`):
+1. Apply migrations sequentially (`001` through `011`):
    ```bash
-   export DB_URL="postgres://HP@localhost:5432/obligo_test"
+   export DB_URL="postgres://postgres:postgres@localhost:5434/inbox_intel"
 
    psql "$DB_URL" -f db/migrations/001_baseline_schema.sql
    psql "$DB_URL" -f db/migrations/002_gmail_ingestion.sql
@@ -46,9 +46,13 @@
    psql "$DB_URL" -f db/migrations/005_runtime_integrity_fixes.sql
    psql "$DB_URL" -f db/migrations/006_validation_program.sql
    psql "$DB_URL" -f db/migrations/007_validation_scoring_integrity.sql
+   psql "$DB_URL" -f db/migrations/008_obligo_rebrand.sql
+   psql "$DB_URL" -f db/migrations/009_frontend_alignment.sql
+   psql "$DB_URL" -f db/migrations/010_emails_status_constraint.sql
+   psql "$DB_URL" -f db/migrations/011_settings_profile_telegram.sql
    ```
 2. **Schema Integrity**:
-   - New migrations must be numbered sequentially (`008_...sql`).
+   - New migrations must be numbered sequentially (`012_...sql`).
    - Every migration must be idempotent and preserve existing historical row data.
    - Test migration upgrade paths in `src/test/integration/01_migrations.test.ts`.
 

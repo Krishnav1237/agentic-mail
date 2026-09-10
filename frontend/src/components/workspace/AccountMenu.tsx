@@ -48,15 +48,16 @@ export function AccountMenu() {
     setHelpOpen(true);
   };
 
-  // The frontend interaction/navigation seam only — no real session exists
-  // to invalidate yet (see `sessionActions.signOut`). A hard navigation, not
-  // router `navigate()`, is deliberate: `signOut()` already clears every
-  // persisted store, but mail/drafts/workflow state is in-memory-only and an
-  // SPA route change wouldn't touch it, leaving it silently reachable until
-  // a real reload. This is the reload.
-  const handleSignOut = () => {
+  // AWAITED, not fire-and-forget: `signOut()` flushes pending preference
+  // writes and calls `POST /auth/logout` to clear the session cookies, and
+  // navigating out from under it would abort both. A hard navigation, not
+  // router `navigate()`, is deliberate: `signOut()` clears every store it
+  // owns, but mail/drafts/workflow state is in-memory-only and an SPA route
+  // change wouldn't touch it, leaving it silently reachable until a real
+  // reload. This is the reload.
+  const handleSignOut = async () => {
     setOpen(false);
-    sessionActions.signOut();
+    await sessionActions.signOut();
     window.location.assign('/');
   };
 
