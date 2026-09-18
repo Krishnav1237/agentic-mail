@@ -16,6 +16,7 @@ import {
   sessionActions,
   useUserProfile,
 } from '../../lib/userProfileStore';
+import { googleAuthUrl, isBackendEnabled } from '../../lib/apiClient';
 
 /**
  * Profile — the Account/Auth surface, structurally the same page Settings
@@ -277,6 +278,35 @@ function EmailRow({ last }: { last?: boolean }) {
  *
  * The value shows the sign-in METHOD rather than a masked `••••••••`, for the
  * same reason: dots imply a stored secret, and there isn't one.
+ *
+ * The row does now carry an action (Reconnect) — that doesn't reopen the
+ * "nothing to ship later" claim above, which was specifically about password
+ * rotation. Reconnecting re-runs Google consent to pick up scopes granted
+ * after a user's original sign-in; it has nothing to do with a password.
+ */
+/**
+ * The Reconnect action here is a plain full-page navigation to
+ * `GET /auth/google`, not an API call — that route responds with an HTTP
+ * redirect into Google's consent screen, not JSON. It works correctly for
+ * re-authing an already-signed-in user (confirmed by reading
+ * backend/src/routes/auth.ts, not assumed): the route carries no session
+ * check of its own, and `prompt: 'consent'` is sent unconditionally, so
+ * Google re-shows the full current scope list — including gmail.modify and
+ * gmail.send, added after every existing test user's original consent —
+ * rather than silently treating already-granted scopes as sufficient. The
+ * callback upserts by email, so it lands back on the same account with
+ * `user_credentials.scopes` overwritten to whatever was just granted.
+ *
+ * If the user backs out of Google's consent screen without approving, the
+ * existing `auth_token`/`csrf_token` cookies are never touched by that code
+ * path — the session survives untouched, just without the additional
+ * scopes.
+ *
+ * Shown unconditionally rather than only when scopes are actually stale:
+ * neither `GET /profile` nor `GET /auth/session` currently exposes
+ * `user_credentials.scopes` to the frontend, so there is no live signal to
+ * condition this on yet. Exposing it on one of those two responses would let
+ * this become conditional later — noted as a follow-up, not done here.
  */
 function SignInMethodRow() {
   return (
@@ -284,10 +314,24 @@ function SignInMethodRow() {
       label="Sign-in"
       last
       value="Google"
+      action={
+        isBackendEnabled() ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.location.href = googleAuthUrl();
+            }}
+          >
+            Reconnect Google account
+          </Button>
+        ) : undefined
+      }
       note={
         <span style={{ ...helperTextStyle, margin: 0 }}>
           Sign-in uses your Google account, so there’s no separate password to
-          change. Manage it in your Google account settings.
+          change. Manage it in your Google account settings. Reconnecting
+          re-grants Obligo access to your mailbox — use this if a permission
+          you'd expect (like sending or archiving) isn't working.
         </span>
       }
     />

@@ -1525,10 +1525,10 @@ export type SettingsRow = {
   disabledOptions?: string[];
 };
 
-/** Reply Drafting's own scale — "Auto-send" is listed but intentionally
- * disabled for now (Obligo never sends unattended, even in automatic mode). */
+/** Reply Drafting's own scale. Selecting "Auto-send" is gated by a
+ * confirmation dialog in Settings.tsx, not by disabling the option here —
+ * see AutoSendExplainerDialog. */
 export const REPLY_DRAFTING_OPTIONS = ["Don't draft", 'Draft for approval', 'Auto-send'];
-export const REPLY_DRAFTING_DISABLED = ['Auto-send'];
 /** Shared scale for Archiving — a lighter-weight action than replying, so it
  * gets a plain never/suggest/automatic ladder instead of Reply Drafting's
  * approval-gated one. */
@@ -1623,7 +1623,6 @@ export const settings = {
       label: 'Reply Drafting',
       value: 'Draft for approval',
       options: REPLY_DRAFTING_OPTIONS,
-      disabledOptions: REPLY_DRAFTING_DISABLED,
     },
     { key: 'archive', label: 'Archiving', value: 'Suggest', options: AUTOMATION_OPTIONS },
     { key: 'followup', label: 'Follow-ups', value: 'Off', options: FOLLOWUP_OPTIONS },

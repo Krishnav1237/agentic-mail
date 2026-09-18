@@ -64,6 +64,23 @@ function apiBase(): string {
   );
 }
 
+/**
+ * `GET /auth/google`'s full URL — a redirect-based OAuth entry point, not a
+ * JSON endpoint, so unlike everything else in this file the caller navigates
+ * to it directly (`window.location.href = googleAuthUrl()`) rather than
+ * going through `request()`. `getGoogleAuthUrlWithPKCE` on the backend sends
+ * `prompt: 'consent'` unconditionally, so hitting this again for an
+ * already-authenticated user re-prompts for the full current scope list
+ * rather than silently no-op'ing — that's what makes this endpoint reusable
+ * as both "sign in" and "reconnect / grant additional scopes" with no
+ * backend change. Callers must check `isBackendEnabled()` first, same as
+ * every other network-touching call in this file — this throws
+ * `NOT_CONFIGURED` otherwise.
+ */
+export function googleAuthUrl(): string {
+  return `${apiBase()}/auth/google`;
+}
+
 /* -------------------------------- Errors --------------------------------- */
 
 /**

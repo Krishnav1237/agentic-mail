@@ -48,9 +48,11 @@ import { dayDiffFor, FOLLOW_UP_WAIT_DAYS } from './deadlineGroups';
  * generated draft in the UI would burn the tokens and the latency anyway. See
  * {@link shouldGenerateDrafts}.
  *
- * `auto` is reserved and currently not selectable (Obligo never sends
- * unattended); it exists in the type because the backend contract has to name
- * the state even while the UI refuses to enter it.
+ * `auto` sends without a human reviewing each draft first, after the
+ * backend's own hold-and-cancel window — see `services/googleWriteService.ts`
+ * on the backend. Settings gates entry into this value with a confirmation
+ * dialog (`AutoSendExplainerDialog` in `Settings.tsx`) rather than blocking it
+ * at the type or store layer.
  */
 export type ReplyDrafting = 'off' | 'review' | 'auto';
 
@@ -240,11 +242,32 @@ export function shouldGenerateDrafts(prefs: AgentPreferences): boolean {
 
 /**
  * Whether a drafted reply, once produced, still needs a human decision before
- * it goes out. True for `review`; false for `auto`, which is not currently
- * reachable through the UI. Meaningless when drafting is off.
+ * it goes out. True for `review`; false for `auto`, whose reply instead goes
+ * through the backend's delayed-send hold with no per-reply approval step.
+ * Meaningless when drafting is off.
  */
 export function draftsNeedApproval(prefs: AgentPreferences): boolean {
   return prefs.replyDrafting === 'review';
+}
+
+/**
+ * Whether auto-send is currently on with no working cancel notification
+ * behind it — the condition Settings' persistent banner renders on.
+ *
+ * LIVE, NOT CACHED: call this with the current values every time (on every
+ * render), never once at the moment `replyDrafting` was set to `'auto'`. The
+ * two inputs come from two independent stores that change independently and
+ * in either order — auto-send can be turned on first and Telegram disconnect
+ * later, or the reverse — and this function must report the same true/false
+ * either way, purely as a function of current state. Settings.tsx's banner
+ * and this function must stay the single source of truth for that condition;
+ * see `agentPreferences.test.ts` for the ordering-independence check.
+ */
+export function needsTelegramForAutoSend(
+  replyDrafting: ReplyDrafting,
+  telegramConnected: boolean
+): boolean {
+  return replyDrafting === 'auto' && !telegramConnected;
 }
 
 /** Where a mail should sit given how the model classified it. `null` means

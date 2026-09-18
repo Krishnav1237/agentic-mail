@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS as DndCSS } from '@dnd-kit/utilities';
-import { ArrowLeft, ArrowRight, ChevronRight, Check, GripVertical, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, ChevronRight, Check, GripVertical, Trash2 } from 'lucide-react';
 import {
   attentionMetaColor,
   AttentionDot,
@@ -27,6 +27,7 @@ import {
   Button,
   Chip,
   ConfirmDialog,
+  Dialog,
   Group,
   InteractiveRow,
   Panel,
@@ -59,6 +60,7 @@ import {
   valueForLabel,
 } from '../../lib/workspaceData';
 import {
+  needsTelegramForAutoSend,
   PRIORITY_TOPICS,
   type AutomationLevel,
   type CleanupCategory,
@@ -70,6 +72,7 @@ import {
   type AttentionColorOption,
 } from '../../lib/attentionColors';
 import { settingsActions, useAgentSettings } from '../../lib/settingsStore';
+import { useTelegramIntegration } from '../../lib/telegramIntegrationStore';
 
 /**
  * Settings — the one page that is configuration, not correspondence (Reference
@@ -156,6 +159,188 @@ function IntegrationsRow({ onClick }: { onClick: () => void }) {
         style={{ color: 'var(--text-faint)' }}
       />
     </InteractiveRow>
+  );
+}
+
+/** Inset warning block shared by the one-time explainer and the persistent
+ * banner below — same coral treatment, different container, so the two
+ * surfaces read as the same warning rather than two differently-styled ones. */
+function TelegramDisconnectedNotice({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: '1px solid rgb(var(--coral) / 0.32)',
+        background: 'rgb(var(--coral) / 0.10)',
+      }}
+    >
+      <AlertTriangle
+        size={15}
+        strokeWidth={2}
+        aria-hidden
+        style={{ flex: 'none', marginTop: 1, color: 'rgb(var(--coral) / 0.9)' }}
+      />
+      <span
+        style={{
+          font: '500 12px/1.55 Inter, sans-serif',
+          color: 'var(--text-strong)',
+        }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Shown every time Reply Drafting is switched to Auto-send — not once ever
+ * and then remembered. Re-confirming on every selection (rather than a
+ * persisted "seen it" flag) matches how Reset/Delete's own `ConfirmDialog`s
+ * behave elsewhere on this page: a consequential toggle re-explains itself
+ * each time it's turned on, including after someone has deliberately turned
+ * it off and back on.
+ *
+ * `telegramConnected` is read once at the moment this opens (Select's own
+ * onChange fires synchronously off a live click), not subscribed to while
+ * open — the dialog is short-lived and closes on either button, so there is
+ * no meaningful window for that fact to change under the user mid-dialog.
+ */
+/** Exported (unlike this file's other page-local components) so
+ * `Settings.autoSend.test.tsx` can render and click through it directly,
+ * without pulling in the rest of the page's drag-and-drop sections. */
+export function AutoSendExplainerDialog({
+  open,
+  telegramConnected,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  telegramConnected: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      title="Turn on auto-send?"
+      description="Obligo will send drafted replies on its own, with a short window to change your mind first."
+    >
+      <ul
+        style={{
+          margin: 0,
+          paddingLeft: 18,
+          font: '400 12.5px/1.6 Inter, sans-serif',
+          color: 'var(--text-secondary)',
+        }}
+      >
+        <li>Replies send automatically 5 minutes after Obligo drafts them.</li>
+        <li>
+          During that 5-minute hold, a Telegram notification lets you cancel
+          the send with one tap.
+        </li>
+      </ul>
+
+      {!telegramConnected && (
+        <div style={{ marginTop: 12 }}>
+          <TelegramDisconnectedNotice>
+            Telegram isn't connected right now, so no cancel notification will
+            be sent. The only way to stop a pending reply is to open Obligo
+            yourself within that 5-minute window.
+          </TelegramDisconnectedNotice>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 10,
+          marginTop: 18,
+        }}
+      >
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={onConfirm}>
+          Turn on auto-send
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
+/**
+ * Live, non-dismissible — recomputed from the actual stores on every render
+ * (Settled requirement: this is a state check, not a one-time notice). Shows
+ * whenever auto-send is the current Reply Drafting value AND Telegram is
+ * currently disconnected, regardless of which happened first — a user whose
+ * Telegram disconnects after auto was already on sees this exactly as much
+ * as someone who turned auto on while already disconnected.
+ */
+/** Exported for the same reason as {@link AutoSendExplainerDialog} above. */
+export function AutoSendTelegramWarning({
+  onReconnectTelegram,
+  onDisable,
+}: {
+  onReconnectTelegram: () => void;
+  onDisable: () => void;
+}) {
+  return (
+    <div role="status" style={{ marginBottom: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '10px 12px',
+          borderRadius: 10,
+          border: '1px solid rgb(var(--coral) / 0.28)',
+          background: 'rgb(var(--coral) / 0.08)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            minWidth: 0,
+            flex: '1 1 260px',
+          }}
+        >
+          <AlertTriangle
+            size={15}
+            strokeWidth={2}
+            aria-hidden
+            style={{ flex: 'none', marginTop: 1, color: 'rgb(var(--coral) / 0.85)' }}
+          />
+          <span
+            style={{
+              font: '400 12px/1.5 Inter, sans-serif',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Auto-send is on, but Telegram isn't connected — this isn't
+            recommended. A pending reply can only be cancelled by opening
+            Obligo yourself within its 5-minute hold.
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
+          <Button variant="outline" onClick={onReconnectTelegram}>
+            Reconnect Telegram
+          </Button>
+          <Button variant="outline" onClick={onDisable}>
+            Disable auto-send
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1130,10 +1315,22 @@ export default function Settings() {
    * enums, and neither leaks into the other.
    */
   const prefs = useAgentSettings();
+  const telegram = useTelegramIntegration();
   const [atmosphereVisible, setAtmosphereVisible] = useAtmosphereVisible();
   const [resetOpen, setResetOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const [autoSendExplainerOpen, setAutoSendExplainerOpen] = useState(false);
+
+  // Live check, not a one-time notice: recomputed from the current store
+  // values on every render, so it tracks a Telegram disconnect that happens
+  // after auto-send was already turned on just as much as the reverse order.
+  // Same function `agentPreferences.test.ts` pins the ordering-independence
+  // of — not a reimplementation of its logic.
+  const autoSendNeedsTelegram = needsTelegramForAutoSend(
+    prefs.replyDrafting,
+    telegram.connected
+  );
 
   /** The current label for each "How I Help" / "Inbox Cleanup" row, resolved
    * from the store rather than carried as row state. */
@@ -1151,9 +1348,16 @@ export default function Settings() {
   };
   const setHowIHelpValue = (key: string, label: string) => {
     if (key === 'reply') {
-      settingsActions.update({
-        replyDrafting: valueForLabel(REPLY_DRAFTING_BY_LABEL, label, 'review'),
-      });
+      const next = valueForLabel(REPLY_DRAFTING_BY_LABEL, label, 'review');
+      // Auto-send doesn't take effect on selection alone — it's gated by
+      // AutoSendExplainerDialog's confirm. Not updating the store here means
+      // the (controlled) Select's displayed value stays exactly where it
+      // was until the dialog is confirmed or cancelled.
+      if (next === 'auto') {
+        setAutoSendExplainerOpen(true);
+        return;
+      }
+      settingsActions.update({ replyDrafting: next });
     } else if (key === 'tone') {
       settingsActions.update({
         replyTone: valueForLabel(REPLY_TONE_BY_LABEL, label, 'neutral'),
@@ -1373,6 +1577,14 @@ export default function Settings() {
             heading={<ShelfHeading>How I Help</ShelfHeading>}
             style={{ marginTop: 28 }}
           >
+            {autoSendNeedsTelegram && (
+              <AutoSendTelegramWarning
+                onReconnectTelegram={() => setIntegrationsOpen(true)}
+                onDisable={() =>
+                  settingsActions.update({ replyDrafting: 'review' })
+                }
+              />
+            )}
             <Panel padding={6}>
               {settings.howIHelp.map((row, i) => (
                 <SettingRow
@@ -1645,6 +1857,15 @@ export default function Settings() {
       <TelegramIntegrationModal
         open={integrationsOpen}
         onClose={() => setIntegrationsOpen(false)}
+      />
+      <AutoSendExplainerDialog
+        open={autoSendExplainerOpen}
+        telegramConnected={telegram.connected}
+        onConfirm={() => {
+          settingsActions.update({ replyDrafting: 'auto' });
+          setAutoSendExplainerOpen(false);
+        }}
+        onCancel={() => setAutoSendExplainerOpen(false)}
       />
     </WorkspacePage>
   );

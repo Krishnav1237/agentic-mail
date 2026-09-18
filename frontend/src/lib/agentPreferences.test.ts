@@ -16,6 +16,7 @@ import {
   isFollowUpCandidate,
   isHighPriorityTopic,
   isSafeToAutoArchive,
+  needsTelegramForAutoSend,
   PRIORITY_TOPICS,
   sanitizePreferences,
   shouldGenerateDrafts,
@@ -63,6 +64,29 @@ describe('reply drafting is an instruction, not a display toggle', () => {
     expect(shouldGenerateDrafts(prefs({ replyDrafting: 'auto' }))).toBe(true);
     expect(draftsNeedApproval(prefs({ replyDrafting: 'review' }))).toBe(true);
     expect(draftsNeedApproval(prefs({ replyDrafting: 'auto' }))).toBe(false);
+  });
+});
+
+describe('needsTelegramForAutoSend — Settings\' persistent auto-send/Telegram banner', () => {
+  it('is true only for the one combination that is actually unsafe: auto-send on, Telegram disconnected', () => {
+    expect(needsTelegramForAutoSend('auto', false)).toBe(true);
+  });
+
+  it('is false whenever Telegram is connected, regardless of the drafting mode', () => {
+    expect(needsTelegramForAutoSend('auto', true)).toBe(false);
+    expect(needsTelegramForAutoSend('review', true)).toBe(false);
+    expect(needsTelegramForAutoSend('off', true)).toBe(false);
+  });
+
+  it('is false whenever drafting is not auto, even with Telegram disconnected — the warning is specifically about auto-send, not Telegram in general', () => {
+    expect(needsTelegramForAutoSend('review', false)).toBe(false);
+    expect(needsTelegramForAutoSend('off', false)).toBe(false);
+  });
+
+  it('is a pure function of its two current arguments — calling it twice with the same inputs never disagrees with itself, which is what makes it safe to call fresh on every render instead of caching a decision made at selection time', () => {
+    expect(needsTelegramForAutoSend('auto', false)).toBe(
+      needsTelegramForAutoSend('auto', false)
+    );
   });
 });
 
