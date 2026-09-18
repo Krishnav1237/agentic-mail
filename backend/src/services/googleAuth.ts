@@ -6,13 +6,18 @@ import { query } from '../db/index.js';
 import { encryptToken, decryptToken } from '../utils/crypto.js';
 import { acquireLock, releaseLock, renewLock, atomicGetDel } from '../utils/redisLua.js';
 
-// Phase 1–4 only requires gmail.readonly for ingestion + read-only classification.
-// gmail.modify and gmail.send are NOT included until Phase 6 execution is approved.
+// gmail.modify (archive/trash/spam via label changes) and gmail.send (sending,
+// including the auto-send hold in workers/agentExecutionWorker.ts) are
+// requested alongside gmail.readonly from the start — see
+// docs/integration-audit.md's Gmail write access design for why the full
+// scope set is requested in one pass rather than read-only-first.
 export const GMAIL_SCOPES = [
   'openid',
   'email',
   'profile',
   'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.send',
 ];
 
 export const createOAuth2Client = () => {
@@ -21,6 +26,18 @@ export const createOAuth2Client = () => {
     env.GOOGLE_CLIENT_SECRET,
     env.GOOGLE_REDIRECT_URI
   );
+};
+
+/**
+ * A ready-to-call Gmail API client for a user, using their current valid
+ * access token (refreshed if needed). Shared by any write-path service that
+ * isn't GmailSyncService (which keeps its own private copy of this).
+ */
+export const getGmailClientForUser = async (userId: string) => {
+  const accessToken = await refreshUserGoogleToken(userId);
+  const client = createOAuth2Client();
+  client.setCredentials({ access_token: accessToken });
+  return google.gmail({ version: 'v1', auth: client });
 };
 
 export const generatePKCE = () => {

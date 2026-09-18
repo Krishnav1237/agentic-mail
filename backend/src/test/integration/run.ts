@@ -11,6 +11,7 @@ import { runAiTimeoutTest } from './09_aiTimeout.test.js';
 import { runErrorSanitizationTest } from './10_errorSanitization.test.js';
 import { runRateLimitingTest } from './11_rateLimiting.test.js';
 import { runValidationProgramTest } from './12_validationProgram.test.js';
+import { runGmailWriteAccessTest } from './13_gmailWriteAccess.test.js';
 
 async function main() {
   console.log('================================================================');
@@ -31,9 +32,10 @@ async function main() {
     await runErrorSanitizationTest();
     await runRateLimitingTest();
     await runValidationProgramTest();
+    await runGmailWriteAccessTest();
 
     console.log('\n================================================================');
-    console.log('  ALL 12 INTEGRATION SUITES PASSED SUCCESSFULLY! 🎉');
+    console.log('  ALL 13 INTEGRATION SUITES PASSED SUCCESSFULLY! 🎉');
     console.log('================================================================\n');
   } catch (err) {
     console.error('\n❌ INTEGRATION GATE FAILED:', err);

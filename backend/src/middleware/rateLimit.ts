@@ -6,6 +6,13 @@ interface RateLimitOptions {
   windowMs: number;
   max: number;
   keyPrefix: string;
+  /**
+   * When true, a Redis error blocks the request (503) instead of the default
+   * fail-open behavior. For irreversible actions (Gmail send) where "no rate
+   * limit at all during an outage" is a worse failure mode than "briefly
+   * unavailable" — see docs/integration-audit.md's Gmail write access design.
+   */
+  failClosed?: boolean;
 }
 
 /**
@@ -36,8 +43,12 @@ export const rateLimiter = (options: RateLimitOptions) => {
 
       next();
     } catch (err) {
-      // If Redis rate limiting fails, fail open to avoid service outage, but log error
       console.error('[RateLimit] Redis error:', err);
+      if (options.failClosed) {
+        return next(new AppError(ErrorCode.RATE_LIMIT_UNAVAILABLE, 'Sending is temporarily unavailable, try again shortly.', 503));
+      }
+      // Fail open for everything else, to avoid a Redis blip taking down reads/writes
+      // that aren't individually irreversible.
       next();
     }
   };

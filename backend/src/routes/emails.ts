@@ -6,6 +6,7 @@ import { authenticateJwt, AuthenticatedRequest } from '../middleware/auth.js';
 import { IntelligenceService } from '../services/intelligenceService.js';
 import { rateLimiter } from '../middleware/rateLimit.js';
 import { AppError, ErrorCode } from '../errors/AppError.js';
+import { sendReplyNow, setMailboxLocation, cancelApproval } from '../services/googleWriteService.js';
 
 export const emailsRouter = Router();
 
@@ -19,6 +20,17 @@ const emailActionRateLimiter = rateLimiter({
   windowMs: 60 * 1000, // 1 min
   max: 30,
   keyPrefix: 'email_action',
+});
+
+// Fail-closed (per docs/integration-audit.md's Gmail write access design):
+// a Redis outage blocks sends rather than silently removing their rate limit,
+// since an unlimited irreversible action is a worse failure mode than a
+// temporarily unavailable one.
+const sendRateLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyPrefix: 'email_send',
+  failClosed: true,
 });
 
 // ─── POST /emails/sync ────────────────────────────────────────────────────────
@@ -221,6 +233,116 @@ emailsRouter.post(
       });
     } catch (error: unknown) {
       next(error instanceof AppError ? error : new AppError(ErrorCode.EXTRACTION_FAILED, 'Email extraction failed', 500));
+    }
+  }
+);
+
+// ─── POST /emails/:id/send ────────────────────────────────────────────────────
+// Immediate send — no hold, no auto-send disclosure footer. Requires a
+// client-supplied Idempotency-Key header so a retried request (e.g. a flaky
+// network on the frontend) replays the original outcome instead of sending
+// twice; scoped to this endpoint only, distinct from the server-computed
+// idempotency keys used for actions/opportunities materialization.
+const SendReplySchema = z.object({
+  to: z.string().email(),
+  subject: z.string().min(1).max(998),
+  bodyText: z.string().min(1).max(50_000),
+  inReplyTo: z.string().max(500).optional(),
+  references: z.string().max(2000).optional(),
+});
+
+emailsRouter.post(
+  '/:id/send',
+  authenticateJwt,
+  sendRateLimiter,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const userId = req.user!.userId;
+    const emailId = req.params.id;
+
+    if (!isValidUUID(emailId)) {
+      return next(new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid email ID format', 400));
+    }
+
+    const idempotencyKey = req.headers['idempotency-key'];
+    if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 8 || idempotencyKey.length > 128) {
+      return next(new AppError(ErrorCode.IDEMPOTENCY_KEY_REQUIRED, 'A valid Idempotency-Key header is required.', 400));
+    }
+
+    const parseResult = SendReplySchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return next(new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid send payload', 400));
+    }
+
+    try {
+      const emailCheck = await query(
+        `SELECT google_thread_id FROM emails WHERE id = $1 AND user_id = $2 AND is_deleted = FALSE`,
+        [emailId, userId]
+      );
+      if (emailCheck.rows.length === 0) {
+        return next(new AppError(ErrorCode.NOT_FOUND, 'Email not found', 404));
+      }
+      const threadId = emailCheck.rows[0].google_thread_id;
+      if (!threadId) {
+        return next(new AppError(ErrorCode.VALIDATION_ERROR, 'This email has no Gmail thread to reply on.', 400));
+      }
+
+      const result = await sendReplyNow(userId, { ...parseResult.data, threadId }, idempotencyKey);
+      res.status(result.alreadySent ? 200 : 201).json(result);
+    } catch (error: unknown) {
+      next(error instanceof AppError ? error : new AppError(ErrorCode.GMAIL_SEND_FAILED, 'Failed to send message', 502));
+    }
+  }
+);
+
+// ─── POST /emails/:id/archive | /trash | /spam ────────────────────────────────
+// Synchronous — no hold, no approvals row. Real Gmail label changes; see
+// services/googleWriteService.ts for the label mapping.
+for (const action of ['archive', 'trash', 'spam'] as const) {
+  emailsRouter.post(
+    `/:id/${action}`,
+    authenticateJwt,
+    emailActionRateLimiter,
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+      const userId = req.user!.userId;
+      const emailId = req.params.id;
+
+      if (!isValidUUID(emailId)) {
+        return next(new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid email ID format', 400));
+      }
+
+      try {
+        await setMailboxLocation(userId, emailId, action);
+        res.status(200).json({ status: 'ok', action });
+      } catch (error: unknown) {
+        next(error instanceof AppError ? error : new AppError(ErrorCode.GMAIL_WRITE_FAILED, `Failed to ${action} message`, 502));
+      }
+    }
+  );
+}
+
+// ─── POST /approvals/:id/cancel ───────────────────────────────────────────────
+// In-app cancel for a held auto-send, authenticated by JWT + ownership. The
+// Telegram cancel-token path (same shape as telegram_integration.link_code)
+// is reserved for the notification wiring in a later stage and isn't exposed
+// as a route yet.
+export const approvalsRouter = Router();
+
+approvalsRouter.post(
+  '/:id/cancel',
+  authenticateJwt,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const userId = req.user!.userId;
+    const approvalId = req.params.id;
+
+    if (!isValidUUID(approvalId)) {
+      return next(new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid approval ID format', 400));
+    }
+
+    try {
+      await cancelApproval(approvalId, userId);
+      res.status(200).json({ status: 'cancelled' });
+    } catch (error: unknown) {
+      next(error instanceof AppError ? error : new AppError(ErrorCode.INTERNAL_ERROR, 'Failed to cancel send', 500));
     }
   }
 );

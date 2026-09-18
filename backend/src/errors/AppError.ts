@@ -42,6 +42,15 @@ export const ErrorCode = {
   TELEGRAM_NOT_CONNECTED: 'TELEGRAM_NOT_CONNECTED',
   TELEGRAM_SEND_FAILED: 'TELEGRAM_SEND_FAILED',
 
+  // Gmail write access (archive/trash/spam, send, auto-send hold)
+  GOOGLE_SCOPE_MISSING: 'GOOGLE_SCOPE_MISSING',
+  IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
+  APPROVAL_ALREADY_RESOLVED: 'APPROVAL_ALREADY_RESOLVED',
+  APPROVAL_NOT_FOUND: 'APPROVAL_NOT_FOUND',
+  RATE_LIMIT_UNAVAILABLE: 'RATE_LIMIT_UNAVAILABLE',
+  GMAIL_SEND_FAILED: 'GMAIL_SEND_FAILED',
+  GMAIL_WRITE_FAILED: 'GMAIL_WRITE_FAILED',
+
   // General application
   NOT_FOUND: 'NOT_FOUND',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
@@ -112,26 +121,33 @@ export function toSafeCode(error: unknown): ErrorCodeValue {
 export function httpStatusForCode(code: ErrorCodeValue): number {
   switch (code) {
     case ErrorCode.NOT_FOUND:
+    case ErrorCode.APPROVAL_NOT_FOUND:
       return 404;
     case ErrorCode.VALIDATION_ERROR:
     case ErrorCode.OAUTH_STATE_EXPIRED:
     case ErrorCode.OAUTH_STATE_INVALID:
     case ErrorCode.OAUTH_CALLBACK_FAILED:
+    case ErrorCode.IDEMPOTENCY_KEY_REQUIRED:
       return 400;
     case ErrorCode.AUTH_REQUIRED:
       return 401;
     case ErrorCode.CSRF_INVALID:
+    case ErrorCode.GOOGLE_SCOPE_MISSING:
       return 403;
     case ErrorCode.GMAIL_SYNC_ALREADY_RUNNING:
     case ErrorCode.TELEGRAM_NOT_CONNECTED:
+    case ErrorCode.APPROVAL_ALREADY_RESOLVED:
       return 409;
     case ErrorCode.GOOGLE_RATE_LIMITED:
     case ErrorCode.RATE_LIMITED:
       return 429;
     case ErrorCode.TELEGRAM_SEND_FAILED:
+    case ErrorCode.GMAIL_SEND_FAILED:
+    case ErrorCode.GMAIL_WRITE_FAILED:
       return 502;
     case ErrorCode.EXTRACTION_PROVIDER_UNAVAILABLE:
     case ErrorCode.TELEGRAM_NOT_CONFIGURED:
+    case ErrorCode.RATE_LIMIT_UNAVAILABLE:
       return 503;
     default:
       return 500;

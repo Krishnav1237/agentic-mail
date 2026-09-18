@@ -7,7 +7,7 @@ import { env } from './config/env.js';
 import { checkDatabaseHealth } from './db/index.js';
 import { checkRedisHealth } from './redis/index.js';
 import { authRouter } from './routes/auth.js';
-import { emailsRouter } from './routes/emails.js';
+import { emailsRouter, approvalsRouter } from './routes/emails.js';
 import { threadsRouter } from './routes/threads.js';
 import { syncRouter } from './routes/sync.js';
 import { preferencesRouter } from './routes/preferences.js';
@@ -92,6 +92,7 @@ export function createApp() {
   // ─── Application routes ───────────────────────────────────────────────────────
   app.use('/auth', authRouter);
   app.use('/emails', emailsRouter);
+  app.use('/approvals', approvalsRouter);
   app.use('/threads', threadsRouter);
   app.use('/sync', syncRouter);
   app.use('/preferences', preferencesRouter);
