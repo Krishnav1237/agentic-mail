@@ -22,6 +22,7 @@ export async function applyMigrationsClean() {
     '010_emails_status_constraint.sql',
     '011_settings_profile_telegram.sql',
     '012_gmail_write_access.sql',
+    '013_reply_drafting.sql',
   ];
 
   // Drop schema public

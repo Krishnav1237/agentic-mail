@@ -75,12 +75,31 @@ function buildMimeMessage(payload: PreparedSendPayload, discloseAutoSent: boolea
  * BullMQ delayed job using the approval id as the jobId. The DB row (not the
  * queue) is the source of truth for whether the send still happens — the
  * queue only controls timing. See workers/agentExecutionWorker.ts.
+ *
+ * `idempotencyKey` is optional (backward compatible — `idempotency_key TEXT
+ * UNIQUE` allows unlimited NULLs, so omitting it preserves the old
+ * always-insert behavior) but load-bearing for any caller that can be
+ * invoked concurrently for the same logical send, e.g.
+ * services/replyDraftingService.ts, which can run
+ * `POST /emails/:id/extract`-triggered twice for the same email at once.
+ *
+ * THE RACE THIS CLOSES: two concurrent callers passing the same
+ * idempotencyKey both reach this function; both run the INSERT below
+ * concurrently. `ON CONFLICT (idempotency_key) DO NOTHING RETURNING id` means
+ * Postgres's own unique-index enforcement — not application timing —
+ * guarantees exactly one of the two statements returns a row, regardless of
+ * how close together they run. Only the call that gets a row back schedules
+ * a BullMQ job, so at most one delayed send is ever scheduled for one
+ * idempotency key, even under a true concurrent race. This is the same
+ * DB-as-arbiter principle already load-bearing in the pending->sending claim
+ * in executeQueuedSend and in upsertDraftApproval's ON CONFLICT DO UPDATE.
  */
 export async function queueAutoSend(
   userId: string,
   emailId: string,
-  preparedPayload: PreparedSendPayload
-): Promise<{ approvalId: string; cancelToken: string; scheduledAt: Date }> {
+  preparedPayload: PreparedSendPayload,
+  idempotencyKey?: string
+): Promise<{ approvalId: string; cancelToken: string; scheduledAt: Date; alreadyQueued: boolean }> {
   await assertGmailScope(userId, GMAIL_SEND_SCOPE);
 
   const cancelToken = crypto.randomBytes(32).toString('base64url');
@@ -88,11 +107,29 @@ export async function queueAutoSend(
 
   const { rows } = await query(
     `INSERT INTO approvals
-       (user_id, email_id, action_type, status, prepared_payload, scheduled_at, cancel_token, cancel_token_expires_at)
-     VALUES ($1, $2, 'send_reply', 'pending', $3, $4, $5, $4)
+       (user_id, email_id, action_type, status, prepared_payload, scheduled_at, cancel_token, cancel_token_expires_at, idempotency_key)
+     VALUES ($1, $2, 'send_reply', 'pending', $3, $4, $5, $4, $6)
+     ON CONFLICT (idempotency_key) DO NOTHING
      RETURNING id`,
-    [userId, emailId, JSON.stringify(preparedPayload), scheduledAt, cancelToken]
+    [userId, emailId, JSON.stringify(preparedPayload), scheduledAt, cancelToken, idempotencyKey ?? null]
   );
+
+  if (rows.length === 0) {
+    // Lost the race — another concurrent call already claimed this key.
+    // Do NOT schedule a second delayed job; that's the entire fix.
+    const existing = await query(
+      `SELECT id, cancel_token, scheduled_at FROM approvals WHERE idempotency_key = $1`,
+      [idempotencyKey]
+    );
+    const winner = existing.rows[0];
+    return {
+      approvalId: winner.id,
+      cancelToken: winner.cancel_token,
+      scheduledAt: winner.scheduled_at,
+      alreadyQueued: true,
+    };
+  }
+
   const approvalId = rows[0].id as string;
 
   await agentQueue.add(
@@ -107,7 +144,7 @@ export async function queueAutoSend(
   );
 
   await writeAuditEvent(userId, 'auto_send_queued', { approvalId, emailId });
-  return { approvalId, cancelToken, scheduledAt };
+  return { approvalId, cancelToken, scheduledAt, alreadyQueued: false };
 }
 
 /**

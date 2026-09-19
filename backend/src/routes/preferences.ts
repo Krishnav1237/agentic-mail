@@ -172,7 +172,10 @@ const AgentPreferencesSchema = z
  * all-or-nothing. A blob with one bad enum must yield eight good fields and
  * one default, not the whole default object.
  */
-function normalizePreferences(raw: unknown): AgentPreferences {
+/** Exported for services/replyDraftingService.ts — reuses this rather than a
+ * second hand-maintained normalizer for the two fields it needs
+ * (replyDrafting, replyTone). See this file's own header on enum drift. */
+export function normalizePreferences(raw: unknown): AgentPreferences {
   const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 
   const oneOf = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>

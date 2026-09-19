@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { query, db } from '../db/index.js';
 import { StructuredAiService } from '../ai/structuredAiService.js';
 import { scoreAndRecord } from './emailScoringService.js';
+import { processReplyDrafting } from './replyDraftingService.js';
 import { env } from '../config/env.js';
 import { AppError, ErrorCode, toSafeCode } from '../errors/AppError.js';
 
@@ -159,9 +160,9 @@ export class IntelligenceService {
           `INSERT INTO email_intelligence (
              email_id, extraction_version, intent_classification, sender_classification,
              priority_score, urgency_score, is_noise, action_candidates, opportunity_candidates,
-             extracted_reasoning, analysis_mode
+             extracted_reasoning, analysis_mode, reply_worthy, reply_worthy_confidence
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
            ON CONFLICT (email_id, extraction_version) DO UPDATE SET
              intent_classification   = EXCLUDED.intent_classification,
              sender_classification   = EXCLUDED.sender_classification,
@@ -172,6 +173,8 @@ export class IntelligenceService {
              opportunity_candidates  = EXCLUDED.opportunity_candidates,
              extracted_reasoning     = EXCLUDED.extracted_reasoning,
              analysis_mode           = EXCLUDED.analysis_mode,
+             reply_worthy            = EXCLUDED.reply_worthy,
+             reply_worthy_confidence = EXCLUDED.reply_worthy_confidence,
              updated_at              = NOW()`,
           [
             emailId,
@@ -185,6 +188,8 @@ export class IntelligenceService {
             JSON.stringify(data.opportunityCandidates),
             data.reasoning,
             analysisMode,
+            data.replyWorthy,
+            data.replyWorthyConfidence,
           ]
         );
 
@@ -331,6 +336,23 @@ export class IntelligenceService {
         );
 
         await client.query('COMMIT');
+
+        // Deliberately AFTER commit, not inside the transaction: Phase B is a
+        // second, separate LLM call with its own latency/failure modes, and a
+        // timeout on the drafting call must never roll back a classification
+        // that already succeeded. A failure here is logged, not thrown —
+        // extraction has already committed and this endpoint's contract is
+        // "extraction completed", not "extraction and drafting completed".
+        if (!data.isNoise) {
+          await processReplyDrafting(emailId, userId, {
+            isNoise: data.isNoise,
+            replyWorthy: data.replyWorthy,
+            replyWorthyConfidence: data.replyWorthyConfidence,
+          }).catch((err) => {
+            console.error(`[Reply Drafting] Failed for email ${emailId}:`, err instanceof Error ? err.message : err);
+          });
+        }
+
         return extractionRunId;
       } catch (txErr: unknown) {
         await client.query('ROLLBACK');

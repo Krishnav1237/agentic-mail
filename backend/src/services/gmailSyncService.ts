@@ -461,6 +461,10 @@ export class GmailSyncService {
     const bodyText = extractBodyText(payload);
     const attachmentMeta = extractAttachmentMetadata(payload);
     const labels: string[] = Array.isArray(msg.labelIds) ? msg.labelIds : [];
+    // Captured for reply threading (migration 013) — an outgoing reply's
+    // In-Reply-To/References headers are built from these, not invented.
+    const messageIdHeader = parseHeader(headers, 'Message-ID') || null;
+    const referencesHeader = parseHeader(headers, 'References') || null;
 
     let threadDbId: string | null = null;
     let threadCreated = false;
@@ -492,13 +496,16 @@ export class GmailSyncService {
       `INSERT INTO emails (
          user_id, google_message_id, google_thread_id, thread_id,
          sender_email, sender_name, subject, body_text, received_at,
-         labels, attachment_metadata, ingestion_status, ai_processing_status, processed_at
+         labels, attachment_metadata, ingestion_status, ai_processing_status, processed_at,
+         message_id_header, references_header
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'ingested', 'unprocessed', NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'ingested', 'unprocessed', NOW(), $12, $13)
        ON CONFLICT (user_id, google_message_id) DO UPDATE SET
          labels              = EXCLUDED.labels,
          attachment_metadata = EXCLUDED.attachment_metadata,
-         ingestion_status    = 'ingested'
+         ingestion_status    = 'ingested',
+         message_id_header   = EXCLUDED.message_id_header,
+         references_header   = EXCLUDED.references_header
        RETURNING (xmax = 0) AS created`,
       [
         userId,
@@ -512,6 +519,8 @@ export class GmailSyncService {
         receivedAt,
         labels,
         JSON.stringify(attachmentMeta),
+        messageIdHeader,
+        referencesHeader,
       ]
     );
 
