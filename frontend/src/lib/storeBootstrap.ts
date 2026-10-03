@@ -19,11 +19,18 @@
  * left on defaults — the phase still ends. Blocking the shell until success
  * would turn one backend blip into a permanently blank workspace.
  */
-import { fetchPreferences, fetchProfile, fetchTelegram, isBackendEnabled } from './apiClient';
+import {
+  fetchPreferences,
+  fetchProfile,
+  fetchTelegram,
+  fetchThreads,
+  isBackendEnabled,
+} from './apiClient';
 import { settingsActions } from './settingsStore';
 import { profileActions } from './userProfileStore';
 import { telegramActions } from './telegramIntegrationStore';
 import { syncStatusActions } from './syncStatus';
+import { demoMailboxInput, getMailSnapshot, mailActions, threadToMailRow } from './mailStore';
 
 /**
  * The `localStorage` keys these three stores used before they had a backend.
@@ -74,17 +81,18 @@ export async function bootstrapStores(): Promise<void> {
 
   syncStatusActions.beginLoading();
 
-  // `allSettled`, not `all`: one failure must not deny the other two their
+  // `allSettled`, not `all`: one failure must not deny the others their
   // data, and every outcome has to be recorded before the phase can end.
   const results = await Promise.allSettled([
     fetchPreferences(),
     fetchProfile(),
     fetchTelegram(),
+    fetchThreads(),
   ]);
 
   const failed: string[] = [];
 
-  const [preferences, profile, telegram] = results;
+  const [preferences, profile, telegram, threads] = results;
 
   if (preferences.status === 'fulfilled') {
     settingsActions.hydrate(preferences.value);
@@ -105,6 +113,50 @@ export async function bootstrapStores(): Promise<void> {
   } else {
     telegramActions.markUnavailable();
     failed.push('Telegram');
+  }
+
+  if (threads.status === 'fulfilled') {
+    // Real inbox data replaces ONLY the Inbox slice of mailStore's unified
+    // `rows` array — everything else (Approvals/demoMail/Opportunities-
+    // sourced rows, anything already filed to Archive/Trash/Spam/Snoozed or
+    // starred, and drafts/scheduled/sent) is explicitly carried forward,
+    // because `hydrate()` itself is a from-scratch replace with no notion of
+    // "what was already there." See docs/integration-audit.md §1 and §5.
+    //
+    // ACCEPTED, BOUNDED LIMITATION: every real thread lands with
+    // `status: 'inbox'` regardless of its actual Gmail location, because
+    // `GET /threads` doesn't expose mailbox location yet (separate,
+    // in-progress backend work) — a thread already archived/trashed/
+    // spammed in real Gmail will incorrectly show up in Inbox until that
+    // lands, and self-corrects once it does.
+    const previous = getMailSnapshot();
+    const preservedRows = previous.rows.filter(
+      (r) => r.status !== 'inbox' || r.starred
+    );
+    // A preserved row already carries everything its original source
+    // (an approval, a demoMail item, an opportunity) would otherwise
+    // re-derive from scratch — excluding its source here is what stops the
+    // same id showing up twice (once preserved as the user left it, once
+    // freshly re-adapted back to plain `inbox`/unstarred).
+    const preservedIds = new Set(preservedRows.map((r) => r.id));
+    const demoInput = demoMailboxInput();
+    mailActions.hydrate({
+      ...demoInput,
+      approvals: demoInput.approvals?.filter((a) => !preservedIds.has(a.id)),
+      demoMail: demoInput.demoMail?.filter((m) => !preservedIds.has(m.id)),
+      opportunities: demoInput.opportunities?.filter(
+        (o) => !preservedIds.has(o.id)
+      ),
+      rows: [...preservedRows, ...threads.value.threads.map(threadToMailRow)],
+      sent: previous.sent,
+      scheduled: previous.scheduled,
+      drafts: previous.drafts,
+    });
+  } else {
+    // Left exactly as the demo bootstrap already hydrated it at module
+    // load — better than a blank inbox, and nothing here can distinguish
+    // "server has no threads" from "request failed" anyway.
+    failed.push('Inbox');
   }
 
   syncStatusActions.finishLoading(failed);

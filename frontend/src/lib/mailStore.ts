@@ -65,6 +65,13 @@ import {
 } from './agentPreferences';
 import { getAgentPreferences, subscribeToPreferences } from './settingsStore';
 import {
+  ApiError,
+  isBackendEnabled,
+  sendEmail,
+  type ThreadSummary,
+} from './apiClient';
+import { syncStatusActions } from './syncStatus';
+import {
   CURRENT_USER_EMAIL,
   CURRENT_USER_NAME,
   initialsOf,
@@ -212,6 +219,14 @@ export type StoredMailRow = MailRow & {
    * below, agree on when 30 days is up. */
   trashedAt?: string;
   spamAt?: string;
+  /** The backend's own id for this thread's latest message — present only
+   * on a row hydrated from `GET /threads` (see `threadToMailRow`). That
+   * route, not this row's own `id` (a thread id), is what a real
+   * `POST /emails/:id/send` or `/archive|trash|spam` call needs, because
+   * those routes act on one email, not a thread. Absent for every demo/mock
+   * row, which is exactly the switch `mailActions.sendReply` reads to decide
+   * whether to attempt a real send. */
+  latestEmailId?: string;
 };
 
 /**
@@ -589,6 +604,36 @@ function opportunityToThreadDetail(o: Opportunity): ThreadDetail {
       },
     ],
     draftPreview: '',
+  };
+}
+
+/**
+ * Maps one `GET /threads` row into the canonical `MailRow` shape, plus the
+ * one extra field (`latestEmailId`) a real send/archive/trash/spam call
+ * needs — see `StoredMailRow.latestEmailId`.
+ *
+ * Deliberately thin: `GET /threads` doesn't join `email_intelligence`, so
+ * there is no real `classification`/`topic`/deadline signal to put on this
+ * row the way the demo adapters above have for their own fixtures — left
+ * undefined rather than guessed. `category` has no backend equivalent
+ * either (the LATERAL join doesn't select anything resembling Primary/
+ * Updates/Promotions); defaulted to `'Primary'`, the same neutral bucket
+ * every other adapter in this file already uses for a record with no real
+ * category of its own (`approvalToRow`, `demoMailToRow`, `opportunityToRow`).
+ */
+export function threadToMailRow(
+  t: ThreadSummary
+): MailRow & { latestEmailId: string } {
+  return {
+    id: t.id,
+    sender: t.sender_name,
+    senderEmail: t.sender_email,
+    subject: t.subject,
+    snippet: t.snippet,
+    date: t.received_at ?? t.last_message_at ?? new Date(0).toISOString(),
+    unread: t.status === 'unread',
+    category: 'Primary',
+    latestEmailId: t.email_id,
   };
 }
 
@@ -1021,17 +1066,26 @@ export function buildMailbox(input: MailboxInput): State {
   const rows = refreshDerivedState(
     applyActionDeadlines(
       [
-        // Rows already authored in the canonical shape; the only thing to
-        // resolve is an absent `attention`, which always means `normal`
-        // (never a page-specific default).
-        ...(input.rows ?? []).map((r) => ({
-          ...r,
-          starred: false,
-          status: 'inbox' as MailStatus,
-          attention: r.completedAt
-            ? NORMAL_ATTENTION
-            : attentionOr(r.attention),
-        })),
+        // Rows already authored in the canonical shape. A plain `MailRow`
+        // (no `starred`/`status` of its own) defaults to unstarred/inbox, as
+        // always. But `input.rows` also doubles as the merge point a real
+        // hydrate uses to carry a `StoredMailRow` it already had — e.g. one
+        // already filed to Archive/Trash/Spam/Snoozed or starred — through
+        // this same from-scratch rebuild without resetting it (see
+        // `storeBootstrap.ts`'s real-thread hydration). So an already-
+        // resolved `status`/`starred` on the incoming row wins over the
+        // default instead of being overwritten by it.
+        ...(input.rows ?? []).map((r) => {
+          const existing = r as Partial<StoredMailRow>;
+          return {
+            ...r,
+            starred: existing.starred ?? false,
+            status: existing.status ?? ('inbox' as MailStatus),
+            attention: r.completedAt
+              ? NORMAL_ATTENTION
+              : attentionOr(r.attention),
+          };
+        }),
         ...(input.approvals ?? []).map(approvalToRow),
         ...(input.demoMail ?? []).map(demoMailToRow),
         ...(input.opportunities ?? []).map(opportunityToRow),
@@ -1385,7 +1439,45 @@ export const mailActions = {
    * save-as-draft, because they are the same message at three moments — and
    * because a parameter list that omits a field is how Cc, Bcc, the real body
    * and every attachment used to get dropped silently on the way out. */
-  sendReply(input: OutgoingInput) {
+  async sendReply(input: OutgoingInput) {
+    // A REAL send — only when this thread came from `GET /threads` (it
+    // carries `latestEmailId`; see that field's own doc) and a backend is
+    // actually configured. A demo/mock thread (approvals, demoMail,
+    // opportunities, or Inbox before any backend is wired) has no backing
+    // email id and keeps the local-only behavior below unchanged.
+    //
+    // Thrown on failure, BEFORE any local state changes, so a failed real
+    // send is never mistaken for a sent one — the caller (`MailThreadView`)
+    // propagates this to the composer, which shows an error instead of its
+    // "Sent" confirmation.
+    const sourceRow = findRow(input.threadId);
+    if (sourceRow?.latestEmailId && isBackendEnabled()) {
+      try {
+        await sendEmail(
+          sourceRow.latestEmailId,
+          {
+            // `POST /emails/:id/send` takes exactly one `to` address and has
+            // no Cc/Bcc/attachments fields at all — see
+            // docs/integration-audit.md. Extra recipients, Cc, Bcc and any
+            // attachment are therefore silently not part of the real send
+            // until that route grows them; this is a backend gap, not
+            // something this client can work around.
+            to: input.recipients.to[0],
+            subject: input.subject,
+            bodyText: input.body.text,
+          },
+          crypto.randomUUID()
+        );
+      } catch (error) {
+        syncStatusActions.reportWriteError(
+          `Couldn't send this reply — ${
+            error instanceof ApiError ? error.message : 'the request failed.'
+          }`
+        );
+        throw error;
+      }
+    }
+
     // Replying to a thread the Completed page already shows is exactly the
     // "manual reply reactivates a completed thread" path — a no-op on any
     // ordinary active thread (see `reactivate`'s own guard).

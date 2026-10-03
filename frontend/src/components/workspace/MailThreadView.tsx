@@ -689,14 +689,20 @@ export function MailThreadView({
   // always has) until the user explicitly collapses it via the eyebrow's
   // close control, rather than yanking that confirmation away the instant
   // it appears.
-  const doSend = (payload: ComposerPayload) => {
+  // Async because `mailActions.sendReply` is: a real `GET /threads`-hydrated
+  // row routes through an actual Gmail send, and that can fail. Left
+  // UNAWAITED here on purpose when a caller-supplied `onSend` takes over
+  // (Drafts/Scheduled/Approvals) — none of those ever resolve to a row
+  // carrying `latestEmailId` today, so they stay on the original
+  // synchronous, always-succeeding local path with no behavior change.
+  const doSend = async (payload: ComposerPayload): Promise<void> => {
     if (!selected) return;
     if (onSend) {
       onSend(selected, payload);
       return;
     }
     const input = outgoingFrom(payload);
-    if (input) mailActions.sendReply(input);
+    if (input) await mailActions.sendReply(input);
   };
   const doSchedule = (date: Date, payload: ComposerPayload) => {
     if (!selected) return;

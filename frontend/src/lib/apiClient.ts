@@ -176,11 +176,14 @@ function handleUnauthorized(): void {
 type RequestOptions = {
   method?: string;
   body?: unknown;
+  /** Extra headers beyond Content-Type/CSRF — e.g. `Idempotency-Key` for a
+   * send. Never overridden by this function's own headers below. */
+  headers?: Record<string, string>;
 };
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? 'GET';
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(options.headers ?? {}) };
 
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
@@ -425,4 +428,85 @@ export function disconnectTelegram(): Promise<TelegramIntegration> {
  * TELEGRAM_NOT_CONFIGURED, which the store maps into its own result shape. */
 export function sendTelegramTest(): Promise<{ ok: true }> {
   return request<{ ok: true }>('/integrations/telegram/test', { method: 'POST' });
+}
+
+/**
+ * One row of `GET /threads` — the thread itself plus its most recent
+ * message's own fields, exactly as the backend's LATERAL join returns them
+ * (snake_case, untransformed; see `backend/src/routes/threads.ts`).
+ *
+ * Deliberately NOT the full message history — `snippet` is the latest
+ * message truncated to 200 chars. There is no backend endpoint today that
+ * returns a thread's full conversation (confirmed: no `/threads/:id`, no
+ * `thread_id` filter on `GET /emails`) — see docs/integration-audit.md.
+ */
+export type ThreadSummary = {
+  id: string;
+  google_thread_id: string;
+  message_count: number;
+  last_message_at: string | null;
+  /** The latest message's own id — the `:id` a real
+   * `POST /emails/:id/send` or `/archive|trash|spam` call needs, since those
+   * routes act on one email, not a thread. */
+  email_id: string;
+  subject: string;
+  sender_email: string;
+  sender_name: string;
+  snippet: string;
+  received_at: string | null;
+  classification: string | null;
+  ai_score: number | null;
+  status: 'unread' | 'read' | 'deleted';
+};
+
+export type ThreadsResponse = {
+  threads: ThreadSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+/**
+ * Fetches one page of threads — the max page size (100), no further
+ * pagination. `GET /threads` doesn't expose mailbox location (Archive/
+ * Trash/Spam/Snoozed), so this is only ever used to hydrate the Inbox slice
+ * of `mailStore`'s unified `rows` array — see `storeBootstrap.ts`.
+ */
+export function fetchThreads(): Promise<ThreadsResponse> {
+  return request<ThreadsResponse>('/threads?limit=100');
+}
+
+/** `POST /emails/:id/send`'s request body. Exactly one `to` address, no
+ * Cc/Bcc, no attachments — the route has no fields for any of those. */
+export type SendEmailBody = {
+  to: string;
+  subject: string;
+  bodyText: string;
+  inReplyTo?: string;
+  references?: string;
+};
+
+export type SendEmailResponse = {
+  approvalId: string;
+  /** `true` when this exact `Idempotency-Key` was already used and the
+   * original send is simply being echoed back, not re-sent. */
+  alreadySent: boolean;
+};
+
+/**
+ * A REAL Gmail send — this hits `gmail.users.messages.send` on the backend,
+ * not a mock. `idempotencyKey` must be 8–128 chars; generate one per send
+ * attempt (`crypto.randomUUID()`) and reuse it across retries of that same
+ * attempt, never mint a fresh one on retry.
+ */
+export function sendEmail(
+  emailId: string,
+  body: SendEmailBody,
+  idempotencyKey: string
+): Promise<SendEmailResponse> {
+  return request<SendEmailResponse>(`/emails/${emailId}/send`, {
+    method: 'POST',
+    body,
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
 }

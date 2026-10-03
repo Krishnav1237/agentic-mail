@@ -2028,10 +2028,15 @@ export function ReplyComposer({
    * to (no callers currently need that, but it keeps this optional rather
    * than assumed). */
   onDiscard?: () => void;
-  /** Called the moment the composer transitions to `sent`, with the final
-   * HTML content — lets the caller record the outgoing message (e.g. into
-   * the Sent view) without the composer itself owning that business logic. */
-  onSend?: (payload: ComposerPayload) => void;
+  /** Called when the user presses Send, with the final HTML content — lets
+   * the caller record the outgoing message (e.g. into the Sent view)
+   * without the composer itself owning that business logic.
+   *
+   * May return a `Promise` — a real send can fail. The composer awaits it
+   * and only shows its "Sent" confirmation once it resolves; a rejection
+   * shows an inline error instead and leaves the composer exactly as it
+   * was, so nothing here is ever shown as sent when it wasn't. */
+  onSend?: (payload: ComposerPayload) => void | Promise<void>;
   /** Called the moment the composer transitions to `scheduled`, with the
    * chosen send date and the final HTML content — lets the caller record it
    * (e.g. into the Scheduled view). */
@@ -2088,6 +2093,11 @@ export function ReplyComposer({
   const [discardPromptOpen, setDiscardPromptOpen] = useState(false);
   const [savingDraftFromPrompt, setSavingDraftFromPrompt] = useState(false);
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
+  /** In flight between pressing Send and `onSend` resolving. Only ever true
+   * for a real backend send (see `onSend`'s own doc) — the local-only mock
+   * path resolves synchronously, so this never visibly renders there. */
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   useEffect(() => {
     const isLinkModifier = (e: KeyboardEvent) =>
@@ -2306,12 +2316,23 @@ export function ReplyComposer({
     }
   };
 
-  const sendNow = () => {
-    if (!hasValidRecipient) return;
+  const sendNow = async () => {
+    if (!hasValidRecipient || sending) return;
     setSendMenuOpen(false);
     setScheduleOpen(false);
-    setStatus('sent');
-    onSend?.(currentPayload());
+    setSendError(null);
+    setSending(true);
+    try {
+      await onSend?.(currentPayload());
+      setSending(false);
+      setStatus('sent');
+    } catch {
+      // Composer stays in `preview` with everything the user wrote intact —
+      // the same "never claim it worked when it didn't" rule
+      // `confirmSaveAsDraft` already follows for a failed draft save.
+      setSending(false);
+      setSendError("Couldn't send this reply. Try again.");
+    }
   };
 
   const applySchedule = (date: Date) => {
@@ -2851,6 +2872,18 @@ export function ReplyComposer({
                 Add at least one recipient before sending.
               </span>
             )}
+            {hasValidRecipient && sendError && (
+              <span
+                role="alert"
+                style={{
+                  marginRight: 'auto',
+                  font: '400 11.5px Inter, sans-serif',
+                  color: 'rgb(var(--coral) / 0.95)',
+                }}
+              >
+                {sendError}
+              </span>
+            )}
             <button
               type="button"
               className="obligo-btn obligo-btn--ghost"
@@ -2874,8 +2907,8 @@ export function ReplyComposer({
               <button
                 type="button"
                 className="obligo-btn obligo-btn--primary"
-                aria-disabled={!hasValidRecipient}
-                disabled={!hasValidRecipient}
+                aria-disabled={!hasValidRecipient || sending}
+                disabled={!hasValidRecipient || sending}
                 title={
                   hasValidRecipient
                     ? undefined
@@ -2884,21 +2917,21 @@ export function ReplyComposer({
                 style={{
                   borderTopRightRadius: 0,
                   borderBottomRightRadius: 0,
-                  opacity: hasValidRecipient ? 1 : 0.5,
-                  cursor: hasValidRecipient ? 'pointer' : 'not-allowed',
+                  opacity: hasValidRecipient && !sending ? 1 : 0.5,
+                  cursor: hasValidRecipient && !sending ? 'pointer' : 'not-allowed',
                 }}
                 onClick={sendNow}
               >
                 <Send size={13} strokeWidth={2} aria-hidden />
-                {sendLabel}
+                {sending ? 'Sending…' : sendLabel}
               </button>
               <button
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={sendMenuOpen}
                 aria-label="Send options"
-                aria-disabled={!hasValidRecipient}
-                disabled={!hasValidRecipient}
+                aria-disabled={!hasValidRecipient || sending}
+                disabled={!hasValidRecipient || sending}
                 title={
                   hasValidRecipient
                     ? undefined
@@ -2910,8 +2943,8 @@ export function ReplyComposer({
                   borderBottomLeftRadius: 0,
                   borderLeft: '1px solid rgba(255,255,255,0.22)',
                   paddingInline: 8,
-                  opacity: hasValidRecipient ? 1 : 0.5,
-                  cursor: hasValidRecipient ? 'pointer' : 'not-allowed',
+                  opacity: hasValidRecipient && !sending ? 1 : 0.5,
+                  cursor: hasValidRecipient && !sending ? 'pointer' : 'not-allowed',
                 }}
                 onClick={() => setSendMenuOpen((o) => !o)}
               >
