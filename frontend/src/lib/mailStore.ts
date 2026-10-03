@@ -1451,10 +1451,16 @@ export const mailActions = {
     // propagates this to the composer, which shows an error instead of its
     // "Sent" confirmation.
     const sourceRow = findRow(input.threadId);
-    if (sourceRow?.latestEmailId && isBackendEnabled()) {
+    // Set only for a genuine backend send — see `StoredMailRow.latestEmailId`.
+    // Narrowed into its own variable (rather than re-checking
+    // `sourceRow?.latestEmailId` below) so the local-state step after it can
+    // ask the same "was this real" question without re-deriving it.
+    const realEmailId = isBackendEnabled() ? sourceRow?.latestEmailId : undefined;
+
+    if (realEmailId) {
       try {
         await sendEmail(
-          sourceRow.latestEmailId,
+          realEmailId,
           {
             // `POST /emails/:id/send` takes exactly one `to` address and has
             // no Cc/Bcc/attachments fields at all — see
@@ -1482,7 +1488,22 @@ export const mailActions = {
     // "manual reply reactivates a completed thread" path — a no-op on any
     // ordinary active thread (see `reactivate`'s own guard).
     mailActions.reactivate(input.threadId);
-    const row = outgoingRowFrom(input, new Date().toISOString());
+    // On a real send, the local "Sent" record must show what actually went
+    // out, not what the composer merely had open — the call above only ever
+    // carries `to[0]`/subject/bodyText, so showing extra `to` entries, any
+    // Cc/Bcc, or attachments here would claim a delivery that never
+    // happened. The local-only path (no backend configured, or a demo/
+    // approval/draft thread with no `latestEmailId`) is untouched: nothing
+    // there was ever dropped, so the full composed message is exactly what
+    // "sent" means.
+    const sentInput: OutgoingInput = realEmailId
+      ? {
+          ...input,
+          recipients: { to: input.recipients.to.slice(0, 1), cc: [], bcc: [] },
+          attachments: [],
+        }
+      : input;
+    const row = outgoingRowFrom(sentInput, new Date().toISOString());
     // A real send — fold it into the thread right away (unlike
     // `scheduleReply` below, which deliberately doesn't) so Inbox and every
     // other page reading this thread's id see the reply immediately, the
