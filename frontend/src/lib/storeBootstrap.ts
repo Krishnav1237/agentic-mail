@@ -30,7 +30,15 @@ import { settingsActions } from './settingsStore';
 import { profileActions } from './userProfileStore';
 import { telegramActions } from './telegramIntegrationStore';
 import { syncStatusActions } from './syncStatus';
-import { demoMailboxInput, getMailSnapshot, mailActions, threadToMailRow } from './mailStore';
+import {
+  demoMailboxInput,
+  getMailSnapshot,
+  mailActions,
+  threadToMailRow,
+  type MailboxInput,
+} from './mailStore';
+import type { ThreadSummary } from './apiClient';
+import type { ThreadDetail } from './workspaceData';
 
 /**
  * The `localStorage` keys these three stores used before they had a backend.
@@ -58,6 +66,71 @@ function clearRetiredStorage(): void {
     // cookies) — the same guard every one of these stores already used to read
     // through. Failing to tidy up is never worth breaking the boot for.
   }
+}
+
+/**
+ * Assembles the `MailboxInput` a real `GET /threads` hydration passes to
+ * `mailActions.hydrate()` — pulled out as its own pure function so the
+ * merge logic is directly testable without mocking the network.
+ *
+ * Real inbox data replaces ONLY the Inbox slice of mailStore's unified
+ * `rows` array — everything else (Approvals/demoMail/Opportunities-sourced
+ * rows, anything already filed to Archive/Trash/Spam/Snoozed or starred,
+ * and drafts/scheduled/sent) is explicitly carried forward, because
+ * `hydrate()` itself is a from-scratch replace with no notion of "what was
+ * already there." See docs/integration-audit.md §1 and §5.
+ *
+ * ACCEPTED, BOUNDED LIMITATION: every real thread lands with
+ * `status: 'inbox'` regardless of its actual Gmail location, because
+ * `GET /threads` doesn't expose mailbox location yet (separate, in-progress
+ * backend work) — a thread already archived/trashed/spammed in real Gmail
+ * will incorrectly show up in Inbox until that lands, and self-corrects
+ * once it does.
+ */
+export function buildInboxHydrationInput(
+  threadRows: ThreadSummary[],
+  previous: ReturnType<typeof getMailSnapshot>
+): MailboxInput {
+  const preservedRows = previous.rows.filter(
+    (r) => r.status !== 'inbox' || r.starred
+  );
+  // A preserved row already carries everything its original source (an
+  // approval, a demoMail item, an opportunity) would otherwise re-derive
+  // from scratch — excluding its source here is what stops the same id
+  // showing up twice (once preserved as the user left it, once freshly
+  // re-adapted back to plain `inbox`/unstarred).
+  const preservedIds = new Set(preservedRows.map((r) => r.id));
+  const demoInput = demoMailboxInput();
+
+  // `buildThreadDetails` only ever derives entries from
+  // `approvals`/`demoMail`/`opportunities` — it never reads `rows` at all.
+  // Excluding a preserved row's source above is correct for `rows` but
+  // leaves nothing behind to produce ITS thread detail, since that detail
+  // is never carried forward the way drafts/sent/scheduled are. Without
+  // this, a preserved row still lists correctly but opens onto an empty/
+  // broken thread. Pulled from `previous.threadDetails` rather than carried
+  // forward wholesale — only the ids this hydrate is actually preserving,
+  // so every other id still gets the fresh derivation its (still-included)
+  // source produces.
+  const preservedThreadDetails: Record<string, ThreadDetail> = {};
+  for (const row of preservedRows) {
+    const detail = previous.threadDetails[row.id];
+    if (detail) preservedThreadDetails[row.id] = detail;
+  }
+
+  return {
+    ...demoInput,
+    threadDetails: { ...demoInput.threadDetails, ...preservedThreadDetails },
+    approvals: demoInput.approvals?.filter((a) => !preservedIds.has(a.id)),
+    demoMail: demoInput.demoMail?.filter((m) => !preservedIds.has(m.id)),
+    opportunities: demoInput.opportunities?.filter(
+      (o) => !preservedIds.has(o.id)
+    ),
+    rows: [...preservedRows, ...threadRows.map(threadToMailRow)],
+    sent: previous.sent,
+    scheduled: previous.scheduled,
+    drafts: previous.drafts,
+  };
 }
 
 /** Idempotent across React's StrictMode double-effect and any remount. */
@@ -116,42 +189,9 @@ export async function bootstrapStores(): Promise<void> {
   }
 
   if (threads.status === 'fulfilled') {
-    // Real inbox data replaces ONLY the Inbox slice of mailStore's unified
-    // `rows` array — everything else (Approvals/demoMail/Opportunities-
-    // sourced rows, anything already filed to Archive/Trash/Spam/Snoozed or
-    // starred, and drafts/scheduled/sent) is explicitly carried forward,
-    // because `hydrate()` itself is a from-scratch replace with no notion of
-    // "what was already there." See docs/integration-audit.md §1 and §5.
-    //
-    // ACCEPTED, BOUNDED LIMITATION: every real thread lands with
-    // `status: 'inbox'` regardless of its actual Gmail location, because
-    // `GET /threads` doesn't expose mailbox location yet (separate,
-    // in-progress backend work) — a thread already archived/trashed/
-    // spammed in real Gmail will incorrectly show up in Inbox until that
-    // lands, and self-corrects once it does.
-    const previous = getMailSnapshot();
-    const preservedRows = previous.rows.filter(
-      (r) => r.status !== 'inbox' || r.starred
+    mailActions.hydrate(
+      buildInboxHydrationInput(threads.value.threads, getMailSnapshot())
     );
-    // A preserved row already carries everything its original source
-    // (an approval, a demoMail item, an opportunity) would otherwise
-    // re-derive from scratch — excluding its source here is what stops the
-    // same id showing up twice (once preserved as the user left it, once
-    // freshly re-adapted back to plain `inbox`/unstarred).
-    const preservedIds = new Set(preservedRows.map((r) => r.id));
-    const demoInput = demoMailboxInput();
-    mailActions.hydrate({
-      ...demoInput,
-      approvals: demoInput.approvals?.filter((a) => !preservedIds.has(a.id)),
-      demoMail: demoInput.demoMail?.filter((m) => !preservedIds.has(m.id)),
-      opportunities: demoInput.opportunities?.filter(
-        (o) => !preservedIds.has(o.id)
-      ),
-      rows: [...preservedRows, ...threads.value.threads.map(threadToMailRow)],
-      sent: previous.sent,
-      scheduled: previous.scheduled,
-      drafts: previous.drafts,
-    });
   } else {
     // Left exactly as the demo bootstrap already hydrated it at module
     // load — better than a blank inbox, and nothing here can distinguish
